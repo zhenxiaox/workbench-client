@@ -1,0 +1,17 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "运营工作台窗口权限：主窗口 + 桌面悬浮球窗口（页面由本机 127.0.0.1 服务提供，需要远程 IPC 白名单）",
+  "windows": ["main", "fab"],
+  "remote": {
+    "urls": [
+      "http://127.0.0.1:8787",
+      "http://127.0.0.1:8787/*",
+      "http://localhost:8787",
+      "http://localhost:8787/*"
+    ]
+  },
+  "permissions": [
+    "core:default"
+  ]
+}

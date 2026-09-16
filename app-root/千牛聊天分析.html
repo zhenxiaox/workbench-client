@@ -1,0 +1,1436 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light" data-page-node-id="pgq4WdlRMRITpjJIYNMWEC">
+<head data-page-node-id="Sn1h9TPVv1OT9HgoJcGEXu">
+<meta charset="UTF-8" data-page-node-id="GnJnwYNQnIi3vhlEFowHN9">
+<script>
+(function(){
+  var WP='wb_theme', WS='wb_theme_auto_start', WE='wb_theme_auto_end';
+  function mins(t){ var p=String(t||'00:00').split(':'); return (parseInt(p[0],10)||0)*60+(parseInt(p[1],10)||0); }
+  function resolve(mode){
+    if(mode==='light'||mode==='dark'||mode==='eye') return mode;
+    if(mode!=='auto') return 'light';
+    var d=new Date(), m=d.getHours()*60+d.getMinutes(), s=1080, e=360;
+    try{ s=mins(localStorage.getItem(WS)||'18:00'); e=mins(localStorage.getItem(WE)||'06:00'); }catch(x){}
+    var dark=(s<e)?(m>=s&&m<e):(m>=s||m<e);
+    return dark?'dark':'light';
+  }
+  window.__wbResolveTheme = resolve;
+  function apply(){
+    var mode='light'; try{ mode=localStorage.getItem(WP)||'light'; }catch(e){}
+    document.documentElement.setAttribute('data-theme', resolve(mode));
+  }
+  apply();
+  window.addEventListener('message', function(e){
+    if(e.data && e.data.type==='wb-theme'){
+      var t=e.data.theme||e.data.mode;
+      if(t) document.documentElement.setAttribute('data-theme', resolve(t));
+      else apply();
+    }
+  });
+  try{ window.addEventListener('storage', function(e){ if(!e.key||e.key===WP||e.key===WS||e.key===WE) apply(); }); }catch(e){}
+})();
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" data-page-node-id="3QcrIfqlKFzOfcDwLoWz7A">
+<link rel="stylesheet" href="mobile-ui.css" data-page-node-id="AMbBLLUlEQJue4lrRdNbdC">
+<script src="mobile-adapter.js"></script>
+<title>需求洞察 · 运营工作台</title>
+<style>
+  :root{
+    --bg:#FFFFFF;
+    --bg-grad-start:#FFF1E4;
+    --bg-grad-mid:#FFF9F5;
+    --panel:#FFFFFF;
+    --panel2:#FAF6F3;
+    --line:#EFE6DE;
+    --line2:#DCD2C9;
+    --ink:#221813;
+    --muted:#7B6A61;
+    --muted2:#A99A90;
+    --accent:#F97316;
+    --accent-d:#EA580C;
+    --accent-soft:rgba(249,115,10,0.10);
+    --accent2:#FBBF24;
+    --accent2-d:#B45309;
+    --accent2-soft:rgba(251,191,36,0.20);
+    --ok:#10B981;
+    --danger:#EF4444;
+    --info:#3B82F6;
+    --warn:#D97706;
+    --radius:14px;
+  }
+  /* 护眼：暖米黄底 + 深棕字 */
+  :root[data-theme="eye"]{
+    --bg:#F5F1E8;
+    --bg-grad-start:#F7F0DF;
+    --bg-grad-mid:#FBF7EE;
+    --panel:#FBF8F1;
+    --panel2:#F0EADC;
+    --line:#E5DCCB;
+    --line2:#D5C9B4;
+    --ink:#3C3229;
+    --muted:#7A6E5F;
+    --muted2:#A2957F;
+    --accent:#F97316;
+    --accent-d:#EA580C;
+    --accent-soft:rgba(249,115,10,0.12);
+    --accent2:#FBBF24;
+    --accent2-d:#B45309;
+    --accent2-soft:rgba(251,191,36,0.20);
+    --ok:#10B981;
+    --danger:#EF4444;
+    --info:#3B82F6;
+    --warn:#D97706;
+    --radius:14px;
+  }
+  :root[data-theme="dark"]{
+    --bg:#100E0C;
+    --bg-grad-start:#2B1A0C;
+    --bg-grad-mid:#191411;
+    --panel:#171412;
+    --panel2:#221C18;
+    --line:#2A231E;
+    --line2:#3D332C;
+    --ink:#F5EFEA;
+    --muted:#B4A49A;
+    --muted2:#8A7A70;
+    --accent:#FB923C;
+    --accent-d:#F97316;
+    --accent-soft:rgba(251,146,60,0.14);
+    --accent2:#FBBF24;
+    --accent2-d:#F59E0B;
+    --accent2-soft:rgba(251,191,36,0.18);
+    --ok:#34D399;
+    --danger:#F87171;
+    --info:#60A5FA;
+    --warn:#FBBF24;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;margin:0;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    background:var(--bg); color:var(--ink); min-height:100vh; overflow-x:hidden;
+  }
+
+  /* 顶栏 */
+  .topbar{
+    padding:14px 24px; border-bottom:1px solid var(--line);
+    display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+    background:var(--panel); position:sticky; top:0; z-index:10;
+  }
+  .topbar h1{font-size:17px; margin:0; font-weight:700; display:flex; align-items:center; gap:10px;}
+  .topbar .dot{width:9px; height:9px; border-radius:50%; background:var(--accent); box-shadow:0 0 0 4px var(--accent-soft);}
+  .topbar .sub{font-size:12px; color:var(--muted);}
+  .topbar .spacer{flex:1;}
+  .btn-refresh{
+    padding:7px 14px; border-radius:9px;
+    border:1px solid var(--line2); background:var(--panel2);
+    color:var(--ink); cursor:pointer; font-size:13px; transition:.15s;
+  }
+  .btn-refresh:hover{border-color:var(--accent); color:var(--accent);}
+
+  /* Hero（产品介绍主视觉） */
+  .hero{
+    background:linear-gradient(180deg, var(--bg-grad-start) 0%, var(--bg-grad-mid) 70%, var(--bg) 100%);
+    padding:56px 24px 44px; text-align:center; position:relative;
+  }
+  .hero-inner{max-width:920px; margin:0 auto;}
+  .hero-brand{
+    font-size:30px; font-weight:800; color:var(--accent);
+    letter-spacing:.04em; margin-bottom:18px;
+  }
+  .hero-title{
+    font-size:40px; font-weight:800; margin:0 0 16px;
+    color:var(--ink); line-height:1.3;
+  }
+  .hero-title .accent{color:var(--accent); display:inline-block;}
+  .hero-sub{
+    font-size:14px; color:var(--ink); margin:0 0 14px;
+    font-weight:500; display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap;
+  }
+  .hero-sub .dia{color:var(--accent); font-weight:700;}
+  .hero-desc{
+    font-size:13px; color:var(--muted); margin:6px auto; max-width:680px; line-height:1.75;
+  }
+  .cta-primary{
+    margin-top:22px; padding:13px 30px; border-radius:999px;
+    background:linear-gradient(135deg, #FB923C, #EA580C);
+    color:#fff; font-size:15px; font-weight:700;
+    border:0; cursor:pointer;
+    box-shadow:0 4px 16px rgba(249,115,10,0.32);
+    transition:.15s;
+  }
+  .cta-primary:hover{transform:translateY(-1px); box-shadow:0 6px 22px rgba(249,115,10,0.42);}
+
+  /* 特性卡片 */
+  .features{padding:18px 24px 36px; background:var(--bg);}
+  .features-grid{
+    max-width:1080px; margin:0 auto;
+    display:grid; grid-template-columns:repeat(3,1fr); gap:16px;
+  }
+  @media(max-width:860px){.features-grid{grid-template-columns:repeat(2,1fr);}}
+  @media(max-width:560px){.features-grid{grid-template-columns:1fr;}}
+  .feat-card{
+    background:var(--panel); border:1px solid var(--line);
+    border-radius:14px; padding:18px 20px; position:relative;
+    transition:.15s; box-shadow:0 1px 2px rgba(0,0,0,0.02);
+    cursor:pointer;
+  }
+  .feat-card:hover{
+    transform:translateY(-2px);
+    box-shadow:0 8px 24px rgba(249,115,10,0.14);
+    border-color:var(--accent-soft);
+  }
+  .feat-icon{
+    position:absolute; top:14px; right:14px;
+    width:22px; height:22px; border-radius:50%;
+    background:var(--accent-soft); color:var(--accent);
+    display:flex; align-items:center; justify-content:center;
+    font-size:12px; font-weight:700;
+  }
+  .feat-title{font-size:15px; font-weight:700; color:var(--ink); margin-bottom:2px;}
+  .feat-sub{font-size:13px; color:var(--accent); font-weight:600; margin-bottom:10px;}
+  .feat-desc{font-size:12.5px; color:var(--muted); line-height:1.65;}
+  .feat-go{
+    margin-top:10px; font-size:12px; color:var(--accent); font-weight:600;
+  }
+  .features-cap{
+    max-width:1080px; margin:0 auto 12px; font-size:12.5px; color:var(--muted);
+    display:flex; align-items:center; gap:8px;
+  }
+  .features-cap .pulse{
+    width:7px; height:7px; border-radius:50%; background:var(--accent);
+    box-shadow:0 0 0 3px rgba(249,115,10,0.20);
+  }
+
+  /* 底部双 CTA */
+  .bottom-cta{
+    padding:20px 24px 56px; background:var(--bg);
+    display:flex; justify-content:center; align-items:center; gap:14px; flex-wrap:wrap;
+  }
+  .cta-blue{
+    padding:13px 28px; border-radius:999px;
+    background:linear-gradient(135deg, #FB923C, #EA580C);
+    color:#fff; font-size:14px; font-weight:700;
+    border:0; cursor:pointer;
+    box-shadow:0 4px 16px rgba(249,115,10,0.30); transition:.15s;
+  }
+  .cta-blue:hover{transform:translateY(-1px); box-shadow:0 6px 22px rgba(249,115,10,0.42);}
+  .cta-cyan{
+    padding:13px 28px; border-radius:999px;
+    background:linear-gradient(135deg, #FDE68A, #F59E0B);
+    color:#7C3A06; font-size:14px; font-weight:700;
+    border:0; cursor:pointer;
+    box-shadow:0 4px 16px rgba(245,158,11,0.30); transition:.15s;
+  }
+  .cta-cyan:hover{transform:translateY(-1px); box-shadow:0 6px 22px rgba(245,158,11,0.42);}
+  :root[data-theme="dark"] .cta-cyan{color:#40240A;}
+
+  /* ============ 数据看板 ============ */
+  .data-board{padding:20px 24px 48px; background:var(--bg);}
+  .board-inner{max-width:1080px; margin:0 auto;}
+  .board-top{display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:18px;}
+  .back-btn{
+    padding:8px 16px; border-radius:9px;
+    border:1px solid var(--line2); background:var(--panel2);
+    color:var(--ink); cursor:pointer; font-size:13px;
+  }
+  .back-btn:hover{border-color:var(--accent); color:var(--accent);}
+  .mod-nav{display:flex; gap:8px; flex-wrap:wrap; flex:1; justify-content:center;}
+  .mod-chip{
+    padding:7px 15px; border-radius:999px;
+    border:1px solid var(--line2); background:var(--panel);
+    color:var(--muted); font-size:13px; cursor:pointer; transition:.15s;
+  }
+  .mod-chip:hover{border-color:var(--accent); color:var(--accent);}
+  .mod-chip.active{
+    background:var(--accent-soft); border-color:var(--accent);
+    color:var(--accent); font-weight:700;
+  }
+
+  .summary{display:flex; gap:12px; flex-wrap:wrap; margin-bottom:20px;}
+  .stat{
+    background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+    padding:14px 18px; min-width:130px; flex:1;
+  }
+  .stat .k{font-size:12px; color:var(--muted); margin-bottom:6px;}
+  .stat .v{font-size:22px; font-weight:700; color:var(--accent);}
+  .stat .v.small{font-size:16px;}
+  .stat.warn .v{color:var(--warn);}
+  .stat.bad .v{color:var(--danger);}
+  .stat.good .v{color:var(--ok);}
+
+  .grid{display:grid; grid-template-columns:1fr 1fr; gap:18px;}
+  .grid3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:18px;}
+  @media(max-width:980px){.grid3{grid-template-columns:1fr;}}
+  @media(max-width:860px){.grid{grid-template-columns:1fr;}}
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:18px;}
+  .card h2{font-size:15px; margin:0 0 14px; font-weight:700; display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
+  .card h2 .tag{font-size:11px; color:var(--accent); background:var(--accent-soft); padding:2px 8px; border-radius:6px; font-weight:600;}
+  .card .hint{font-size:11.5px; color:var(--muted2); font-weight:400;}
+
+  .list-item{
+    display:flex; gap:10px; align-items:flex-start; padding:9px 0; border-bottom:1px solid var(--line);
+  }
+  .list-item:last-child{border-bottom:none;}
+  .list-item .idx{color:var(--muted2); font-size:12px; min-width:22px; text-align:right; padding-top:2px;}
+  .list-item .cnt{
+    flex:0 0 auto; background:var(--accent-soft); color:var(--accent);
+    font-size:12px; padding:2px 8px; border-radius:8px; font-weight:600; margin-top:1px;
+  }
+  .list-item .txt{flex:1; color:var(--ink); font-size:13px; line-height:1.55; word-break:break-word;}
+  .list-item.bad .cnt{background:rgba(239,68,68,0.12); color:var(--danger);}
+  .list-item.good .cnt{background:var(--accent2-soft); color:var(--accent2-d);}
+  .empty{color:var(--muted); font-size:13px; text-align:center; padding:28px 0;}
+  .note{
+    font-size:12.5px; color:var(--ink); line-height:1.7;
+    background:var(--accent-soft); border:1px dashed var(--accent);
+    border-radius:10px; padding:10px 14px; margin-bottom:16px;
+  }
+  .note b{color:var(--accent-d);}
+
+  /* 原因占比条 */
+  .bar-row{display:flex; align-items:center; gap:10px; margin:9px 0;}
+  .bar-name{width:118px; font-size:12.5px; color:var(--ink); text-align:right; flex:0 0 auto;}
+  .bar-track{flex:1; height:10px; background:var(--panel2); border-radius:6px; overflow:hidden;}
+  .bar-fill{height:100%; background:linear-gradient(90deg,#FB923C,#EA580C); border-radius:6px; transition:width .4s;}
+  .bar-cnt{font-size:12px; color:var(--muted); width:76px; flex:0 0 auto;}
+
+  /* 售前询单分类格 */
+  .bucket-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:12px;}
+  @media(max-width:860px){.bucket-grid{grid-template-columns:repeat(2,1fr);}}
+  @media(max-width:480px){.bucket-grid{grid-template-columns:1fr;}}
+  .bucket{background:var(--panel2); border:1px solid var(--line); border-radius:10px; padding:12px 14px;}
+  .bucket .bk{font-size:12px; color:var(--muted); margin-bottom:4px;}
+  .bucket .bv{font-size:20px; font-weight:700; color:var(--accent);}
+  .bucket .bp{font-size:11px; color:var(--muted2); margin-top:2px;}
+
+  /* Ask AI 对话 */
+  .chat-log{display:flex; flex-direction:column; gap:12px; max-height:430px; overflow-y:auto; padding:6px 2px;}
+  .msg{max-width:88%; padding:10px 14px; border-radius:12px; font-size:13px; line-height:1.7; white-space:pre-wrap; word-break:break-word;}
+  .msg.user{align-self:flex-end; background:linear-gradient(135deg,#FB923C,#EA580C); color:#fff; border-bottom-right-radius:4px;}
+  .msg.ai{align-self:flex-start; background:var(--panel2); border:1px solid var(--line); border-bottom-left-radius:4px;}
+  .msg.err{align-self:stretch; max-width:100%; background:rgba(239,68,68,0.10); border:1px solid rgba(239,68,68,0.40); color:var(--danger); text-align:center;}
+  .msg .ai-head{font-size:11px; color:var(--muted2); margin-bottom:4px;}
+  .chips{display:flex; gap:8px; flex-wrap:wrap; margin:12px 0 10px;}
+  .chip{
+    padding:6px 13px; border-radius:999px; border:1px solid var(--line2);
+    background:var(--panel); font-size:12px; color:var(--muted); cursor:pointer; transition:.15s;
+  }
+  .chip:hover{border-color:var(--accent); color:var(--accent); background:var(--accent-soft);}
+  .ask-row{display:flex; gap:10px; margin-top:6px;}
+  .ask-row input{
+    flex:1; padding:11px 14px; border-radius:10px; border:1px solid var(--line2);
+    background:var(--panel); color:var(--ink); font-size:13px; outline:none;
+  }
+  .ask-row input:focus{border-color:var(--accent);}
+  .btn-main{
+    padding:10px 20px; border-radius:10px; border:0;
+    background:linear-gradient(135deg,#FB923C,#EA580C); color:#fff;
+    font-weight:700; cursor:pointer; font-size:13px; transition:.15s;
+  }
+  .btn-main:hover{opacity:.9;}
+  .btn-main:disabled{opacity:.5; cursor:not-allowed;}
+  .btn-ghost{
+    padding:8px 14px; border-radius:9px; border:1px solid var(--line2);
+    background:var(--panel2); color:var(--ink); cursor:pointer; font-size:12.5px; transition:.15s;
+  }
+  .btn-ghost:hover{border-color:var(--accent); color:var(--accent);}
+  .btn-danger{color:var(--danger);}
+  .btn-danger:hover{border-color:var(--danger); color:var(--danger);}
+
+  /* 标签管理 */
+  .tag-row{
+    display:flex; align-items:flex-start; gap:12px; padding:13px 0;
+    border-bottom:1px solid var(--line); flex-wrap:wrap;
+  }
+  .tag-row:last-child{border-bottom:none;}
+  .tag-name{font-size:14px; font-weight:700; color:var(--ink); min-width:90px;}
+  .type-badge{
+    font-size:11px; padding:2px 8px; border-radius:6px;
+    background:var(--accent2-soft); color:var(--accent2-d); font-weight:600; flex:0 0 auto; margin-top:2px;
+  }
+  .kw-wrap{flex:1; min-width:200px;}
+  .kw-chip{
+    background:var(--accent-soft); color:var(--accent); border-radius:6px;
+    padding:2px 8px; font-size:11.5px; margin:2px 4px 2px 0; display:inline-block;
+  }
+  .tag-ops{display:flex; gap:8px; flex:0 0 auto; align-items:center;}
+  .onoff{
+    font-size:11.5px; padding:3px 10px; border-radius:999px; border:1px solid var(--line2);
+    cursor:pointer; background:var(--panel2); color:var(--muted);
+  }
+  .onoff.on{background:var(--accent2-soft); color:var(--accent2-d); border-color:var(--accent2);}
+  .tag-editor{margin-top:14px; border:1px solid var(--line); border-radius:12px; padding:16px; background:var(--panel2);}
+  .tag-editor h3{margin:0 0 12px; font-size:14px;}
+  .fe-row{display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px;}
+  .fe-row label{font-size:12px; color:var(--muted); display:block; margin-bottom:4px;}
+  .fe-row input[type=text], .fe-row select, .fe-row textarea{
+    padding:9px 12px; border-radius:9px; border:1px solid var(--line2);
+    background:var(--panel); color:var(--ink); font-size:13px; outline:none; font-family:inherit;
+  }
+  .fe-row input[type=text]:focus, .fe-row textarea:focus{border-color:var(--accent);}
+  .fe-row textarea{width:100%; min-height:64px; resize:vertical;}
+
+  /* SKU 管理 */
+  .sku-toolbar{display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px; align-items:center;}
+  .sku-toolbar input[type=text], .sku-toolbar select{
+    padding:9px 12px; border-radius:9px; border:1px solid var(--line2);
+    background:var(--panel); color:var(--ink); font-size:13px; outline:none;
+  }
+  .sku-toolbar input[type=text]{flex:1; min-width:180px;}
+  .sku-prod{border:1px solid var(--line); border-radius:10px; margin-bottom:12px; overflow:hidden;}
+  .sku-head{
+    background:var(--panel2); padding:10px 14px; display:flex; gap:12px;
+    align-items:center; flex-wrap:wrap; font-size:13px;
+  }
+  .sku-head .t{font-weight:700; flex:1; min-width:160px; word-break:break-all;}
+  .sku-head .m{font-size:12px; color:var(--muted);}
+  table.sku-t{width:100%; border-collapse:collapse; font-size:12.5px;}
+  table.sku-t th{
+    text-align:left; color:var(--muted); font-weight:600; padding:8px 10px;
+    border-bottom:1px solid var(--line); background:var(--panel);
+  }
+  table.sku-t td{padding:8px 10px; border-bottom:1px solid var(--line); vertical-align:middle;}
+  table.sku-t tr:last-child td{border-bottom:none;}
+  table.sku-t select{
+    padding:5px 8px; border-radius:7px; border:1px solid var(--line2);
+    background:var(--panel); color:var(--ink); font-size:12px; max-width:130px;
+  }
+  .st-on{color:var(--ok); font-weight:600;}
+  .st-off{color:var(--muted2);}
+  .grp-row{display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:12px;}
+  .grp-chip{
+    display:inline-flex; align-items:center; gap:6px;
+    background:var(--accent2-soft); color:var(--accent2-d);
+    border-radius:999px; padding:4px 12px; font-size:12px; font-weight:600;
+  }
+  .grp-chip .x{cursor:pointer; opacity:.7; font-weight:700;}
+  .grp-chip .x:hover{opacity:1;}
+
+  .banner{
+    margin:0 24px 14px; padding:12px 16px; border-radius:10px;
+    background:rgba(248,113,113,0.12); border:1px solid rgba(248,113,113,0.35);
+    color:#FECACA; font-size:13px; display:none;
+  }
+  :root:not([data-theme="dark"]) .banner{color:#B91C1C; background:rgba(239,68,68,0.08);}
+  .banner.show{display:block;}
+
+  /* 响应式 */
+  @media(max-width:680px){
+    .hero{padding:36px 18px 28px;}
+    .hero-brand{font-size:24px;}
+    .hero-title{font-size:26px;}
+    .topbar{padding:12px 16px;}
+    .features{padding:14px 16px 24px;}
+    .data-board{padding:14px 16px 36px;}
+    .bar-name{width:88px;}
+    .board-top{gap:8px;}
+    .mod-nav{order:3; flex-basis:100%; justify-content:flex-start;}
+  }
+</style>
+<link rel="stylesheet" href="scrollbar.css?v=1">
+</head>
+<body data-page-node-id="D2YNJcletQwyXFhmhD2jxn">
+  <header class="topbar" data-page-node-id="2j1TBtXHcjIbsRDf4cyAYK">
+    <h1 data-page-node-id="WKFt3JKvEQelIFdwqKCXSM"><span class="dot" data-page-node-id="rDEGHRaTfhWBysA7HJSZMj"></span>需求洞察</h1>
+    <span class="sub" data-page-node-id="FJybm4aANJdmQbR2jARmia">AI 驱动的客户之声智能分析</span>
+    <span class="spacer" data-page-node-id="yTQgWnK1DWX33IqcS6lxPl"></span>
+    <button class="btn-refresh" id="btnRefresh" data-page-node-id="f5SAIDX2ewDcGA0Z6Jr0KN">↻ 刷新数据</button>
+  </header>
+
+  <div class="banner" id="banner" data-page-node-id="gkkRMH4w0WWZYCI4wULd7n"></div>
+
+  <!-- 产品介绍视图 -->
+  <div id="introView" data-page-node-id="yzB4qPwlOOTun2CQijBTKU">
+    <section class="hero" data-page-node-id="Yp0kfciTb6P7l5eaevveGQ">
+      <div class="hero-inner" data-page-node-id="WDdZLjAPV4yN6rP4gdGHOx">
+        <div class="hero-brand" data-page-node-id="u22RuNPrF51bF4HHkhfvTi">需求洞察</div>
+        <h2 class="hero-title" data-page-node-id="1vySkoL57AVR88TaEk5RMX">让每一条细微声音<br data-page-node-id="rf49nhUj6nCGViwyMCJDuE"><span class="accent" data-page-node-id="PBuO7Gfx6MogBDLj1qF5HY">都闪耀经营价值</span> ✨</h2>
+        <p class="hero-sub" data-page-node-id="xufYJsw9ZZbEceKWecTTOX">
+          <span data-page-node-id="1WWORKbU7oFiyqVOFO3v6x"><span class="dia" data-page-node-id="H69cBxyRzTMRZQ3DAan3Eu">◆</span> AI Agent 全渠道话聊洞察引擎</span>
+          <span data-page-node-id="7g8z6kJ2dFTPtqkcsC6O7X"><span class="dia" data-page-node-id="m3gLkm6sJYQ7AM6u233ywL">◆</span> 让体验洞察驱动商业增长</span>
+        </p>
+        <p class="hero-desc" data-page-node-id="LNGFwLj8yK5AjMBIjlsqAR">基于本机聊天记录的用户洞察 AI Agent</p>
+        <p class="hero-desc" data-page-node-id="Iccxx5U80vemuTfHlV8LYL">1 分钟穿透每条对话 — 消费者关心什么、吐槽什么、夸赞什么、为何退款、询单后流失去哪里</p>
+        <button class="cta-primary" id="btnViewDataTop" data-page-node-id="Axk19j8hWiamMkf60KUkUY">查看数据看板 →</button>
+      </div>
+    </section>
+
+    <section class="features" data-page-node-id="sTcNhP5kVedC6kjWY2TJ1G">
+      <div class="features-cap"><span class="pulse"></span>六大功能模块已全部上线 · 点击卡片直达</div>
+      <div class="features-grid" data-page-node-id="6Go5imBaGTwEauEZOE4dOA">
+        <div class="feat-card" data-mod="quanqu" data-page-node-id="ghD7n4ZbLs4qdc9z6GqomH">
+          <div class="feat-title" data-page-node-id="wZzJIrOcSwYfl0RNl7kTMu">全渠洞察</div>
+          <div class="feat-sub" data-page-node-id="5oVkKNQ0uxJVfdk2MGdRUn">快速定位热点</div>
+          <div class="feat-desc" data-page-node-id="LGKu9EB7a968fOFZLFtkH2">评价 / 客户咨询 / 宝贝舆情用户热点声音，一目了然，支持多维度灵活拆解</div>
+          <div class="feat-go">进入模块 →</div>
+        </div>
+        <div class="feat-card" data-mod="jindian" data-page-node-id="JxzsJrWTxO6y3AUKgEA3Go">
+          <div class="feat-title" data-page-node-id="VF1ZYDJzNgcO0GSSAHRtfe">退款分析</div>
+          <div class="feat-sub" data-page-node-id="G0Hoy3gex4SKOuGesjFng9">挖掘真实原因</div>
+          <div class="feat-desc" data-page-node-id="0nOsqhH0T2917OcT88er63">关联订单全链路 VOC，识别真实退款原因并提供改善建议</div>
+          <div class="feat-go">进入模块 →</div>
+        </div>
+        <div class="feat-card" data-mod="wenjuan" data-page-node-id="TF9PN98Y18VRQaa45dd8kr">
+          <div class="feat-title" data-page-node-id="PE9GUHGXtcaeUF26EhfvAp">售前询单分析</div>
+          <div class="feat-sub" data-page-node-id="NvNxCcfhChxVT3u4IFYELU">挖掘询单流失原因</div>
+          <div class="feat-desc" data-page-node-id="Oucg2WW1RyCGyXDhJ7iqex">用户售前咨询热点，咨询前流失归因分析</div>
+          <div class="feat-go">进入模块 →</div>
+        </div>
+        <div class="feat-card" data-mod="askai" data-page-node-id="40ZQXB6pUhEWsORl5X0gfN">
+          <div class="feat-title" data-page-node-id="JOGSvjAiNypIkhqoZrEsVI">Ask AI</div>
+          <div class="feat-sub" data-page-node-id="B33SFAicJxIUMbaGSdcvIM">替代人工分析</div>
+          <div class="feat-desc" data-page-node-id="BJSB9ltZv7GZkjl5WE98a0">Agent 自然语言交互，1 分钟深度洞察根因，自动生成报告</div>
+          <div class="feat-go">进入模块 →</div>
+        </div>
+        <div class="feat-card" data-mod="tags" data-page-node-id="eEbSSs6lxGN83EsrX5UwTs">
+          <div class="feat-title" data-page-node-id="OSe0ZWvkkPK8wIF56taTIu">标签管理</div>
+          <div class="feat-sub" data-page-node-id="kuRlhg0iInRZcLo7ZKqwao">适配行业特性</div>
+          <div class="feat-desc" data-page-node-id="xJ9A6PwKNiF9f60WCgpnj1">支持精细化调整标签释义，持续优化打准准确率</div>
+          <div class="feat-go">进入模块 →</div>
+        </div>
+        <div class="feat-card" data-mod="sku" data-page-node-id="mrTbAFg4BZV1hHbfI0EtI5">
+          <div class="feat-title" data-page-node-id="vBTk8qqSpxWg2eYE4gE9GA">SKU 管理</div>
+          <div class="feat-sub" data-page-node-id="sm0WCrAiwq9ihDWTX4JMBO">探析运营体系</div>
+          <div class="feat-desc" data-page-node-id="lPtRmvsmnNUPNv5Nw39gPL">将平台 SKU 映射为您真实的商品管理层级</div>
+          <div class="feat-go">进入模块 →</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="bottom-cta" data-page-node-id="63XsQwwLCUaXFD42wZtAIt">
+      <button class="cta-blue" id="btnViewDataBot" data-page-node-id="RAieBZ8vXxfKng9d0BbXBj">查看数据看板 →</button>
+      <button class="cta-cyan" id="btnRefreshBottom" data-page-node-id="Ibo7D94PU0DbOfx7YVsOCO">↻ 刷新数据</button>
+    </section>
+  </div>
+
+  <!-- 数据看板视图（默认隐藏） -->
+  <section class="data-board" id="dataView" hidden data-page-node-id="Wh6mExoATZre2K4jPdXMW1">
+    <div class="board-inner">
+      <div class="board-top" data-page-node-id="LWrCOiSns5nmlB493s7MtC">
+        <button class="back-btn" id="btnBackIntro" data-page-node-id="O16V8DLP3yfD10rZDAVAh8">← 返回介绍</button>
+        <div class="mod-nav" id="modNav">
+          <button class="mod-chip active" data-mod="quanqu">全渠洞察</button>
+          <button class="mod-chip" data-mod="jindian">退款分析</button>
+          <button class="mod-chip" data-mod="wenjuan">售前询单</button>
+          <button class="mod-chip" data-mod="askai">Ask AI</button>
+          <button class="mod-chip" data-mod="tags">标签管理</button>
+          <button class="mod-chip" data-mod="sku">SKU 管理</button>
+        </div>
+      </div>
+
+      <!-- ① 全渠洞察 -->
+      <div class="mod-panel" id="mod-quanqu">
+        <div class="summary" id="qqStats"></div>
+        <div class="grid">
+          <div class="card">
+            <h2>客户咨询热点 <span class="tag">客户常问</span></h2>
+            <div id="qqFaq"><div class="empty">正在加载…</div></div>
+          </div>
+          <div class="card">
+            <h2>隐性需求 <span class="tag">想要 / 希望 / 需要</span> <span class="hint">跟随标签</span></h2>
+            <div id="qqNeed"><div class="empty">正在加载…</div></div>
+          </div>
+          <div class="card">
+            <h2>客户抱怨 / 痛点 <span class="tag">差评信号</span> <span class="hint">跟随标签</span></h2>
+            <div id="qqPain"><div class="empty">正在加载…</div></div>
+          </div>
+          <div class="card">
+            <h2>需求建议 <span class="tag">建议 / 期待</span> <span class="hint">跟随标签</span></h2>
+            <div id="qqSuggest"><div class="empty">正在加载…</div></div>
+          </div>
+        </div>
+        <div class="grid" style="margin-top:18px;">
+          <div class="card">
+            <h2>评价 · 正面声音 <span class="tag">好评关键词</span></h2>
+            <div id="qqPos"><div class="empty">正在加载…</div></div>
+          </div>
+          <div class="card">
+            <h2>评价 · 负面声音 <span class="tag">差评关键词</span></h2>
+            <div id="qqNeg"><div class="empty">正在加载…</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ② 退款分析 -->
+      <div class="mod-panel" id="mod-jindian" hidden>
+        <div class="note" id="jdNote"><b>数据说明：</b>当前基于「评价 + 客服咨询」中的退款 / 退货信号做退款原因归因。店铺分析中导入「店铺-订单数据」后，可进一步关联订单全链路。</div>
+        <div class="summary" id="jdStats"></div>
+        <div class="grid">
+          <div class="card">
+            <h2>退款原因归类 <span class="tag">信号占比</span></h2>
+            <div id="jdBars"><div class="empty">正在加载…</div></div>
+          </div>
+          <div class="card">
+            <h2>改善建议 <span class="tag">按原因给方案</span></h2>
+            <div id="jdAdvice"><div class="empty">正在加载…</div></div>
+          </div>
+        </div>
+        <div class="card" style="margin-top:18px;">
+          <h2>差评 / 退款信号原文 <span class="tag">Top 10</span></h2>
+          <div id="jdDetail"><div class="empty">正在加载…</div></div>
+        </div>
+      </div>
+
+      <!-- ③ 售前询单 -->
+      <div class="mod-panel" id="mod-wenjuan" hidden>
+        <div class="card" style="margin-bottom:18px;">
+          <h2>售前咨询热点分类 <span class="tag">客户在问什么</span></h2>
+          <div class="bucket-grid" id="wjBuckets"><div class="empty">正在加载…</div></div>
+        </div>
+        <div class="grid">
+          <div class="card">
+            <h2>高频问题 <span class="tag">询单 TOP</span></h2>
+            <div id="wjFaq"><div class="empty">正在加载…</div></div>
+          </div>
+          <div class="card">
+            <h2>流失信号 <span class="tag">贵 / 考虑 / 再看看</span> <span class="hint">跟随标签</span></h2>
+            <div id="wjChurn"><div class="empty">正在加载…</div></div>
+          </div>
+        </div>
+        <div class="card" style="margin-top:18px;">
+          <h2>转化建议 <span class="tag">针对咨询热点</span></h2>
+          <div id="wjAdvice"><div class="empty">正在加载…</div></div>
+        </div>
+      </div>
+
+      <!-- ④ Ask AI -->
+      <div class="mod-panel" id="mod-askai" hidden>
+        <div class="card">
+          <h2>Ask AI <span class="tag" id="aiModelTag">智能洞察助手</span></h2>
+          <div class="chat-log" id="aiLog">
+            <div class="msg ai">你好！我已接入本店聊天 / 评价 / SKU 数据摘要。<br>可以直接问我，比如「客户最关心什么？」「退款主要是什么原因？」「生成一份需求洞察报告」。</div>
+          </div>
+          <div class="chips" id="aiChips">
+            <button class="chip" data-q="客户最关心什么？请结合数据给出前3个关注点和依据。">客户最关心什么？</button>
+            <button class="chip" data-q="分析退款和流失的主要原因，并说明改善优先级。">退款 / 流失原因分析</button>
+            <button class="chip" data-q="根据咨询热点，给详情页和客服话术各提 3 条优化建议。">详情页 &amp; 话术优化</button>
+            <button class="chip" data-q="请生成一份《需求洞察报告》：1) 客户最关心的3件事 2) 退款/流失主要原因 3) 给运营的3条可落地建议 4) 下一步行动计划。分点、简明。">生成洞察报告 📄</button>
+          </div>
+          <div class="ask-row">
+            <input type="text" id="aiInput" placeholder="问我任何关于客户声音的问题…" maxlength="500">
+            <button class="btn-main" id="aiSend">发送</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ⑤ 标签管理 -->
+      <div class="mod-panel" id="mod-tags" hidden>
+        <div class="note"><b>说明：</b>标签关键词会即时作用于「全渠洞察」「售前询单」的归类统计。改完关键词，回到对应模块点「↻ 刷新数据」即可看到效果。</div>
+        <div class="card">
+          <h2>洞察标签 <span class="tag" id="tagCount"></span>
+            <span style="flex:1"></span>
+            <button class="btn-ghost" id="btnTagAdd">＋ 新增标签</button>
+            <button class="btn-ghost" id="btnTagReset">恢复默认</button>
+          </h2>
+          <div id="tagList"><div class="empty">正在加载…</div></div>
+          <div class="tag-editor" id="tagEditor" hidden>
+            <h3 id="tagEditorTitle">新增标签</h3>
+            <div class="fe-row">
+              <div style="flex:1;min-width:160px;"><label>标签名称</label><input type="text" id="feName" maxlength="20" style="width:100%;"></div>
+              <div><label>类型</label>
+                <select id="feType">
+                  <option value="need">隐性需求</option>
+                  <option value="pain">抱怨痛点</option>
+                  <option value="suggest">需求建议</option>
+                  <option value="churn">询单流失</option>
+                  <option value="custom">自定义</option>
+                </select>
+              </div>
+            </div>
+            <div class="fe-row">
+              <div style="width:100%;"><label>关键词（用逗号 / 顿号 / 空格分隔）</label>
+              <textarea id="feKw" placeholder="例如：想要, 希望, 能不能, 有没有, 推荐"></textarea></div>
+            </div>
+            <div style="display:flex; gap:10px;">
+              <button class="btn-main" id="feSave">保存</button>
+              <button class="btn-ghost" id="feCancel">取消</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ⑥ SKU 管理 -->
+      <div class="mod-panel" id="mod-sku" hidden>
+        <div class="summary" id="skuStats"></div>
+        <div class="card" style="margin-bottom:18px;">
+          <h2>商品分组映射 <span class="tag">平台SKU → 真实管理层级</span></h2>
+          <div class="grp-row">
+            <input type="text" id="grpName" placeholder="新分组名称，如：猫爬架-大号" maxlength="20" style="padding:8px 12px;border-radius:9px;border:1px solid var(--line2);background:var(--panel);color:var(--ink);outline:none;">
+            <button class="btn-ghost" id="btnGrpAdd">＋ 建分组</button>
+          </div>
+          <div class="grp-row" id="grpChips"></div>
+          <div class="hint" style="font-size:11.5px;color:var(--muted2);">在下方每个 SKU 行的「归属分组」下拉里选分组；分组库存 / 价格会自动汇总。</div>
+        </div>
+        <div class="sku-toolbar">
+          <input type="text" id="skuSearch" placeholder="搜索商品 / SKU / 商家编码…">
+          <select id="skuStore"><option value="">全部店铺</option></select>
+          <select id="skuStatus"><option value="">全部状态</option></select>
+        </div>
+        <div id="skuList"><div class="empty">正在加载…</div></div>
+      </div>
+    </div>
+  </section>
+
+<script>
+(function () {
+  'use strict';
+  var APP_VERSION = 'v1.1.0';
+  var $ = function (id) { return document.getElementById(id); };
+
+  /* ================= 基础工具 ================= */
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+  function isAgent(r) {
+    var role = (r.role || '').trim();
+    return role.indexOf('客服') >= 0 || role.indexOf('小二') >= 0 || role.indexOf('卖家') >= 0;
+  }
+  function isCustomer(r) { return !isAgent(r) && !!(r.content || '').trim(); }
+  /* 与插件导出一致：把 "[图片: URL]" 图片片段从文本里剥离，图片消息不参与语句/问题统计 */
+  function stripImages(s) {
+    return String(s == null ? '' : s)
+      .replace(/\[图片[:：]\s*[^\]]+\]/g, ' ')
+      .replace(/https?:\/\/[^\s"'<>]+?\.(?:jpg|jpeg|png|gif|webp|bmp)(?:\?[^\s"'<>]*)?/gi, ' ');
+  }
+  function norm(s) {
+    return stripImages(s).replace(/\s+/g, ' ').replace(/^[，。！？、；：,.!?;:]+/, '').trim();
+  }
+  function hitAny(text, kws) {
+    for (var i = 0; i < kws.length; i++) { if (text.indexOf(kws[i]) >= 0) return true; }
+    return false;
+  }
+  /* 纯链接 / 图片占位消息不参与统计（避免商品网址、图片消息污染热点）
+     注意：不能用「去掉 URL 后长度很短」来判断，否则「有货吗」「多少钱」这类
+     3 字短问句会被误杀；改为判断「是否还剩有效文字（中文/字母/数字）」。 */
+  function isUrlOnly(text) {
+    var t = String(text || '')
+      .replace(/https?:\/\/\S+/gi, '')          // 去掉链接
+      .replace(/\[图片[:：]?[^\]]*\]/g, '')      // 去掉图片占位
+      .replace(/[\s，。！？、；：,.!?;:·~\-_/\\|()（）\[\]【】"'”’]+/g, '');
+    if (!t) return true;
+    return !/[\u4e00-\u9fa5a-zA-Z0-9]/.test(t);
+  }
+  function clauseFreq(records, keywords) {
+    var counter = {};
+    records.forEach(function (r) {
+      var text = norm(r.content);
+      if (!text || isUrlOnly(text)) return;
+      var clauses = text.split(/[，。！？、；：,.!?;:\n]+/);
+      clauses.forEach(function (c) {
+        c = c.trim();
+        if (!c || c.length < 2 || c.length > 40) return;
+        if (keywords && keywords.length && !hitAny(c, keywords)) return;
+        counter[c] = (counter[c] || 0) + 1;
+      });
+    });
+    var arr = Object.keys(counter).map(function (k) { return { text: k, count: counter[k] }; });
+    arr.sort(function (a, b) { return b.count - a.count || b.text.length - a.text.length; });
+    return arr;
+  }
+  function questionFreq(records) {
+    var counter = {};
+    records.forEach(function (r) {
+      var text = norm(r.content);
+      if (!text || isUrlOnly(text)) return;
+      var isQ = /[?？]/.test(text) || /^(怎么|为什么|多少|有没有|能不能|可以|是否|哪|几|多|什么|如何|请问)/.test(text);
+      if (!isQ) return;
+      if (text.length > 60) text = text.slice(0, 60);
+      counter[text] = (counter[text] || 0) + 1;
+    });
+    var arr = Object.keys(counter).map(function (k) { return { text: k, count: counter[k] }; });
+    arr.sort(function (a, b) { return b.count - a.count; });
+    return arr.slice(0, 20);
+  }
+  function renderList(el, arr, limit, emptyText, cls) {
+    el.innerHTML = '';
+    var list = (arr || []).slice(0, limit || 12);
+    if (!list.length) { el.innerHTML = '<div class="empty">' + esc(emptyText || '暂无相关数据') + '</div>'; return; }
+    list.forEach(function (item, i) {
+      var div = document.createElement('div');
+      div.className = 'list-item' + (cls ? ' ' + cls : '');
+      var idx = document.createElement('div'); idx.className = 'idx'; idx.textContent = (i + 1);
+      var cnt = document.createElement('div'); cnt.className = 'cnt'; cnt.textContent = item.count + ' 次';
+      var txt = document.createElement('div'); txt.className = 'txt'; txt.textContent = item.text;
+      div.appendChild(idx); div.appendChild(txt); div.appendChild(cnt);
+      el.appendChild(div);
+    });
+  }
+  function fetchJSON(url) {
+    return fetch(url, { cache: 'no-store' }).then(function (r) { return r.json(); });
+  }
+
+  /* ================= 标签管理（数据） ================= */
+  var TAGS_KEY = 'wb_insight_tags';
+  var TAG_TYPES = { need: '隐性需求', pain: '抱怨痛点', suggest: '需求建议', churn: '询单流失', custom: '自定义' };
+  var DEFAULT_TAGS = [
+    { name: '隐性需求', type: 'need', on: true, keywords: ['想要', '想买', '想换', '希望', '需要', '能不能', '有没有', '可以吗', '合适吗', '推荐', '哪款', '怎么选', '求推荐', '想了解', '考虑', '在找'] },
+    { name: '抱怨痛点', type: 'pain', on: true, keywords: ['太贵', '贵了', '退款', '退货', '投诉', '差评', '质量', '坏了', '破损', '瑕疵', '异味', '味道', '掉色', '缩水', '变形', '失望', '不行', '垃圾', '太慢', '发货慢', '物流慢', '不理', '态度', '假货', '劣质', '次品', '难闻', '漏', '脏'] },
+    { name: '需求建议', type: 'suggest', on: true, keywords: ['建议', '希望', '最好', '能不能出', '想要个', '期待', '改进', '优化', '加个', '增加', '以后', '下次'] },
+    { name: '询单流失', type: 'churn', on: true, keywords: ['太贵', '考虑', '再看看', '再想想', '对比', '别家', '其他家', '算了', '不需要了', '先不'] }
+  ];
+  var tags = null;
+  function loadTags() {
+    if (tags) return tags;
+    try { tags = JSON.parse(localStorage.getItem(TAGS_KEY) || 'null'); } catch (e) { tags = null; }
+    if (!Array.isArray(tags) || !tags.length) tags = JSON.parse(JSON.stringify(DEFAULT_TAGS));
+    return tags;
+  }
+  function saveTags() { try { localStorage.setItem(TAGS_KEY, JSON.stringify(loadTags())); } catch (e) {} }
+  function tagKeywords(type) {
+    var out = [];
+    loadTags().forEach(function (t) { if (t.on && t.type === type && Array.isArray(t.keywords)) out = out.concat(t.keywords); });
+    return out;
+  }
+
+  /* ================= 数据加载 ================= */
+  var chatRecs = [], reviewRecs = [], skuRecs = [];
+  var loadedCore = false, loadedSku = false;
+  function showError(msg) {
+    $('banner').textContent = msg;
+    $('banner').classList.add('show');
+  }
+  function clearError() { $('banner').classList.remove('show'); }
+
+  function ensureCore(cb) {
+    if (loadedCore) { cb(true); return; }
+    Promise.all([fetchJSON('/api/qianniu-chat'), fetchJSON('/api/qianniu-review')])
+      .then(function (rs) {
+        chatRecs = (rs[0] && rs[0].ok) ? (rs[0].records || []) : [];
+        reviewRecs = (rs[1] && rs[1].ok) ? (rs[1].records || []) : [];
+        loadedCore = true;
+        cb(true);
+      })
+      .catch(function () {
+        if (location.protocol === 'file:') {
+          showError('当前是通过本地文件方式打开的，无法读取数据。请访问 http://127.0.0.1:8787/千牛聊天分析.html');
+        } else {
+          showError('无法连接运营工作台服务，请先双击「启动工作台.bat」启动本地服务。');
+        }
+        cb(false);
+      });
+  }
+  function ensureSku(cb) {
+    if (loadedSku) { cb(true); return; }
+    fetchJSON('/api/qianniu-sku')
+      .then(function (j) {
+        skuRecs = (j && j.ok) ? (j.records || []) : [];
+        loadedSku = true;
+        cb(true);
+      })
+      .catch(function () { showError('SKU 数据读取失败'); cb(false); });
+  }
+  function refreshAll() {
+    loadedCore = false; loadedSku = false;
+    clearError();
+    var mod = curMod;
+    if (mod === 'sku') { ensureSku(function () { renderModule(mod); }); }
+    else if (mod === 'tags') { renderModule(mod); }
+    else { ensureCore(function () { if (mod === 'sku') ensureSku(function(){ renderModule(mod); }); else renderModule(mod); }); }
+  }
+
+  /* ================= 情感 / 评价 ================= */
+  var REV_POS = ['好看', '喜欢', '满意', '不错', '质量好', '结实', '稳固', '推荐', '好评', '可爱', '方便', '赞', '漂亮', '实用', '值', '开心', '满意', '放心', '物超所值'];
+  var REV_NEG = ['差评', '失望', '垃圾', '难用', '不好', '掉色', '异味', '破损', '瑕疵', '断裂', '晃', '不稳', '太差', '退货', '退款', '投诉', '态度', '发货慢', '物流慢', '假货', '缩水', '变形', '脏', '漏', '味道大', '质量差', '被骗'];
+  function reviewSentiment(r) {
+    var text = norm(r.content);
+    var score = parseInt(r.credit, 10);
+    var st = (r.scoreType || '');
+    if (st.indexOf('差') >= 0) return 'neg';
+    if (st.indexOf('好') >= 0) return 'pos';
+    if (!isNaN(score)) {
+      if (score <= 2) return 'neg';
+      if (score >= 4 && !hitAny(text, REV_NEG)) return 'pos';
+      if (score === 3) return hitAny(text, REV_NEG) ? 'neg' : (hitAny(text, REV_POS) ? 'pos' : 'mid');
+    }
+    if (hitAny(text, REV_NEG)) return 'neg';
+    if (hitAny(text, REV_POS)) return 'pos';
+    return 'mid';
+  }
+
+  /* ================= 模块切换 ================= */
+  var curMod = 'quanqu';
+  function setModule(mod) {
+    curMod = mod;
+    var chips = document.querySelectorAll('#modNav .mod-chip');
+    chips.forEach(function (c) { c.classList.toggle('active', c.getAttribute('data-mod') === mod); });
+    ['quanqu', 'jindian', 'wenjuan', 'askai', 'tags', 'sku'].forEach(function (m) {
+      $('mod-' + m).hidden = (m !== mod);
+    });
+    window.scrollTo({ top: 0, behavior: 'instant' });
+    if (mod === 'sku') { ensureSku(function () { renderModule(mod); }); }
+    else if (mod === 'tags') { renderModule(mod); }
+    else { ensureCore(function () { renderModule(mod); }); }
+  }
+  function renderModule(mod) {
+    if (mod === 'quanqu') renderQuanqu();
+    else if (mod === 'jindian') renderJindian();
+    else if (mod === 'wenjuan') renderWenjuan();
+    else if (mod === 'askai') renderAskai();
+    else if (mod === 'tags') renderTags();
+    else if (mod === 'sku') renderSku();
+  }
+
+  /* ================= ① 全渠洞察 ================= */
+  function renderQuanqu() {
+    var cust = chatRecs.filter(isCustomer);
+    var agent = chatRecs.filter(isAgent);
+    var convs = {}, agents = {};
+    chatRecs.forEach(function (r) {
+      if (r.conversationId) convs[r.conversationId] = true;
+      if (r.agent) agents[r.agent] = true;
+    });
+    var neg = reviewRecs.filter(function (r) { return reviewSentiment(r) === 'neg'; });
+    var pos = reviewRecs.filter(function (r) { return reviewSentiment(r) === 'pos'; });
+    var rate = reviewRecs.length ? Math.round(pos.length / reviewRecs.length * 100) : null;
+
+    $('qqStats').innerHTML =
+      stat('消息总数', chatRecs.length) +
+      stat('客户消息', cust.length) +
+      stat('会话数', Object.keys(convs).length) +
+      stat('评价数', reviewRecs.length) +
+      stat('差评数', neg.length, neg.length ? 'bad' : 'good') +
+      stat('好评率', rate == null ? '—' : rate + '%', rate != null && rate < 80 ? 'warn' : 'good');
+
+    renderList($('qqFaq'), questionFreq(cust), 15, '暂无高频问题');
+    renderList($('qqNeed'), clauseFreq(cust, tagKeywords('need')), 12, '暂无隐性需求信号 · 可在标签管理里加关键词');
+    renderList($('qqPain'), clauseFreq(cust, tagKeywords('pain')), 12, '暂无抱怨/痛点信号 · 可在标签管理里加关键词', 'bad');
+    renderList($('qqSuggest'), clauseFreq(cust, tagKeywords('suggest')), 12, '暂无需求建议信号 · 可在标签管理里加关键词');
+
+    var posCnt = clauseFreq(pos, null);
+    var negCnt = clauseFreq(neg, null);
+    renderList($('qqPos'), posCnt, 12, '暂无好评数据 · 可在「千牛评价」页导入', 'good');
+    renderList($('qqNeg'), negCnt, 12, '暂无差评数据 · 可在「千牛评价」页导入', 'bad');
+  }
+  function stat(k, v, cls) {
+    return '<div class="stat' + (cls ? ' ' + cls : '') + '"><div class="k">' + esc(k) + '</div><div class="v">' + esc(v) + '</div></div>';
+  }
+
+  /* ================= ② 退款分析 ================= */
+  var REFUND_BUCKETS = [
+    { name: '质量/破损问题', kw: ['质量', '坏了', '破损', '瑕疵', '异味', '味道', '掉色', '缩水', '变形', '断裂', '裂开', '脏', '漏', '劣质', '次品', '假货', '不稳', '晃'] },
+    { name: '尺寸/规格不符', kw: ['尺寸', '大小', '不符', '太小', '太大', '买错', '规格', '不合', '承重'] },
+    { name: '描述不符', kw: ['描述', '图片', '色差', '不一样', '实物'] },
+    { name: '物流问题', kw: ['物流', '发货', '太慢', '迟迟', '快递', '延误'] },
+    { name: '价格因素', kw: ['太贵', '降价', '价格', '贵了'] },
+    { name: '不想要/拍错', kw: ['不想要', '拍错', '错拍', '后悔', '多拍'] }
+  ];
+  var REFUND_ADVICE = {
+    '质量/破损问题': '加强出库质检：破损、异味、配件齐全列为必检项；大件加护角与防潮包装。',
+    '尺寸/规格不符': '详情页首屏放「实物尺寸对比图 + 承重说明」；客服话术主动确认放置空间。',
+    '描述不符': '主图与详情统一实拍色差说明；SKU 命名与详情页文案对齐，避免歧义。',
+    '物流问题': '核对发货时效承诺；大件走物流专线并主动同步单号与预计到货时间。',
+    '价格因素': '设置店铺券 / 满减对冲比价；老客回购专享价提升复购。',
+    '不想要/拍错': '客服推单前主动确认需求与规格；大件订单发货前二次确认。'
+  };
+  function renderJindian() {
+    var refundReviews = reviewRecs.filter(function (r) {
+      var t = norm(r.content);
+      return t && hitAny(t, ['退款', '退货', '退换', '退了']);
+    });
+    var refundChats = chatRecs.filter(function (r) {
+      return isCustomer(r) && hitAny(norm(r.content), ['退款', '退货', '退换', '退了', '不要了']);
+    });
+    var texts = [];
+    refundReviews.forEach(function (r) { var t = norm(r.content); if (t) texts.push(t); });
+    refundChats.forEach(function (r) { var t = norm(r.content); if (t) texts.push(t); });
+
+    $('jdStats').innerHTML =
+      stat('评价中的退款信号', refundReviews.length, refundReviews.length ? 'warn' : 'good') +
+      stat('咨询中的退款信号', refundChats.length, refundChats.length ? 'warn' : 'good') +
+      stat('差评总数', reviewRecs.filter(function (r) { return reviewSentiment(r) === 'neg'; }).length, 'bad') +
+      stat('订单数据', '未接入', 'warn');
+
+    var bucketBox = $('jdBars');
+    if (!texts.length) {
+      bucketBox.innerHTML = '<div class="empty">暂无退款 / 退货信号数据。<br>可在「千牛评价」「千牛聊天记录」页导入数据后自动分析。</div>';
+      $('jdAdvice').innerHTML = '<div class="empty">暂无可给建议的信号</div>';
+      renderList($('jdDetail'), [], 10, '暂无差评 / 退款原文', 'bad');
+      return;
+    }
+    var counts = REFUND_BUCKETS.map(function (b) {
+      var c = 0;
+      texts.forEach(function (t) { if (hitAny(t, b.kw)) c++; });
+      return { name: b.name, count: c };
+    });
+    var other = 0;
+    texts.forEach(function (t) {
+      var matched = REFUND_BUCKETS.some(function (b) { return hitAny(t, b.kw); });
+      if (!matched) other++;
+    });
+    counts.push({ name: '其他', count: other });
+    counts.sort(function (a, b) { return b.count - a.count; });
+    var total = counts.reduce(function (s, c) { return s + c.count; }, 0) || 1;
+
+    bucketBox.innerHTML = counts.map(function (c) {
+      var pct = Math.round(c.count / total * 100);
+      return '<div class="bar-row"><div class="bar-name">' + esc(c.name) + '</div>' +
+        '<div class="bar-track"><div class="bar-fill" style="width:' + pct + '%"></div></div>' +
+        '<div class="bar-cnt">' + c.count + ' 条 · ' + pct + '%</div></div>';
+    }).join('');
+
+    var advice = counts.filter(function (c) { return c.count > 0 && REFUND_ADVICE[c.name]; }).slice(0, 4);
+    $('jdAdvice').innerHTML = advice.length
+      ? advice.map(function (c, i) {
+          return '<div class="list-item"><div class="idx">' + (i + 1) + '</div><div class="txt"><b style="color:var(--accent)">' +
+            esc(c.name) + '（' + c.count + ' 条）</b><br>' + esc(REFUND_ADVICE[c.name]) + '</div></div>';
+        }).join('')
+      : '<div class="empty">暂无明显原因集中，可人工抽查信号原文</div>';
+
+    var details = refundReviews.slice(0, 10).map(function (r) {
+      return { text: '【' + (r.product || r.store || '商品') + '】' + norm(r.content), count: (r.credit || '') };
+    });
+    renderList($('jdDetail'), details, 10, '暂无差评 / 退款原文', 'bad');
+  }
+
+  /* ================= ③ 售前询单分析 ================= */
+  var PRESALE_BUCKETS = [
+    { name: '价格优惠', kw: ['价格', '多少钱', '贵', '便宜', '优惠', '券', '折扣', '活动'] },
+    { name: '尺寸规格', kw: ['尺寸', '大小', '规格', '多高', '多重', '承重', '重量', '适合', '多大'] },
+    { name: '材质质量', kw: ['材质', '质量', '结实', '用料', '实木', '板材', '布', '绒', '耐用'] },
+    { name: '发货物流', kw: ['发货', '物流', '快递', '多久', '到货', '运费', '包邮', '几天'] },
+    { name: '使用安装', kw: ['安装', '组装', '说明书', '怎么装', '教程', '稳固'] },
+    { name: '售后保障', kw: ['售后', '保修', '退换', '退款', '退货', '破损', '补发'] },
+    { name: '推荐选择', kw: ['推荐', '哪款', '怎么选', '区别', '哪个好', '那款好'] }
+  ];
+  var WJ_ADVICE = [
+    ['价格类咨询多', '在详情页醒目位置放「当前活动价 + 券后价」；客服快捷短语配好优惠话术。'],
+    ['尺寸规格问得多', '首屏补一张「尺寸对比场景图」（猫/人与产品同框），减少反复确认。'],
+    ['安装类问题多', '详情页放 30 秒安装视频或步骤图；随箱附一张大字版安装卡。'],
+    ['物流时效问得多', '详情页标注「XX 前下单当天发」；客服自动回复里带预计到货时间。'],
+    ['推荐选择问得多', '做一张「一秒选对型号」对比表放详情页第二屏，客服同步使用。']
+  ];
+  function renderWenjuan() {
+    var cust = chatRecs.filter(isCustomer);
+    var texts = cust.map(function (r) { return norm(r.content); }).filter(function (t) { return t && !isUrlOnly(t); });
+    var bucketBox = $('wjBuckets');
+    if (!texts.length) {
+      bucketBox.innerHTML = '<div class="empty">暂无售前咨询数据</div>';
+      renderList($('wjFaq'), [], 15, '暂无高频问题');
+      renderList($('wjChurn'), [], 10, '暂无流失信号');
+      return;
+    }
+    var matchedTotal = 0;
+    var bks = PRESALE_BUCKETS.map(function (b) {
+      var c = 0;
+      texts.forEach(function (t) { if (hitAny(t, b.kw)) { c++; matchedTotal++; } });
+      return { name: b.name, count: c };
+    });
+    var other = texts.length - matchedTotal;
+    if (other < 0) other = 0;
+    bks.push({ name: '其他', count: other });
+    bks.sort(function (a, b) { return b.count - a.count; });
+
+    bucketBox.innerHTML = bks.map(function (b) {
+      var pct = texts.length ? Math.round(b.count / texts.length * 100) : 0;
+      return '<div class="bucket"><div class="bk">' + esc(b.name) + '</div><div class="bv">' + b.count + '</div><div class="bp">占咨询 ' + pct + '%</div></div>';
+    }).join('');
+
+    renderList($('wjFaq'), questionFreq(cust), 15, '暂无高频问题');
+
+    var churnKw = tagKeywords('churn');
+    var churnMsgs = churnKw.length ? texts.filter(function (t) { return hitAny(t, churnKw); }) : [];
+    var churnCnt = clauseFreq(churnMsgs.map(function (t) { return { content: t }; }), churnKw);
+    $('wjChurn').innerHTML = churnKw.length
+      ? (churnMsgs.length
+        ? '<div class="note" style="margin-bottom:10px;">命中流失信号 <b>' + churnMsgs.length + '</b> 条（占咨询 ' + Math.round(churnMsgs.length / texts.length * 100) + '%）</div>' +
+          (churnCnt.slice(0, 10).map(function (c, i) {
+            return '<div class="list-item bad"><div class="idx">' + (i + 1) + '</div><div class="txt">' + esc(c.text) + '</div><div class="cnt">' + c.count + ' 次</div></div>';
+          }).join('') || '<div class="empty">暂无明细</div>')
+        : '<div class="empty">暂无流失信号 · 好事！</div>')
+      : '<div class="empty">询单流失标签未启用 · 去标签管理开启</div>';
+
+    var top = bks.slice(0, 3).filter(function (b) { return b.count > 0 && b.name !== '其他'; }).map(function (b) { return b.name; });
+    var tips = WJ_ADVICE.filter(function (a) {
+      return top.some(function (t) { return a[0].indexOf(t.slice(0, 2)) >= 0; });
+    });
+    if (!tips.length) tips = WJ_ADVICE.slice(0, 2);
+    $('wjAdvice').innerHTML = tips.map(function (a, i) {
+      return '<div class="list-item"><div class="idx">' + (i + 1) + '</div><div class="txt"><b style="color:var(--accent)">' + esc(a[0]) + '</b><br>' + esc(a[1]) + '</div></div>';
+    }).join('');
+  }
+
+  /* ================= ④ Ask AI ================= */
+  var aiMsgs = [];  // {role:'user'|'ai'|'err', text}
+  var aiBusy = false;
+  function aiCfg() {
+    try { return JSON.parse(localStorage.getItem('wb_cfg') || 'null'); } catch (e) { return null; }
+  }
+  function buildContext() {
+    var cust = chatRecs.filter(isCustomer);
+    var convs = {};
+    chatRecs.forEach(function (r) { if (r.conversationId) convs[r.conversationId] = true; });
+    var neg = reviewRecs.filter(function (r) { return reviewSentiment(r) === 'neg'; });
+    var pos = reviewRecs.filter(function (r) { return reviewSentiment(r) === 'pos'; });
+    var lines = [];
+    lines.push('【数据概况】聊天消息 ' + chatRecs.length + ' 条（客户 ' + cust.length + ' 条），会话 ' + Object.keys(convs).length + ' 个；评价 ' + reviewRecs.length + ' 条（差评 ' + neg.length + '、好评 ' + pos.length + '）；SKU 记录 ' + skuRecs.length + ' 条。');
+    var faq = questionFreq(cust).slice(0, 10).map(function (x) { return x.text + '（' + x.count + '次）'; });
+    if (faq.length) lines.push('【高频咨询 TOP10】' + faq.join('；'));
+    var need = clauseFreq(cust, tagKeywords('need')).slice(0, 6).map(function (x) { return x.text + '（' + x.count + '次）'; });
+    if (need.length) lines.push('【隐性需求信号】' + need.join('；'));
+    var pain = clauseFreq(cust, tagKeywords('pain')).slice(0, 6).map(function (x) { return x.text + '（' + x.count + '次）'; });
+    if (pain.length) lines.push('【抱怨痛点信号】' + pain.join('；'));
+    var churnKw = tagKeywords('churn');
+    if (churnKw.length) {
+      var churn = cust.filter(function (r) { return hitAny(norm(r.content), churnKw); }).length;
+      lines.push('【询单流失信号】' + churn + ' 条消息命中流失词。');
+    }
+    var negTexts = neg.slice(0, 5).map(function (r) { return norm(r.content).slice(0, 40); });
+    if (negTexts.length) lines.push('【差评摘录】' + negTexts.join('；'));
+    return lines.join('\n');
+  }
+  function aiEndpoint(c) {
+    if (c.base && c.base.indexOf('bigmodel.cn') >= 0) return '/api/paas/v4/chat/completions';
+    return (c.base || '').replace(/\/+$/, '') + '/chat/completions';
+  }
+  function aiCall(userText, cb) {
+    var c = aiCfg();
+    if (!c || !c.key) { cb(null, 'NOKEY'); return; }
+    var body = {
+      model: c.model || 'glm-4-flash',
+      messages: [
+        { role: 'system', content: '你是电商运营的「需求洞察分析师」。基于给出的本店数据摘要回答用户问题；结论先行、分点、说人话；没有数据支撑的部分明确说“数据里没有”。\n\n[本店数据摘要]\n' + buildContext() },
+        { role: 'user', content: userText }
+      ],
+      temperature: 0.4,
+      stream: false
+    };
+    fetch(aiEndpoint(c), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + c.key },
+      body: JSON.stringify(body)
+    })
+      .then(function (r) {
+        return r.json().then(function (j) { return { status: r.status, j: j }; });
+      })
+      .then(function (res) {
+        if (res.status === 200 && res.j && res.j.choices && res.j.choices[0] && res.j.choices[0].message) {
+          cb(res.j.choices[0].message.content, null);
+        } else if (res.status === 401) {
+          cb(null, 'AI Key 无效或已过期，请到工作台「设置」重新填写。');
+        } else if (res.status === 429) {
+          cb(null, '模型限流中（免费模型晚高峰常见）。稍等 1 分钟重试，或到工作台「设置」切到 glm-4-plus。');
+        } else {
+          var m = (res.j && res.j.error && res.j.error.message) || ('HTTP ' + res.status);
+          cb(null, 'AI 返回错误：' + m);
+        }
+      })
+      .catch(function (e) { cb(null, '网络错误：' + e.message); });
+  }
+  function renderChat() {
+    var log = $('aiLog');
+    if (!aiMsgs.length) {
+      var c0 = aiCfg();
+      log.innerHTML = '<div class="msg ai">' + ((c0 && c0.key)
+        ? '你好！我已接入本店聊天 / 评价 / SKU 数据摘要。<br>可以直接问我，比如「客户最关心什么？」「退款主要是什么原因？」「生成一份需求洞察报告」。'
+        : '尚未接入 AI 模型：请打开「工作台 → 设置」，服务商选智谱 GLM（免费 glm-4-flash 最稳），填入 API Key 并测试连接，然后回到本页刷新。') + '</div>';
+      var c1 = aiCfg();
+      $('aiModelTag').textContent = (c1 && c1.model) ? ('模型 · ' + c1.model) : '未接入模型';
+      return;
+    }
+    log.innerHTML = aiMsgs.map(function (m) {
+      if (m.role === 'user') return '<div class="msg user">' + esc(m.text) + '</div>';
+      if (m.role === 'err') return '<div class="msg err">' + esc(m.text) + '</div>';
+      return '<div class="msg ai"><div class="ai-head">✦ 需求洞察 AI</div>' + esc(m.text) + '</div>';
+    }).join('');
+    log.scrollTop = log.scrollHeight;
+    var c = aiCfg();
+    $('aiModelTag').textContent = (c && c.model) ? ('模型 · ' + c.model) : '未接入模型';
+  }
+  function renderAskai() {
+    renderChat();
+  }
+  function aiSend(text) {
+    if (aiBusy) return;
+    var q = (text == null ? $('aiInput').value : text).trim();
+    if (!q) return;
+    var c = aiCfg();
+    if (!c || !c.key) { renderAskai(); return; }
+    $('aiInput').value = '';
+    aiMsgs.push({ role: 'user', text: q });
+    aiMsgs.push({ role: 'ai', text: '思考中…' });
+    aiBusy = true;
+    $('aiSend').disabled = true;
+    renderChat();
+    var idx = aiMsgs.length - 1;
+    ensureCore(function () {
+      aiCall(q, function (answer, err) {
+        aiBusy = false;
+        $('aiSend').disabled = false;
+        if (err === 'NOKEY') {
+          aiMsgs[idx] = { role: 'err', text: '尚未接入 AI 模型：请到「工作台 → 设置」配置智谱 GLM API Key。' };
+        } else if (err) {
+          aiMsgs[idx] = { role: 'err', text: err };
+        } else {
+          aiMsgs[idx] = { role: 'ai', text: answer };
+        }
+        renderChat();
+      });
+    });
+  }
+
+  /* ================= ⑤ 标签管理 ================= */
+  var editingIdx = -1;
+  function renderTags() {
+    var list = loadTags();
+    $('tagCount').textContent = '共 ' + list.length + ' 个 · 启用 ' + list.filter(function (t) { return t.on; }).length + ' 个';
+    var box = $('tagList');
+    if (!list.length) { box.innerHTML = '<div class="empty">暂无标签，点右上角「新增标签」</div>'; return; }
+    box.innerHTML = '';
+    list.forEach(function (t, i) {
+      var row = document.createElement('div');
+      row.className = 'tag-row';
+      row.innerHTML =
+        '<div class="tag-name">' + esc(t.name) + '</div>' +
+        '<div class="type-badge">' + esc(TAG_TYPES[t.type] || t.type) + '</div>' +
+        '<div class="kw-wrap">' + (t.keywords || []).map(function (k) { return '<span class="kw-chip">' + esc(k) + '</span>'; }).join('') + '</div>';
+      var ops = document.createElement('div');
+      ops.className = 'tag-ops';
+      var on = document.createElement('button');
+      on.className = 'onoff' + (t.on ? ' on' : '');
+      on.textContent = t.on ? '已启用' : '已停用';
+      on.addEventListener('click', function () { list[i].on = !list[i].on; saveTags(); renderTags(); });
+      var ed = document.createElement('button');
+      ed.className = 'btn-ghost'; ed.textContent = '编辑';
+      ed.addEventListener('click', function () { openTagEditor(i); });
+      var del = document.createElement('button');
+      del.className = 'btn-ghost btn-danger'; del.textContent = '删除';
+      del.addEventListener('click', function () {
+        if (!confirm('确定删除标签「' + t.name + '」？')) return;
+        list.splice(i, 1); saveTags(); renderTags();
+      });
+      ops.appendChild(on); ops.appendChild(ed); ops.appendChild(del);
+      row.appendChild(ops);
+      box.appendChild(row);
+    });
+  }
+  function openTagEditor(idx) {
+    editingIdx = idx;
+    var t = idx >= 0 ? loadTags()[idx] : { name: '', type: 'custom', keywords: [] };
+    $('tagEditorTitle').textContent = idx >= 0 ? ('编辑标签：' + t.name) : '新增标签';
+    $('feName').value = t.name || '';
+    $('feType').value = t.type || 'custom';
+    $('feKw').value = (t.keywords || []).join('，');
+    $('tagEditor').hidden = false;
+    $('feName').focus();
+  }
+  function saveTagFromEditor() {
+    var name = $('feName').value.trim();
+    var type = $('feType').value;
+    var kw = $('feKw').value.split(/[，,、\s]+/).map(function (s) { return s.trim(); }).filter(Boolean);
+    if (!name) { alert('请填写标签名称'); return; }
+    if (!kw.length) { alert('请至少填写 1 个关键词'); return; }
+    var list = loadTags();
+    var obj = { name: name, type: type, on: true, keywords: kw };
+    if (editingIdx >= 0) { obj.on = list[editingIdx].on; list[editingIdx] = obj; }
+    else list.push(obj);
+    saveTags();
+    $('tagEditor').hidden = true;
+    renderTags();
+  }
+
+  /* ================= ⑥ SKU 管理 ================= */
+  var GRP_KEY = 'wb_sku_groups', MAP_KEY = 'wb_sku_map';
+  function loadGroups() {
+    try { return JSON.parse(localStorage.getItem(GRP_KEY) || '[]'); } catch (e) { return []; }
+  }
+  function saveGroups(g) { try { localStorage.setItem(GRP_KEY, JSON.stringify(g)); } catch (e) {} }
+  function loadMap() {
+    try { return JSON.parse(localStorage.getItem(MAP_KEY) || '{}'); } catch (e) { return {}; }
+  }
+  function saveMap(m) { try { localStorage.setItem(MAP_KEY, JSON.stringify(m)); } catch (e) {} }
+  function skuStatusCls(s) {
+    var t = String(s || '');
+    if (!t) return '';
+    if (t.indexOf('下架') >= 0 || t.indexOf('失效') >= 0 || t.indexOf('删除') >= 0) return 'st-off';
+    return 'st-on';
+  }
+  function renderSku() {
+    /* 筛选下拉 */
+    var stores = {}, statuses = {};
+    skuRecs.forEach(function (r) {
+      if (r.store) stores[r.store] = true;
+      if (r.status) statuses[r.status] = true;
+    });
+    fillSelect($('skuStore'), Object.keys(stores).sort());
+    fillSelect($('skuStatus'), Object.keys(statuses).sort());
+
+    var onCnt = skuRecs.filter(function (r) { return skuStatusCls(r.status) === 'st-on'; }).length;
+    var stockSum = skuRecs.reduce(function (s, r) { return s + (parseFloat(r.stock) || 0); }, 0);
+    var prods = {};
+    skuRecs.forEach(function (r) {
+      var key = r.itemId || r.title || '未分组商品';
+      if (!prods[key]) prods[key] = [];
+      prods[key].push(r);
+    });
+
+    $('skuStats').innerHTML =
+      stat('SKU 总数', skuRecs.length) +
+      stat('在售 SKU', onCnt, 'good') +
+      stat('涉及商品', Object.keys(prods).length) +
+      stat('库存合计', Math.round(stockSum));
+
+    renderGrpChips();
+    renderSkuList();
+  }
+  function fillSelect(sel, arr) {
+    var cur = sel.value;
+    var first = sel.options[0] ? sel.options[0].outerHTML : '';
+    sel.innerHTML = first + arr.map(function (v) { return '<option value="' + esc(v) + '">' + esc(v) + '</option>'; }).join('');
+    if (arr.indexOf(cur) >= 0) sel.value = cur;
+  }
+  function renderGrpChips() {
+    var g = loadGroups();
+    $('grpChips').innerHTML = g.length
+      ? g.map(function (n, i) { return '<span class="grp-chip">' + esc(n) + '<span class="x" data-i="' + i + '" title="删除分组">×</span></span>'; }).join('')
+      : '<span style="font-size:12px;color:var(--muted2);">还没有分组，先在上面新建一个</span>';
+    var chips = $('grpChips').querySelectorAll('.x');
+    chips.forEach(function (x) {
+      x.addEventListener('click', function () {
+        var i = parseInt(x.getAttribute('data-i'), 10);
+        var g = loadGroups();
+        var name = g[i];
+        if (!confirm('删除分组「' + name + '」？已映射的 SKU 将回到未分组。')) return;
+        g.splice(i, 1); saveGroups(g);
+        var m = loadMap();
+        Object.keys(m).forEach(function (k) { if (m[k] === name) delete m[k]; });
+        saveMap(m);
+        renderGrpChips(); renderSkuList();
+      });
+    });
+  }
+  function renderSkuList() {
+    var q = $('skuSearch').value.trim().toLowerCase();
+    var fs = $('skuStore').value, fst = $('skuStatus').value;
+    var g = loadGroups(), m = loadMap();
+
+    var prods = {};
+    skuRecs.forEach(function (r) {
+      if (fs && r.store !== fs) return;
+      if (fst && String(r.status || '') !== fst) return;
+      var key = r.itemId || r.title || '未分组商品';
+      if (!prods[key]) prods[key] = { title: r.title || key, store: r.store || '', skus: [] };
+      prods[key].skus.push(r);
+    });
+    var keys = Object.keys(prods).sort();
+    if (q) keys = keys.filter(function (k) {
+      var p = prods[k];
+      if (p.title.toLowerCase().indexOf(q) >= 0) return true;
+      return p.skus.some(function (r) {
+        return ((r.skuDesc || '') + (r.merchantCode || '') + (r.skuId || '')).toLowerCase().indexOf(q) >= 0;
+      });
+    });
+
+    var box = $('skuList');
+    if (!keys.length) {
+      box.innerHTML = '<div class="empty">' + (skuRecs.length ? '没有匹配的 SKU' : '暂无 SKU 数据 · 可在「千牛SKU」页导出后自动加载') + '</div>';
+      return;
+    }
+    var shown = keys.slice(0, 60);
+    var html = shown.length < keys.length
+      ? '<div class="note">共 ' + keys.length + ' 个商品，当前显示前 ' + shown.length + ' 个，请用搜索缩小范围。</div>' : '';
+    html += shown.map(function (k) {
+      var p = prods[k];
+      var prices = p.skus.map(function (r) { return parseFloat(r.price); }).filter(function (n) { return !isNaN(n); });
+      var stock = p.skus.reduce(function (s, r) { return s + (parseFloat(r.stock) || 0); }, 0);
+      var pmin = prices.length ? Math.min.apply(null, prices) : null;
+      var pmax = prices.length ? Math.max.apply(null, prices) : null;
+      var priceTxt = pmin == null ? '—' : (pmin === pmax ? '¥' + pmin : '¥' + pmin + ' ~ ¥' + pmax);
+      var rows = p.skus.slice(0, 20).map(function (r) {
+        var opts = ['<option value="">未分组</option>'].concat(g.map(function (n) {
+          return '<option value="' + esc(n) + '"' + (m[r.skuId] === n ? ' selected' : '') + '>' + esc(n) + '</option>';
+        }));
+        return '<tr>' +
+          '<td>' + esc(r.skuDesc || r.skuId || '—') + '</td>' +
+          '<td>' + esc(r.merchantCode || '—') + '</td>' +
+          '<td>' + (r.price != null && r.price !== '' ? '¥' + esc(r.price) : '—') + '</td>' +
+          '<td>' + esc(r.stock == null || r.stock === '' ? '—' : r.stock) + '</td>' +
+          '<td class="' + skuStatusCls(r.status) + '">' + esc(r.status || '—') + '</td>' +
+          '<td><select data-sku="' + esc(r.skuId || '') + '">' + opts.join('') + '</select></td>' +
+          '</tr>';
+      }).join('');
+      return '<div class="sku-prod">' +
+        '<div class="sku-head"><span class="t">' + esc(p.title) + '</span>' +
+        '<span class="m">SKU ' + p.skus.length + ' 个</span>' +
+        '<span class="m">价格 ' + priceTxt + '</span>' +
+        '<span class="m">库存 ' + Math.round(stock) + '</span>' +
+        (p.store ? '<span class="m">' + esc(p.store) + '</span>' : '') +
+        '</div>' +
+        '<table class="sku-t"><thead><tr><th>规格</th><th>商家编码</th><th>价格</th><th>库存</th><th>状态</th><th>归属分组</th></tr></thead><tbody>' + rows + '</tbody></table>' +
+        '</div>';
+    }).join('');
+    box.innerHTML = html;
+    box.querySelectorAll('select[data-sku]').forEach(function (sel) {
+      sel.addEventListener('change', function () {
+        var mm = loadMap();
+        var id = sel.getAttribute('data-sku');
+        if (sel.value) mm[id] = sel.value; else delete mm[id];
+        saveMap(mm);
+      });
+    });
+  }
+
+  /* ================= 视图切换 ================= */
+  function showIntro() {
+    $('introView').hidden = false;
+    $('dataView').hidden = true;
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }
+  function showData(mod) {
+    clearError();
+    $('introView').hidden = true;
+    $('dataView').hidden = false;
+    window.scrollTo({ top: 0, behavior: 'instant' });
+    setModule(mod || curMod || 'quanqu');
+  }
+
+  /* ================= 事件绑定 ================= */
+  $('btnRefresh').addEventListener('click', refreshAll);
+  $('btnViewDataTop').addEventListener('click', function () { showData('quanqu'); });
+  $('btnViewDataBot').addEventListener('click', function () { showData('quanqu'); });
+  $('btnRefreshBottom').addEventListener('click', function () { showData(curMod); });
+  $('btnBackIntro').addEventListener('click', showIntro);
+
+  document.querySelectorAll('.feat-card').forEach(function (card) {
+    card.addEventListener('click', function () { showData(card.getAttribute('data-mod')); });
+  });
+  document.querySelectorAll('#modNav .mod-chip').forEach(function (c) {
+    c.addEventListener('click', function () { setModule(c.getAttribute('data-mod')); });
+  });
+
+  /* Ask AI */
+  $('aiSend').addEventListener('click', function () { aiSend(); });
+  $('aiInput').addEventListener('keydown', function (e) { if (e.key === 'Enter') aiSend(); });
+  document.querySelectorAll('#aiChips .chip').forEach(function (c) {
+    c.addEventListener('click', function () { aiSend(c.getAttribute('data-q')); });
+  });
+
+  /* 标签管理 */
+  $('btnTagAdd').addEventListener('click', function () { openTagEditor(-1); });
+  $('btnTagReset').addEventListener('click', function () {
+    if (!confirm('恢复为默认 4 个标签？当前自定义修改会被覆盖。')) return;
+    tags = JSON.parse(JSON.stringify(DEFAULT_TAGS));
+    saveTags(); renderTags();
+  });
+  $('feSave').addEventListener('click', saveTagFromEditor);
+  $('feCancel').addEventListener('click', function () { $('tagEditor').hidden = true; });
+
+  /* SKU 管理 */
+  $('btnGrpAdd').addEventListener('click', function () {
+    var n = $('grpName').value.trim();
+    if (!n) { alert('请填写分组名称'); return; }
+    var g = loadGroups();
+    if (g.indexOf(n) >= 0) { alert('分组「' + n + '」已存在'); return; }
+    g.push(n); saveGroups(g);
+    $('grpName').value = '';
+    renderGrpChips(); renderSkuList();
+  });
+  $('skuSearch').addEventListener('input', renderSkuList);
+  $('skuStore').addEventListener('change', renderSkuList);
+  $('skuStatus').addEventListener('change', renderSkuList);
+})();
+</script>
+</body>
+</html>

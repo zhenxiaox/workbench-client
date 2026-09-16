@@ -1,0 +1,338 @@
+//! 运营工作台桌面客户端 —— Tauri 薄壳
+//!
+//! 职责（刻意保持轻薄）：
+//!   1. 启动 sidecar：用 node.exe 跑 wb-server.js（监听 127.0.0.1:8787）。
+//!   2. 等端口就绪后，开主窗口指向 http://127.0.0.1:8787/工作台.html。
+//!   3. 开一个无边框置顶透明「悬浮球」窗口（待办球 + AI 球），常驻桌面。
+//!   4. 挂一个系统托盘，主窗口关闭时只隐藏不退出，托盘/悬浮球可再唤起。
+//!   5. 客户端退出时，把 sidecar 子进程一并结束。
+//!   6. 数据目录统一落到用户 LocalAppData，卸载 / 升级不丢数据。
+
+use std::net::TcpStream;
+use std::path::{Path, PathBuf};
+use std::process::{Child, Command, Stdio};
+use std::sync::Mutex;
+use std::time::{Duration, Instant};
+
+use tauri::menu::{Menu, MenuItem};
+use tauri::tray::TrayIconBuilder;
+use tauri::{Emitter, Manager, WebviewUrl, WebviewWindowBuilder, WindowEvent};
+use tauri_plugin_updater::UpdaterExt;
+use url::Url;
+
+const PORT: u16 = 8787;
+const MAIN_LABEL: &str = "main";
+const FAB_LABEL: &str = "fab";
+const FAB_ACTION_EVENT: &str = "wb-fab-action";
+
+/// 持有 sidecar 子进程句柄，便于退出时回收。
+struct ServerProcess(Mutex<Option<Child>>);
+
+/// 定位工作台根目录（node.exe / wb-server.js / 全部 HTML 都在这里）。
+/// 优先级：打包后的资源目录 > 可执行文件同目录 > 开发者本机桌面路径（兜底）。
+fn resolve_workbench_dir(app: &tauri::App) -> PathBuf {
+    if let Ok(res) = app.path().resource_dir() {
+        let candidate = res.join("app");
+        if candidate.join("wb-server.js").exists() {
+            return candidate;
+        }
+    }
+    if let Ok(exe) = std::env::current_exe() {
+        if let Some(dir) = exe.parent() {
+            let dir = dir.to_path_buf();
+            if dir.join("wb-server.js").exists() {
+                return dir;
+            }
+        }
+    }
+    PathBuf::from(r"C:\Users\admin\Desktop\运营工作台")
+}
+
+fn start_server(root: &Path, data_dir: &Path) -> Result<Child, String> {
+    let node_exe = root.join("node.exe");
+
+    let mut cmd = Command::new(&node_exe);
+    // 脚本名用相对路径（配合 current_dir），避免 argv 里带中文被解析坏。
+    cmd.arg("wb-server.js")
+        .env("WB_DATA_DIR", data_dir)
+        .current_dir(root)
+        .stdout(Stdio::null())
+        .stderr(Stdio::null());
+
+    // Windows：CREATE_NO_WINDOW，让 node 服务静默后台运行，不弹黑窗。
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        cmd.creation_flags(0x08000000);
+    }
+
+    cmd.spawn()
+        .map_err(|e| format!("启动本地服务失败（{}）：{}", node_exe.display(), e))
+}
+
+/// 轮询端口，直到服务可连接或超时。
+fn wait_port(port: u16, timeout: Duration) -> bool {
+    let start = Instant::now();
+    while start.elapsed() < timeout {
+        if TcpStream::connect(("127.0.0.1", port)).is_ok() {
+            return true;
+        }
+        std::thread::sleep(Duration::from_millis(200));
+    }
+    false
+}
+
+/// 数据目录（与 wb-server 的 WB_DATA_DIR 一致），用于存放悬浮球位置等客户端状态。
+fn data_dir_of(app: &tauri::AppHandle) -> PathBuf {
+    app.path()
+        .app_local_data_dir()
+        .map(|d| d.join("data"))
+        .unwrap_or_default()
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+struct FabPos {
+    x: i32,
+    y: i32,
+}
+
+fn load_fab_pos(data_dir: &Path) -> Option<(i32, i32)> {
+    let p = data_dir.join("fab-pos.json");
+    let s = std::fs::read_to_string(p).ok()?;
+    let v: FabPos = serde_json::from_str(&s).ok()?;
+    Some((v.x, v.y))
+}
+
+fn save_fab_pos(app: &tauri::AppHandle, data_dir: &Path) {
+    if let Some(w) = app.get_webview_window(FAB_LABEL) {
+        if let Ok(pos) = w.outer_position() {
+            let json = serde_json::to_string(&FabPos {
+                x: pos.x,
+                y: pos.y,
+            })
+            .unwrap_or_default();
+            let _ = std::fs::write(data_dir.join("fab-pos.json"), json);
+        }
+    }
+}
+
+/// 唤起主窗口（若隐藏则显示，若最小化则还原，最后聚焦）。
+fn show_main(app: &tauri::AppHandle) {
+    if let Some(w) = app.get_webview_window(MAIN_LABEL) {
+        let _ = w.show();
+        let _ = w.unminimize();
+        let _ = w.set_focus();
+    }
+}
+
+fn open_main_window(app: &tauri::AppHandle) {
+    let target = Url::parse(&format!("http://127.0.0.1:{}/工作台.html", PORT))
+        .expect("工作台 URL 解析失败");
+
+    let res = WebviewWindowBuilder::new(app, MAIN_LABEL, WebviewUrl::External(target))
+        .title("运营工作台")
+        .inner_size(1280.0, 800.0)
+        .build();
+
+    if let Err(e) = res {
+        eprintln!("创建主窗口失败：{}", e);
+    }
+}
+
+fn open_fab_window(app: &tauri::AppHandle, data_dir: &Path) {
+    let target = Url::parse(&format!("http://127.0.0.1:{}/悬浮球.html", PORT))
+        .expect("悬浮球 URL 解析失败");
+
+    let res = WebviewWindowBuilder::new(app, FAB_LABEL, WebviewUrl::External(target))
+        .title("运营工作台悬浮球")
+        .inner_size(108.0, 188.0)
+        .decorations(false)
+        .transparent(true)
+        .always_on_top(true)
+        .skip_taskbar(true)
+        .resizable(false)
+        .shadow(false)
+        .focused(false)
+        .build();
+
+    if let Ok(w) = res {
+        if let Some((x, y)) = load_fab_pos(data_dir) {
+            let _ = w.set_position(tauri::PhysicalPosition::new(x, y));
+        } else if let Ok(Some(mon)) = app.primary_monitor() {
+            // 首次启动：默认贴屏幕右缘、垂直居中。
+            let size = mon.size();
+            let pos = mon.position();
+            let ww = w.outer_size().map(|s| s.width as i32).unwrap_or(108);
+            let wh = w.outer_size().map(|s| s.height as i32).unwrap_or(188);
+            let x = (pos.x + size.width as i32 - ww - 16).max(0);
+            let y = (pos.y + (size.height as i32 - wh) / 2).max(0);
+            let _ = w.set_position(tauri::PhysicalPosition::new(x, y));
+        }
+    } else if let Err(e) = res {
+        eprintln!("创建悬浮球窗口失败：{}", e);
+    }
+}
+
+fn setup_tray(app: &tauri::App) -> tauri::Result<()> {
+    let open = MenuItem::with_id(app, "open", "打开工作台", true, None::<&str>)?;
+    let quit = MenuItem::with_id(app, "quit", "退出客户端", true, None::<&str>)?;
+    let menu = Menu::with_items(app, &[&open, &quit])?;
+
+    let mut builder = TrayIconBuilder::with_id("main-tray")
+        .tooltip("运营工作台")
+        .menu(&menu)
+        .show_menu_on_left_click(true);
+    if let Some(icon) = app.default_window_icon().cloned() {
+        builder = builder.icon(icon);
+    }
+    builder.build(app.handle())?;
+    Ok(())
+}
+
+/// 悬浮球左侧按钮点击：唤起主窗口 + 让主窗口跳转到对应页（AI 面板 / 待办页）。
+#[tauri::command]
+fn fab_action(app: tauri::AppHandle, action: String) {
+    show_main(&app);
+    let _ = app.emit_to(
+        tauri::EventTarget::labeled(MAIN_LABEL),
+        FAB_ACTION_EVENT,
+        action,
+    );
+}
+
+/// 悬浮球右键：弹出原生菜单（打开工作台 / 退出客户端）。
+#[tauri::command]
+fn fab_menu(app: tauri::AppHandle) {
+    if let Some(w) = app.get_webview_window(FAB_LABEL) {
+        let open = MenuItem::with_id(&app, "open", "打开工作台", true, None::<&str>);
+        let quit = MenuItem::with_id(&app, "quit", "退出客户端", true, None::<&str>);
+        if let (Ok(open), Ok(quit)) = (open, quit) {
+            if let Ok(menu) = Menu::with_items(&app, &[&open, &quit]) {
+                let _ = w.popup_menu(&menu);
+            }
+        }
+    }
+}
+
+/// 更新结果（供前端展示 / 手动触发检查）。
+#[derive(serde::Serialize)]
+struct UpdateInfo {
+    available: bool,
+    version: String,
+    current_version: String,
+    date: Option<i64>,
+    body: Option<String>,
+}
+
+/// 检查更新：返回是否有可用版本（无更新时 available=false）。
+#[tauri::command]
+async fn check_update(app: tauri::AppHandle) -> Result<UpdateInfo, String> {
+    let current = app.package_info().version.to_string();
+    let updater = app.updater().map_err(|e| e.to_string())?;
+    match updater.check().await {
+        Ok(Some(u)) => Ok(UpdateInfo {
+            available: true,
+            version: u.version.clone(),
+            current_version: current,
+            date: u.date.map(|d| d.unix_timestamp()),
+            body: u.body.clone(),
+        }),
+        Ok(None) => Ok(UpdateInfo {
+            available: false,
+            version: String::new(),
+            current_version: current,
+            date: None,
+            body: None,
+        }),
+        Err(e) => Err(e.to_string()),
+    }
+}
+
+/// 启动后后台检查一次更新，发现新版本则通知主窗口。
+fn spawn_update_check(app: &tauri::AppHandle) {
+    let handle = app.clone();
+    tauri::async_runtime::spawn(async move {
+        let updater = match handle.updater() {
+            Ok(u) => u,
+            Err(_) => return,
+        };
+        if let Ok(Some(u)) = updater.check().await {
+            let _ = handle.emit_to(
+                tauri::EventTarget::labeled(MAIN_LABEL),
+                "wb-update-available",
+                serde_json::json!({
+                    "version": u.version,
+                    "current_version": u.current_version,
+                    "date": u.date.map(|d| d.unix_timestamp()),
+                    "body": u.body,
+                }),
+            );
+        }
+    });
+}
+
+#[cfg_attr(mobile, tauri::mobile_entry_point)]
+pub fn run() {
+    tauri::Builder::default()
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .setup(|app| {
+            let root = resolve_workbench_dir(app);
+            let data_dir = app
+                .path()
+                .app_local_data_dir()
+                .map(|d| d.join("data"))
+                .unwrap_or_else(|_| root.join("data"));
+
+            match start_server(&root, &data_dir) {
+                Ok(child) => {
+                    app.manage(ServerProcess(Mutex::new(Some(child))));
+                }
+                Err(e) => eprintln!("{}", e),
+            }
+
+            // 等服务就绪再开窗口，避免窗口先起来时 8787 还没监听导致白屏。
+            if !wait_port(PORT, Duration::from_secs(15)) {
+                eprintln!("警告：{} 端口在 15 秒内未就绪", PORT);
+            }
+
+            open_main_window(app.handle());
+            open_fab_window(app.handle(), &data_dir);
+            if let Err(e) = setup_tray(app) {
+                eprintln!("创建系统托盘失败：{}", e);
+            }
+            spawn_update_check(app.handle());
+            Ok(())
+        })
+        .invoke_handler(tauri::generate_handler![fab_action, fab_menu, check_update])
+        .on_menu_event(|app, event| match event.id().as_ref() {
+            "open" => show_main(app),
+            "quit" => app.exit(0),
+            _ => {}
+        })
+        .on_window_event(|window, event| {
+            // 主窗口关闭 → 只隐藏不退出，悬浮球和托盘继续常驻桌面。
+            if let WindowEvent::CloseRequested { api, .. } = event {
+                if window.label() == MAIN_LABEL {
+                    api.prevent_close();
+                    let _ = window.hide();
+                }
+            }
+        })
+        .build(tauri::generate_context!())
+        .expect("Tauri 初始化失败")
+        .run(|app_handle, event| {
+            // 进程退出时：保存悬浮球位置 + 回收 sidecar，避免残留 node.exe 占用 8787。
+            if let tauri::RunEvent::Exit = event {
+                let data_dir = data_dir_of(app_handle);
+                save_fab_pos(app_handle, &data_dir);
+                if let Some(state) = app_handle.try_state::<ServerProcess>() {
+                    if let Ok(mut guard) = state.0.lock() {
+                        if let Some(mut child) = guard.take() {
+                            let _ = child.kill();
+                            let _ = child.wait();
+                        }
+                    }
+                }
+            }
+        });
+}

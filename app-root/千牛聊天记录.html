@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="mobile-ui.css">
+<script src="mobile-adapter.js"></script>
+<title>聊天记录 · 运营工作台</title>
+<style>
+  :root[data-theme="eye"]{
+    --bg:#F5F1E8; --panel:#FBF8F1; --panel2:#F0EADC;
+    --line:#E5DCCB; --line2:#D5C9B4;
+    --ink:#3C3229; --muted:#7A6E5F; --muted2:#A2957F;
+    --accent:#F97316; --accent-d:#EA580C; --accent-soft:rgba(249,115,10,0.12);
+    --ok:#16A34A; --danger:#EF4444;
+    --shadow:0 6px 24px rgba(60,50,41,.08);
+    --radius:14px;
+  }
+  :root{
+    --bg:#100E0C; --panel:#171412; --panel2:#221C18;
+    --line:#2A231E; --line2:#3D332C;
+    --ink:#F1F5F9; --muted:#94A3B8; --muted2:#64748B;
+    --accent:#F97316; --accent-d:#EA580C; --accent-soft:rgba(249,115,10,0.12);
+    --ok:#34D399; --danger:#F87171;
+    --shadow:0 8px 28px rgba(0,0,0,.40);
+    --radius:14px;
+  }
+  /* 暗色主题：显式声明，不再依赖 :root 默认值（防止默认值变更后暗色失效） */
+  :root[data-theme="dark"]{
+    --bg:#100E0C; --panel:#171412; --panel2:#221C18;
+    --line:#2A231E; --line2:#3D332C;
+    --ink:#F5EFEA; --muted:#B4A49A; --muted2:#8A7A70;
+    --accent:#FB923C; --accent-d:#F97316; --accent-soft:rgba(251,146,60,0.14);
+    --ok:#34D399; --danger:#F87171;
+    --shadow:0 8px 28px rgba(0,0,0,.40);
+    --radius:14px;
+  }
+  :root[data-theme="light"]{
+    --bg:#FAF7F5; --panel:#FFFFFF; --panel2:#F3EDE8;
+    --line:#EFE6DE; --line2:#DCD2C9;
+    --ink:#111827; --muted:#475569; --muted2:#94A3B8;
+    --accent:#F97316; --accent-d:#EA580C; --accent-soft:rgba(249,115,10,0.12);
+    --ok:#16A34A; --danger:#EF4444;
+    --shadow:0 6px 24px rgba(15,23,42,.10);
+    --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;margin:0;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    background:var(--bg); color:var(--ink);
+    display:flex; flex-direction:column; min-height:100vh;
+  }
+
+  header{
+    padding:16px 24px; border-bottom:1px solid var(--line);
+    display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+    background:linear-gradient(180deg, rgba(249,115,10,0.06), transparent);
+  }
+  header h1{font-size:19px; margin:0; font-weight:700; display:flex; align-items:center; gap:10px;}
+  header .dot{width:10px; height:10px; border-radius:50%; background:var(--accent); box-shadow:0 0 0 4px rgba(249,115,10,0.15);}
+  header .sub{font-size:12px; color:var(--muted);}
+  header .spacer{flex:1;}
+  .refresh-btn{
+    padding:8px 16px; border-radius:9px; border:1px solid var(--line2);
+    background:var(--panel2); color:var(--ink); cursor:pointer; font-size:13px; transition:.15s;
+  }
+  .refresh-btn:hover{border-color:var(--accent); color:var(--accent);}
+
+  .summary{
+    display:flex; gap:12px; padding:14px 24px; flex-wrap:wrap;
+  }
+  .stat{
+    background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow);
+    padding:12px 18px; min-width:120px;
+  }
+  .stat .k{font-size:12px; color:var(--muted); margin-bottom:6px;}
+  .stat .v{font-size:20px; font-weight:700; color:var(--accent);}
+
+  .toolbar{
+    display:flex; gap:10px; padding:0 24px 14px; flex-wrap:wrap; align-items:center;
+  }
+  .toolbar input, .toolbar select{
+    background:var(--panel2); border:1px solid var(--line2); color:var(--ink);
+    border-radius:9px; padding:8px 12px; font-size:13px; outline:none; transition:.15s;
+  }
+  .toolbar input:focus, .toolbar select:focus{border-color:var(--accent);}
+  .toolbar input[type="text"]{min-width:220px;}
+
+  /* ===== 日期筛选：快捷区间 + 精确起止 ===== */
+  .date-wrap{
+    display:inline-flex; align-items:center; gap:8px; flex-wrap:wrap;
+    background:var(--panel2); border:1px solid var(--line2);
+    border-radius:10px; padding:4px;
+  }
+  .date-quick{display:inline-flex; align-items:center; gap:2px;}
+  .date-quick button{
+    border:0; background:transparent; color:var(--muted);
+    font-size:12.5px; font-family:inherit; cursor:pointer;
+    padding:6px 10px; border-radius:7px; white-space:nowrap; transition:.12s;
+  }
+  .date-quick button:hover{ background:var(--panel); color:var(--accent); }
+  .date-quick button.on{
+    background:var(--accent); color:#1a1206; font-weight:600;
+  }
+  .date-quick button.on:hover{ background:var(--accent-d); color:#fff; }
+  .date-sep{width:1px; height:18px; background:var(--line2); flex:0 0 auto;}
+  .date-exact{display:inline-flex; align-items:center; gap:6px;}
+  .date-exact input[type="date"]{
+    background:var(--panel); border:1px solid var(--line2); color:var(--ink);
+    border-radius:7px; padding:6px 8px; font-size:12.5px; outline:none;
+    transition:.15s; font-family:inherit;
+    color-scheme:light;                           /* 跟随主题，见下方主题覆盖 */
+    width:120px; min-width:120px;                 /* 保证完整显示 YYYY-MM-DD */
+    cursor:pointer;                               /* 整块可点，点哪都能弹日历 */
+  }
+  .date-exact input[type="date"]:focus{ border-color:var(--accent); }
+  /* 关键：重置日历指示器尺寸。若不重置，Chrome 会把它拉成 ~110px 宽，
+     几乎铺满整个输入框，导致点击命中异常、日历弹不出来。 */
+  .date-exact input[type="date"]::-webkit-calendar-picker-indicator{
+    cursor:pointer; opacity:.65;
+    width:14px; height:14px; margin:0; padding:0; flex:0 0 auto;
+    transition:opacity .15s;
+  }
+  .date-exact input[type="date"]:hover::-webkit-calendar-picker-indicator{ opacity:1; }
+  /* 空值时把占位文字替换为更友好的提示（避免显示 yyyy/mm/dd 像坏掉） */
+  .date-exact input[type="date"]:not(:focus):invalid::-webkit-datetime-edit{
+    color:var(--muted2);
+  }
+  .date-exact input[type="date"]::-webkit-datetime-edit-fields-wrapper{ padding:0; }
+  /* 主题跟随：暗色下用 dark color-scheme，其余用 light */
+  :root[data-theme="dark"] .date-exact input[type="date"]{ color-scheme:dark; }
+  .date-to{font-size:12px; color:var(--muted2);}
+  /* 起止倒置警告 */
+  .date-exact.invalid input[type="date"]{ border-color:#e24b4a; }
+  .date-warn{
+    display:none; align-items:center; gap:4px;
+    font-size:12px; color:#e24b4a; white-space:nowrap;
+  }
+  .date-warn.show{ display:inline-flex; }
+  /* 数据实际范围提示 */
+  .date-hint{
+    font-size:12px; color:var(--muted2); white-space:nowrap;
+  }
+  .date-hint b{ color:var(--muted); font-weight:600; cursor:pointer; }
+  .date-hint b:hover{ color:var(--accent); }
+
+  .toolbar .btn{
+    padding:8px 16px; border-radius:9px; border:1px solid var(--line2);
+    background:var(--panel2); color:var(--ink); cursor:pointer; font-size:13px; transition:.15s; white-space:nowrap;
+  }
+  .toolbar .btn:hover{border-color:var(--accent); color:var(--accent);}
+  .toolbar .btn.primary{background:var(--accent); border-color:var(--accent); color:#1a1206; font-weight:600;}
+  .toolbar .btn.primary:hover{background:var(--accent-d); border-color:var(--accent-d); color:#fff;}
+
+  .table-wrap{
+    flex:1; padding:0 24px; overflow:auto; min-height:0;
+  }
+  table{width:100%; border-collapse:collapse; font-size:13px;}
+  thead th{
+    position:sticky; top:0; background:var(--panel2); color:var(--muted);
+    text-align:left; padding:11px 12px; border-bottom:1px solid var(--line2);
+    font-weight:600; white-space:nowrap; z-index:2;
+  }
+  tbody td{
+    padding:10px 12px; border-bottom:1px solid var(--line); vertical-align:top;
+    color:var(--ink); word-break:break-word;
+  }
+  tbody tr:hover{background:var(--panel);}
+  .role-cust{color:#60A5FA;}
+  .role-agent{color:#FBBF24;}
+  .empty{
+    text-align:center; color:var(--muted); padding:48px 0; font-size:14px;
+  }
+  .msg-content{max-width:640px; white-space:pre-wrap; line-height:1.55;}
+  /* 聊天图片独立列：缩略图 + 点击看大图（与插件导出「图片N」列对齐） */
+  .img-cell{text-align:center; white-space:nowrap;}
+  .img-cell a{
+    display:inline-block; line-height:0; border-radius:8px; overflow:hidden;
+    border:1px solid var(--line2); transition:.15s; vertical-align:middle;
+  }
+  .img-cell a:hover{border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft);}
+  .img-cell img{width:46px; height:46px; object-fit:cover; display:block; background:var(--panel2);}
+  .img-cell .img-fallback{
+    display:inline-block; padding:4px 8px; border-radius:7px; font-size:12px;
+    color:var(--accent); border:1px solid var(--line2); text-decoration:none;
+  }
+  .img-cell .img-fallback:hover{border-color:var(--accent);}
+
+  .pagination{
+    display:flex; align-items:center; gap:10px; padding:14px 24px;
+    border-top:1px solid var(--line); flex-wrap:wrap;
+  }
+  .pagination .info{font-size:12px; color:var(--muted);}
+  .pagination button{
+    padding:7px 14px; border-radius:8px; border:1px solid var(--line2);
+    background:var(--panel2); color:var(--ink); cursor:pointer; font-size:13px; transition:.15s;
+  }
+  .pagination button:disabled{opacity:.4; cursor:not-allowed;}
+  .pagination button:not(:disabled):hover{border-color:var(--accent); color:var(--accent);}
+  .pagination .pages{font-size:13px; color:var(--muted);}
+
+  .banner{
+    margin:14px 24px 0; padding:12px 16px; border-radius:10px;
+    background:rgba(248,113,113,0.12); border:1px solid rgba(248,113,113,0.35);
+    color:#FECACA; font-size:13px; display:none;
+  }
+  .banner.show{display:block;}
+</style>
+<script>
+(function(){
+  var WP='wb_theme', WS='wb_theme_auto_start', WE='wb_theme_auto_end';
+  function mins(t){ var p=String(t||'00:00').split(':'); return (parseInt(p[0],10)||0)*60+(parseInt(p[1],10)||0); }
+  function resolve(mode){
+    if(mode==='light'||mode==='dark'||mode==='eye') return mode;
+    if(mode!=='auto') return 'light';
+    var d=new Date(), m=d.getHours()*60+d.getMinutes(), s=1080, e=360;
+    try{ s=mins(localStorage.getItem(WS)||'18:00'); e=mins(localStorage.getItem(WE)||'06:00'); }catch(x){}
+    var dark=(s<e)?(m>=s&&m<e):(m>=s||m<e);
+    return dark?'dark':'light';
+  }
+  window.__wbResolveTheme = resolve;
+  function apply(){
+    var mode='light'; try{ mode=localStorage.getItem(WP)||'light'; }catch(e){}
+    document.documentElement.setAttribute('data-theme', resolve(mode));
+  }
+  apply();
+  window.addEventListener('message', function(e){
+    if(e.data && e.data.type==='wb-theme'){
+      var t=e.data.theme||e.data.mode;
+      if(t) document.documentElement.setAttribute('data-theme', resolve(t));
+      else apply();
+    }
+  });
+  try{ window.addEventListener('storage', function(e){ if(!e.key||e.key===WP||e.key===WS||e.key===WE) apply(); }); }catch(e){}
+})();
+</script>
+<link rel="stylesheet" href="scrollbar.css?v=1">
+</head>
+<body>
+  <header>
+    <h1><span class="dot"></span>聊天记录</h1>
+    <span class="sub">来自浏览器扩展导入的客服会话数据 · 本地存储</span>
+    <span class="spacer"></span>
+    <button class="refresh-btn" id="btnRefresh">↻ 刷新数据</button>
+  </header>
+
+  <div class="summary" id="summary">
+    <div class="stat"><div class="k">消息总数</div><div class="v" id="statTotal">0</div></div>
+    <div class="stat"><div class="k">客户数量</div><div class="v" id="statCustomer">0</div></div>
+    <div class="stat"><div class="k">客服数量</div><div class="v" id="statAgent">0</div></div>
+    <div class="stat"><div class="k">店铺数量</div><div class="v" id="statStore">0</div></div>
+    <div class="stat"><div class="k">日期区间</div><div class="v" id="statDate" style="font-size:15px;">—</div></div>
+  </div>
+
+  <div class="banner" id="banner">无法连接运营工作台服务，请先双击「启动工作台.bat」启动本地服务。</div>
+
+  <div class="toolbar" id="toolbar">
+    <input type="text" id="kw" placeholder="搜索：消息内容 / 客户 / 客服 / 会话ID">
+    <select id="selStore"><option value="">全部店铺</option></select>
+    <button class="btn" id="btnDelStore" title="删除当前选中的店铺及其全部数据">删除店铺</button>
+    <select id="selCustomer"><option value="">全部客户</option></select>
+    <select id="selAgent"><option value="">全部客服</option></select>
+
+    <div class="date-wrap" id="dateWrap">
+      <div class="date-quick" id="dateQuick">
+        <button type="button" data-range="today">今天</button>
+        <button type="button" data-range="yesterday">昨天</button>
+        <button type="button" data-range="7d">近 7 天</button>
+        <button type="button" data-range="30d">近 30 天</button>
+        <button type="button" data-range="month">本月</button>
+        <button type="button" data-range="all">全部</button>
+      </div>
+      <span class="date-sep"></span>
+      <div class="date-exact" id="dateExact">
+        <input type="date" id="dateStart" title="开始日期" aria-label="开始日期">
+        <span class="date-to">至</span>
+        <input type="date" id="dateEnd" title="结束日期" aria-label="结束日期">
+      </div>
+      <span class="date-warn" id="dateWarn">⚠ 起止日期已自动对调</span>
+    </div>
+    <span class="date-hint" id="dateHint"></span>
+
+    <button class="btn" id="btnClearFilter">清空筛选</button>
+    <span class="spacer" style="flex:1"></span>
+    <button class="btn" id="btnCsv">导出 CSV</button>
+    <button class="btn" id="btnJson">导出 JSON</button>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr id="theadRow">
+          <th>店铺</th>
+          <th>日期</th>
+          <th>时间</th>
+          <th>客户昵称</th>
+          <th>会话ID</th>
+          <th>角色</th>
+          <th>客服</th>
+          <th>消息内容</th>
+        </tr>
+      </thead>
+      <tbody id="tbody">
+        <tr><td colspan="8" class="empty">正在加载数据…</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="pagination">
+    <span class="info" id="pageInfo">共 0 条</span>
+    <button id="btnPrev">‹ 上一页</button>
+    <span class="pages" id="pageLabel">第 1 / 1 页</span>
+    <button id="btnNext">下一页 ›</button>
+    <span class="spacer" style="flex:1"></span>
+    <span class="info">每页 <select id="pageSize" style="background:var(--panel2);color:var(--ink);border:1px solid var(--line2);border-radius:7px;padding:4px 6px;">
+      <option value="50">50</option><option value="100" selected>100</option><option value="200">200</option><option value="500">500</option>
+    </select> 条</span>
+  </div>
+
+<script>
+(function () {
+  'use strict';
+  var APP_VERSION = 'v1.0.8';
+
+  var allRecords = [];
+  var filtered = [];
+  var page = 1;
+  var pageSize = 100;
+  /* 日期筛选状态：start / end 为 YYYY-MM-DD，preset 为当前选中的快捷区间名
+     preset 为空字符串表示「未选快捷项」——此时不点亮任何快捷按钮 */
+  var dateRange = { start: '', end: '', preset: '' };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function esc(s) {
+    if (s == null) return '';
+    return String(s);
+  }
+
+  // 把 "2026/5/15" / "2026-05-15" / "2026.05.15" 等解析成 "YYYY-MM-DD"
+  function parseDate(s) {
+    if (!s) return null;
+    var m = String(s).match(/(\d{4})[/\-.](\d{1,2})[/\-.](\d{1,2})/);
+    if (!m) return null;
+    return m[1] + '-' + m[2].padStart(2, '0') + '-' + m[3].padStart(2, '0');
+  }
+
+  function uniq(arr) {
+    var seen = {}, out = [];
+    (arr || []).forEach(function (x) {
+      var k = String(x == null ? '' : x).trim();
+      if (k && !seen[k]) { seen[k] = true; out.push(k); }
+    });
+    return out.sort(function (a, b) { return a.localeCompare(b, 'zh'); });
+  }
+
+  /* ===== 聊天图片：与插件导出的「图片1/图片2…」列对齐 =====
+     插件把图片消息写成 "[图片: URL]" 片段。这里把 URL 抽成独立列，
+     表格里显示缩略图，点击在新标签打开原图；消息内容列只保留纯文本。 */
+  var IMG_TOKEN_RE = /\[图片[:：]\s*([^\]\s"'<>]+)\]/g;
+  var BARE_IMG_RE = /https?:\/\/[^\s"'<>]+?\.(?:jpg|jpeg|png|gif|webp|bmp)(?:\?[^\s"'<>]*)?/gi;
+  function normImgUrl(u) {
+    var s = String(u || '').trim();
+    if (!s) return '';
+    if (s.indexOf('//') === 0) s = 'https:' + s;
+    return s;
+  }
+  function splitImages(content) {
+    var text = String(content == null ? '' : content);
+    var imgs = [];
+    IMG_TOKEN_RE.lastIndex = 0;
+    var m;
+    while ((m = IMG_TOKEN_RE.exec(text)) !== null) {
+      var u = normImgUrl(m[1]);
+      if (u && imgs.indexOf(u) < 0) imgs.push(u);
+    }
+    text = text.replace(IMG_TOKEN_RE, ' ');
+    // 兜底：正文里的裸图片链接也抽走
+    BARE_IMG_RE.lastIndex = 0;
+    var m2;
+    while ((m2 = BARE_IMG_RE.exec(text)) !== null) {
+      var u2 = normImgUrl(m2[0]);
+      if (u2 && imgs.indexOf(u2) < 0) imgs.push(u2);
+    }
+    text = text.replace(BARE_IMG_RE, ' ');
+    text = text.replace(/\s+/g, ' ').trim();
+    return { text: text, images: imgs };
+  }
+  function maxImgCount(records) {
+    var n = 0;
+    (records || []).forEach(function (r) {
+      var c = splitImages(r && r.content).images.length;
+      if (c > n) n = c;
+    });
+    return n;
+  }
+  var imgColCount = 0;
+  function renderImgHeaders(n) {
+    imgColCount = n;
+    var row = $('theadRow');
+    // 先移除旧的图片列表头（防止重复渲染叠加）
+    var olds = row.querySelectorAll('th[data-img-col]');
+    for (var i = 0; i < olds.length; i++) olds[i].parentNode.removeChild(olds[i]);
+    for (var j = 1; j <= n; j++) {
+      var th = document.createElement('th');
+      th.setAttribute('data-img-col', '1');
+      th.textContent = '图片' + j;
+      row.appendChild(th);
+    }
+  }
+
+  function buildSelects() {
+    var stores = uniq(allRecords.map(function (r) { return r.store || '默认店铺'; }));
+    var customers = uniq(allRecords.map(function (r) { return r.customerId; }));
+    var agents = uniq(allRecords.map(function (r) { return r.agent; }));
+    var curS = $('selStore').value;
+    var curC = $('selCustomer').value;
+    var curA = $('selAgent').value;
+    var htmlS = '<option value="">全部店铺</option>';
+    stores.forEach(function (s) { htmlS += '<option value="' + s.replace(/"/g, '&quot;') + '">' + esc(s) + '</option>'; });
+    var htmlC = '<option value="">全部客户</option>';
+    customers.forEach(function (c) { htmlC += '<option value="' + c.replace(/"/g, '&quot;') + '">' + esc(c) + '</option>'; });
+    var htmlA = '<option value="">全部客服</option>';
+    agents.forEach(function (a) { htmlA += '<option value="' + a.replace(/"/g, '&quot;') + '">' + esc(a) + '</option>'; });
+    $('selStore').innerHTML = htmlS;
+    $('selCustomer').innerHTML = htmlC;
+    $('selAgent').innerHTML = htmlA;
+    $('selStore').value = curS;
+    $('selCustomer').value = curC;
+    $('selAgent').value = curA;
+  }
+
+  function applyFilters() {
+    var kw = ($('kw').value || '').trim().toLowerCase();
+    var s = $('selStore').value;
+    var c = $('selCustomer').value;
+    var a = $('selAgent').value;
+    var ds = dateRange.start;
+    var de = dateRange.end;
+    // 起止倒置时自动对调，避免出现「选了却永远查不到」的困惑
+    if (ds && de && ds > de) { var _t = ds; ds = de; de = _t; }
+
+    filtered = allRecords.filter(function (r) {
+      if (kw) {
+        var hay = [r.content, r.customerId, r.agent, r.conversationId].join('\u0001').toLowerCase();
+        if (hay.indexOf(kw) < 0) return false;
+      }
+      if (s && ((r.store || '默认店铺').trim() !== s)) return false;
+      if (c && (r.customerId || '').trim() !== c) return false;
+      if (a && (r.agent || '').trim() !== a) return false;
+      var d = parseDate(r.date);
+      if (ds && (!d || d < ds)) return false;
+      if (de && (!d || d > de)) return false;
+      return true;
+    });
+
+    renderImgHeaders(maxImgCount(filtered));
+    renderStats(filtered);
+    page = 1;
+    render();
+  }
+
+  function render() {
+    var total = filtered.length;
+    var totalPages = Math.max(1, Math.ceil(total / pageSize));
+    if (page > totalPages) page = totalPages;
+    var start = (page - 1) * pageSize;
+    var slice = filtered.slice(start, start + pageSize);
+    var colCount = 8 + imgColCount;
+
+    var tbody = $('tbody');
+    tbody.innerHTML = '';
+    if (!slice.length) {
+      var tr = document.createElement('tr');
+      var td = document.createElement('td');
+      td.colSpan = colCount; td.className = 'empty';
+      td.textContent = allRecords.length ? '没有符合筛选条件的记录' : '暂无数据，请先用浏览器扩展提取并「发送到运营工作台」';
+      tr.appendChild(td); tbody.appendChild(tr);
+    } else {
+      slice.forEach(function (r) {
+        var tr = document.createElement('tr');
+        var sp = splitImages(r.content);
+        var cells = [r.store || '默认店铺', r.date, r.time, r.customerId, r.conversationId, r.role, r.agent];
+        cells.forEach(function (v) {
+          var td = document.createElement('td');
+          td.textContent = esc(v);
+          tr.appendChild(td);
+        });
+        var contentTd = document.createElement('td');
+        var role = (r.role || '').trim();
+        contentTd.className = 'msg-content';
+        contentTd.textContent = esc(sp.text) || (sp.images.length ? '（图片消息）' : '');
+        // 角色着色（可选）
+        if (role.indexOf('客服') >= 0 || role.indexOf('小二') >= 0) {
+          tr.querySelectorAll('td')[5].className = 'role-agent';
+        } else if (role) {
+          tr.querySelectorAll('td')[5].className = 'role-cust';
+        }
+        tr.appendChild(contentTd);
+
+        // 图片列：与插件导出的「图片1/图片2…」一一对应
+        for (var i = 0; i < imgColCount; i++) {
+          var imgTd = document.createElement('td');
+          imgTd.className = 'img-cell';
+          var url = sp.images[i];
+          if (url) {
+            var a = document.createElement('a');
+            a.href = url;
+            a.target = '_blank';
+            a.rel = 'noopener noreferrer';
+            a.title = '点击看大图';
+            var im = document.createElement('img');
+            im.src = url;
+            im.alt = '图片' + (i + 1);
+            im.loading = 'lazy';
+            im.onerror = function () {
+              // 缩略图加载失败（如防盗链）时降级成文字链接，保证仍可点开
+              var p = this.parentNode;
+              if (!p) return;
+              var fb = document.createElement('a');
+              fb.className = 'img-fallback';
+              fb.href = this.getAttribute('data-url') || '#';
+              fb.target = '_blank';
+              fb.rel = 'noopener noreferrer';
+              fb.textContent = '点击看大图';
+              p.parentNode.replaceChild(fb, p);
+            };
+            im.setAttribute('data-url', url);
+            a.appendChild(im);
+            imgTd.appendChild(a);
+          }
+          tr.appendChild(imgTd);
+        }
+        tbody.appendChild(tr);
+      });
+    }
+
+    $('pageInfo').textContent = '共 ' + total + ' 条';
+    $('pageLabel').textContent = '第 ' + page + ' / ' + totalPages + ' 页';
+    $('btnPrev').disabled = page <= 1;
+    $('btnNext').disabled = page >= totalPages;
+  }
+
+  // 统计跟随当前筛选条件（切换店铺 / 客户 / 客服 / 关键词 / 日期时一起变），不是全量统计
+  function renderStats(src) {
+    src = src || filtered || [];
+    $('statTotal').textContent = src.length;
+    $('statCustomer').textContent = uniq(src.map(function (r) { return r.customerId; })).length;
+    $('statAgent').textContent = uniq(src.map(function (r) { return r.agent; })).length;
+    $('statStore').textContent = uniq(src.map(function (r) { return r.store || '默认店铺'; })).length;
+    var dates = src.map(function (r) { return parseDate(r.date); }).filter(Boolean).sort();
+    if (dates.length) {
+      $('statDate').textContent = dates[0] + ' ~ ' + dates[dates.length - 1];
+    } else {
+      $('statDate').textContent = '—';
+    }
+  }
+
+  function loadData() {
+    $('banner').classList.remove('show');
+    $('tbody').innerHTML = '<tr><td colspan="8" class="empty">正在加载数据…</td></tr>';
+    fetch('/api/qianniu-chat')
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        if (j && j.ok) {
+          allRecords = Array.isArray(j.records) ? j.records : [];
+          buildSelects();
+          syncDateUI();          // 数据到位后才能算出「数据范围」与快捷区间
+          applyFilters();
+        } else {
+          showError((j && j.error) || '数据读取失败');
+        }
+      })
+      .catch(function (e) {
+        if (location.protocol === 'file:') {
+          showError('当前是通过本地文件方式打开的，无法读取数据。请在浏览器地址栏输入并访问：http://127.0.0.1:8787/千牛聊天记录.html');
+        } else {
+          showError('无法连接运营工作台服务，请先双击「启动工作台.bat」启动本地服务。');
+        }
+      });
+  }
+
+  function showError(msg) {
+    $('banner').textContent = msg;
+    $('banner').classList.add('show');
+    allRecords = [];
+    filtered = [];
+    renderImgHeaders(0);
+    applyFilters();
+  }
+
+  function downloadBlob(blob, name) {
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = name;
+    document.body.appendChild(a); a.click();
+    setTimeout(function () { URL.revokeObjectURL(url); a.remove(); }, 100);
+  }
+
+  function csvField(s) {
+    var v = String(s == null ? '' : s).replace(/\r\n/g, '\n').replace(/\r/g, '\n').replace(/\n+/g, ' ').trim();
+    return /[",]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
+  }
+  // 公式单元格始终加引号，Excel/WPS 才会按公式解析（与插件导出一致）
+  function csvAlways(s) {
+    return '"' + String(s == null ? '' : s).replace(/"/g, '""').replace(/[\r\n\t]/g, ' ') + '"';
+  }
+  function buildCsv(records) {
+    var imgN = maxImgCount(records);
+    var headers = ['店铺', '日期', '时间', '客户昵称', '会话ID', '角色', '客服', '消息内容'];
+    for (var i = 1; i <= imgN; i++) headers.push('图片' + i);
+    var lines = [headers.map(csvField).join(',')];
+    records.forEach(function (r) {
+      var sp = splitImages(r.content);
+      var row = [r.store || '默认店铺', r.date, r.time, r.customerId, r.conversationId, r.role, r.agent, sp.text].map(csvField);
+      for (var i = 0; i < imgN; i++) {
+        row.push(sp.images[i] ? csvAlways('=HYPERLINK("' + sp.images[i] + '","点击看大图' + (i + 1) + '")') : '""');
+      }
+      lines.push(row.join(','));
+    });
+    return '\ufeff' + lines.join('\r\n');
+  }
+
+  function exportCsv() {
+    if (!filtered.length) { alert('没有可导出的记录'); return; }
+    var csv = buildCsv(filtered);
+    var d = new Date();
+    var name = '聊天记录_' + d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate()) + '_' + pad(d.getHours()) + pad(d.getMinutes()) + '.csv';
+    downloadBlob(new Blob([csv], { type: 'text/csv;charset=utf-8;' }), name);
+  }
+  function pad(n) { return String(n).padStart(2, '0'); }
+
+  function exportJson() {
+    if (!filtered.length) { alert('没有可导出的记录'); return; }
+    var rows = filtered.map(function (r) {
+      var sp = splitImages(r.content);
+      var o = {
+        '店铺': r.store || '默认店铺', '日期': r.date || '', '时间': r.time || '',
+        '客户昵称': r.customerId || '', '会话ID': r.conversationId || '',
+        '角色': r.role || '', '客服': r.agent || '', '消息内容': sp.text
+      };
+      if (sp.images.length) o['聊天图片'] = sp.images;
+      return o;
+    });
+    var d = new Date();
+    var name = '聊天记录_' + d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate()) + '_' + pad(d.getHours()) + pad(d.getMinutes()) + '.json';
+    downloadBlob(new Blob(['\ufeff' + JSON.stringify(rows, null, 2)], { type: 'application/json;charset=utf-8;' }), name);
+  }
+
+  /* ========== 日期筛选：快捷区间 + 精确起止 ========== */
+
+  function toDS(d) {
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+  }
+  /* 数据里实际存在的最早 / 最晚日期（决定快捷项的边界与「全部」的范围） */
+  function dataBounds() {
+    var mn = null, mx = null;
+    allRecords.forEach(function (r) {
+      var d = parseDate(r.date);
+      if (!d) return;
+      if (!mn || d < mn) mn = d;
+      if (!mx || d > mx) mx = d;
+    });
+    return { min: mn, max: mx };
+  }
+  /* 依据预设名算出起止日期 */
+  function computePreset(name) {
+    var b = dataBounds();
+    var now = new Date();
+    var today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    var s, e;
+    switch (name) {
+      case 'today':
+        s = e = today; break;
+      case 'yesterday':
+        s = e = new Date(today.getTime() - 86400000); break;
+      case '7d':
+        e = today; s = new Date(today.getTime() - 6 * 86400000); break;
+      case '30d':
+        e = today; s = new Date(today.getTime() - 29 * 86400000); break;
+      case 'month':
+        s = new Date(today.getFullYear(), today.getMonth(), 1); e = today; break;
+      case 'all':
+      default:
+        return { start: '', end: '', preset: 'all' };
+    }
+    return { start: toDS(s), end: toDS(e), preset: name };
+  }
+
+  /* 同步 UI：输入框取值、快捷按钮高亮、警告、数据范围提示 */
+  function syncDateUI() {
+    var si = $('dateStart'), ei = $('dateEnd');
+    if (!si || !ei) return;
+    si.value = dateRange.start || '';
+    ei.value = dateRange.end || '';
+
+    // 快捷按钮高亮：仅在当前区间与预设完全吻合时点亮
+    var qs = document.querySelectorAll('#dateQuick button');
+    Array.prototype.forEach.call(qs, function (b) {
+      b.classList.toggle('on', !!dateRange.preset && b.getAttribute('data-range') === dateRange.preset);
+    });
+
+    // 数据实际范围提示（点击可一键选中全部数据）
+    var hint = $('dateHint');
+    if (hint) {
+      var b2 = dataBounds();
+      if (b2.min && b2.max) {
+        hint.innerHTML = '数据范围 <b title="点击查看全部数据">' + b2.min + ' ~ ' + b2.max + '</b>';
+        var bb = hint.querySelector('b');
+        if (bb) bb.onclick = function () { setDate({ start: b2.min, end: b2.max, preset: '' }); };
+      } else {
+        hint.innerHTML = '';
+      }
+    }
+  }
+
+  /* 设置区间并应用筛选 */
+  function setDate(r) {
+    dateRange.start = r.start || '';
+    dateRange.end = r.end || '';
+    dateRange.preset = r.preset || '';
+    syncDateUI();
+    applyFilters();
+  }
+
+  /* 手动改输入框：立即取消预设高亮（因为是自定义区间） */
+  function onManualDate() {
+    var si = $('dateStart'), ei = $('dateEnd');
+    var s = (si && si.value) || '';
+    var e = (ei && ei.value) || '';
+    var swapped = false;
+    // 起止倒置时自动对调，并把对调结果写回输入框，让用户看得见
+    if (s && e && s > e) { var t = s; s = e; e = t; swapped = true; }
+    dateRange.start = s;
+    dateRange.end = e;
+    dateRange.preset = '';           // 手动 = 自定义，不再点亮任何快捷项
+    syncDateUI();
+    // 仅在发生对调时短暂提示
+    var w = $('dateWarn');
+    if (w) {
+      if (swapped) {
+        w.classList.add('show');
+        clearTimeout(w._t);
+        w._t = setTimeout(function () { w.classList.remove('show'); }, 2200);
+      } else {
+        w.classList.remove('show');
+      }
+    }
+    applyFilters();
+  }
+
+  function bindDateFilter() {
+    var quick = $('dateQuick');
+    if (quick) {
+      quick.addEventListener('click', function (e) {
+        var b = e.target.closest('button[data-range]');
+        if (!b) return;
+        setDate(computePreset(b.getAttribute('data-range')));
+      });
+    }
+    var si = $('dateStart'), ei = $('dateEnd');
+    if (si) si.addEventListener('change', onManualDate);
+    if (ei) ei.addEventListener('change', onManualDate);
+  }
+
+  function bind() {
+    $('btnRefresh').addEventListener('click', loadData);
+
+    var debounceTimer = null;
+    $('kw').addEventListener('input', function () {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(applyFilters, 250);
+    });
+    $('selStore').addEventListener('change', applyFilters);
+    $('selCustomer').addEventListener('change', applyFilters);
+    $('selAgent').addEventListener('change', applyFilters);
+    bindDateFilter();
+
+    $('btnClearFilter').addEventListener('click', function () {
+      $('kw').value = '';
+      $('selStore').value = '';
+      $('selCustomer').value = '';
+      $('selAgent').value = '';
+      dateRange = { start: '', end: '', preset: '' };
+      syncDateUI();
+      applyFilters();
+    });
+
+    $('btnDelStore').addEventListener('click', function () {
+      var store = $('selStore').value;
+      if (!store) { alert('请先在下拉框里选择要删除的店铺（不能删「全部店铺」）'); return; }
+      if (!confirm('确定删除店铺「' + store + '」的全部数据吗？此操作不可恢复。')) return;
+      fetch('/api/qianniu-chat/remove-store', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ store: store })
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+          if (j && j.ok) { alert('已删除「' + store + '」数据：' + (j.removed || 0) + ' 条'); loadData(); }
+          else { alert('删除失败：' + ((j && j.error) || '未知错误')); }
+        })
+        .catch(function (e) { alert('删除失败：' + e.message); });
+    });
+
+    $('btnPrev').addEventListener('click', function () { if (page > 1) { page--; render(); } });
+    $('btnNext').addEventListener('click', function () {
+      var totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+      if (page < totalPages) { page++; render(); }
+    });
+    $('pageSize').addEventListener('change', function () {
+      pageSize = parseInt(this.value, 10) || 100;
+      page = 1;
+      render();
+    });
+
+    $('btnCsv').addEventListener('click', exportCsv);
+    $('btnJson').addEventListener('click', exportJson);
+  }
+
+  bind();
+  loadData();
+})();
+</script>
+</body>
+</html>

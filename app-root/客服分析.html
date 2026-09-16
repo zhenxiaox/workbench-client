@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<script>
+(function(){
+  var WP='wb_theme', WS='wb_theme_auto_start', WE='wb_theme_auto_end';
+  function mins(t){ var p=String(t||'00:00').split(':'); return (parseInt(p[0],10)||0)*60+(parseInt(p[1],10)||0); }
+  function resolve(mode){
+    if(mode==='light'||mode==='dark'||mode==='eye') return mode;
+    if(mode!=='auto') return 'light';
+    var d=new Date(), m=d.getHours()*60+d.getMinutes(), s=1080, e=360;
+    try{ s=mins(localStorage.getItem(WS)||'18:00'); e=mins(localStorage.getItem(WE)||'06:00'); }catch(x){}
+    var dark=(s<e)?(m>=s&&m<e):(m>=s||m<e);
+    return dark?'dark':'light';
+  }
+  window.__wbResolveTheme = resolve;
+  function apply(){
+    var mode='light'; try{ mode=localStorage.getItem(WP)||'light'; }catch(e){}
+    document.documentElement.setAttribute('data-theme', resolve(mode));
+  }
+  apply();
+  window.addEventListener('message', function(e){
+    if(e.data && e.data.type==='wb-theme'){
+      var t=e.data.theme||e.data.mode;
+      if(t) document.documentElement.setAttribute('data-theme', resolve(t));
+      else apply();
+    }
+  });
+  try{ window.addEventListener('storage', function(e){ if(!e.key||e.key===WP||e.key===WS||e.key===WE) apply(); }); }catch(e){}
+})();
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="mobile-ui.css">
+<script src="mobile-adapter.js"></script>
+<title>客服分析 · 运营工作台</title>
+<style>
+  :root[data-theme="eye"]{
+    --bg:#F5F1E8; --panel:#FBF8F1; --panel2:#F0EADC;
+    --line:#E5DCCB; --line2:#D5C9B4;
+    --ink:#3C3229; --muted:#7A6E5F; --muted2:#A2957F;
+    --accent:#F97316; --accent-d:#EA580C; --accent-soft:rgba(249,115,10,0.12);
+    --ok:#16A34A; --danger:#EF4444;
+    --shadow:0 6px 24px rgba(60,50,41,.08);
+    --radius:14px;
+  }
+  :root{
+    --bg:#100E0C; --panel:#171412; --panel2:#221C18;
+    --line:#2A231E; --line2:#3D332C;
+    --ink:#F1F5F9; --muted:#94A3B8; --muted2:#64748B;
+    --accent:#F97316; --accent-d:#EA580C; --accent-soft:rgba(249,115,10,0.12);
+    --ok:#34D399; --danger:#F87171;
+    --radius:14px;
+  }
+  /* 暗色主题：显式声明，不再依赖 :root 默认值（防止默认值变更后暗色失效） */
+  :root[data-theme="dark"]{
+    --bg:#100E0C; --panel:#171412; --panel2:#221C18;
+    --line:#2A231E; --line2:#3D332C;
+    --ink:#F5EFEA; --muted:#B4A49A; --muted2:#8A7A70;
+    --accent:#FB923C; --accent-d:#F97316; --accent-soft:rgba(251,146,60,0.14);
+    --ok:#34D399; --danger:#F87171;
+    --shadow:0 8px 28px rgba(0,0,0,.40);
+    --radius:14px;
+  }
+  :root[data-theme="light"]{
+    --bg:#FAF7F5; --panel:#FFFFFF; --panel2:#F3EDE8;
+    --line:#EFE6DE; --line2:#DCD2C9;
+    --ink:#111827; --muted:#475569; --muted2:#94A3B8;
+    --accent:#F97316; --accent-d:#EA580C; --accent-soft:rgba(249,115,10,0.12);
+    --ok:#16A34A; --danger:#EF4444;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;margin:0;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    background:var(--bg); color:var(--ink); min-height:100vh;
+  }
+  header{
+    padding:16px 24px; border-bottom:1px solid var(--line);
+    display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+    background:linear-gradient(180deg, rgba(249,115,10,0.06), transparent);
+    position:sticky; top:0; z-index:5; backdrop-filter:blur(8px);
+  }
+  header h1{font-size:19px; margin:0; font-weight:700; display:flex; align-items:center; gap:10px;}
+  header .dot{width:10px; height:10px; border-radius:50%; background:var(--accent); box-shadow:0 0 0 4px rgba(249,115,10,0.15);}
+  header .sub{font-size:12px; color:var(--muted);}
+  header .spacer{flex:1;}
+  .refresh-btn{
+    padding:8px 16px; border-radius:9px; border:1px solid var(--line2);
+    background:var(--panel2); color:var(--ink); cursor:pointer; font-size:13px; transition:.15s;
+  }
+  .refresh-btn:hover{border-color:var(--accent); color:var(--accent);}
+
+  .wrap{max-width:1180px; margin:0 auto; padding:20px 24px 48px;}
+
+  .summary{display:flex; gap:12px; flex-wrap:wrap; margin-bottom:20px;}
+  .stat{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:14px 18px; min-width:130px; flex:1;}
+  .stat .k{font-size:12px; color:var(--muted); margin-bottom:6px;}
+  .stat .v{font-size:22px; font-weight:700; color:var(--accent);}
+
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:18px; margin-bottom:18px;}
+  .card h2{font-size:15px; margin:0 0 14px; font-weight:700; display:flex; align-items:center; gap:8px;}
+  .card h2 .tag{font-size:11px; color:var(--accent); background:var(--accent-soft); padding:2px 8px; border-radius:6px; font-weight:600;}
+
+  table{width:100%; border-collapse:collapse; font-size:13px;}
+  thead th{
+    text-align:left; padding:9px 10px; border-bottom:1px solid var(--line2);
+    color:var(--muted); font-weight:600; white-space:nowrap;
+  }
+  tbody td{padding:9px 10px; border-bottom:1px solid var(--line); vertical-align:top; word-break:break-word;}
+  tbody tr:hover{background:var(--panel2);}
+  .num{font-variant-numeric:tabular-nums;}
+
+  .banner{
+    margin:0 24px 14px; padding:12px 16px; border-radius:10px;
+    background:rgba(248,113,113,0.12); border:1px solid rgba(248,113,113,0.35);
+    color:#FECACA; font-size:13px; display:none;
+  }
+  .banner.show{display:block;}
+
+  /* ===== 筛选栏 ===== */
+  .filter-bar{
+    max-width:1180px; margin:18px auto 0; padding:0 24px;
+    display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+  }
+  .date-wrap{
+    display:inline-flex; align-items:center; gap:8px; flex-wrap:wrap;
+    background:var(--panel2); border:1px solid var(--line2);
+    border-radius:10px; padding:4px;
+  }
+  .date-quick{display:inline-flex; align-items:center; gap:2px;}
+  .date-quick button{
+    border:0; background:transparent; color:var(--muted);
+    font-size:12.5px; font-family:inherit; cursor:pointer;
+    padding:6px 10px; border-radius:7px; white-space:nowrap; transition:.12s;
+  }
+  .date-quick button:hover{ background:var(--panel); color:var(--accent); }
+  .date-quick button.on{ background:var(--accent); color:#1a1206; font-weight:600; }
+  .date-quick button.on:hover{ background:var(--accent-d); color:#fff; }
+  .date-sep{width:1px; height:18px; background:var(--line2); flex:0 0 auto;}
+  .date-exact{display:inline-flex; align-items:center; gap:6px;}
+  .date-to{font-size:12px; color:var(--muted2);}
+  .filter-bar select{
+    background:var(--panel2); border:1px solid var(--line2); color:var(--ink);
+    border-radius:9px; padding:8px 12px; font-size:13px; outline:none; transition:.15s;
+    font-family:inherit; cursor:pointer; max-width:200px;
+  }
+  .filter-bar select:focus{ border-color:var(--accent); }
+  .filter-bar .btn{
+    background:var(--panel2); border:1px solid var(--line2); color:var(--ink);
+    border-radius:9px; padding:8px 14px; font-size:13px; cursor:pointer;
+    font-family:inherit; transition:.15s;
+  }
+  .filter-bar .btn:hover{ border-color:var(--accent); color:var(--accent); }
+  .filter-hint{font-size:12px; color:var(--muted2);}
+
+  /* 统计卡片：数值较小时缩小字号，避免溢出 */
+  .stat .v.sm{font-size:18px;}
+  .stat .v .unit{font-size:12px; font-weight:600; color:var(--muted); margin-left:2px;}
+  /* 响应效率分色：好=绿，中=橙(默认)，差=红 */
+  .v-good{color:var(--ok) !important;}
+  .v-bad{color:var(--danger) !important;}
+  .tag-warn{
+    font-size:11px; color:var(--accent); background:var(--accent-soft);
+    padding:2px 8px; border-radius:6px; font-weight:600; margin-left:8px;
+  }
+</style>
+<script>var APP_VERSION='v1.0.8';</script>
+<link rel="stylesheet" href="scrollbar.css?v=1">
+</head>
+<body>
+  <header>
+    <h1><span class="dot"></span>客服分析</h1>
+    <span class="sub">客服工作量与接待分析 · 基于本地聊天记录</span>
+    <span class="spacer"></span>
+    <button class="refresh-btn" id="btnRefresh">↻ 刷新数据</button>
+  </header>
+
+  <div class="banner" id="banner"></div>
+
+  <div class="filter-bar">
+    <div class="date-wrap">
+      <div class="date-quick" id="dateQuick">
+        <button type="button" data-range="today">今天</button>
+        <button type="button" data-range="yesterday">昨天</button>
+        <button type="button" data-range="7d">近 7 天</button>
+        <button type="button" data-range="30d">近 30 天</button>
+        <button type="button" data-range="month">本月</button>
+        <button type="button" data-range="all">全部</button>
+      </div>
+      <span class="date-sep"></span>
+      <div class="date-exact">
+        <input type="date" id="dateStart" title="开始日期" aria-label="开始日期">
+        <span class="date-to">至</span>
+        <input type="date" id="dateEnd" title="结束日期" aria-label="结束日期">
+      </div>
+    </div>
+    <select id="selStore"><option value="">全部店铺</option></select>
+    <select id="selAgent"><option value="">全部客服</option></select>
+    <button class="btn" id="btnClearFilter">清空筛选</button>
+    <span class="filter-hint" id="filterHint"></span>
+  </div>
+
+  <div class="wrap">
+    <div class="summary" id="summary">
+      <div class="stat"><div class="k">客服数</div><div class="v" id="statAgents">0</div></div>
+      <div class="stat" title="按客户数统计（同一客户的全部消息算一个会话）">
+        <div class="k">会话数</div><div class="v" id="statConv">0</div>
+      </div>
+      <div class="stat"><div class="k">消息总数</div><div class="v" id="statTotal">0</div></div>
+      <div class="stat"><div class="k">客户消息</div><div class="v" id="statCust">0</div></div>
+      <div class="stat"><div class="k">客服消息</div><div class="v" id="statAgent">0</div></div>
+    </div>
+
+    <div class="summary" id="summaryEff">
+      <div class="stat" title="客户发消息后，客服首次回应的等待时长（取所有会话的中位数）">
+        <div class="k">首次响应</div><div class="v sm" id="statFirst">—</div>
+      </div>
+      <div class="stat" title="每次客户提问到客服回复的平均间隔">
+        <div class="k">平均响应</div><div class="v sm" id="statAvg">—</div>
+      </div>
+      <div class="stat" title="得到客服回复的客户提问占比">
+        <div class="k">响应率</div><div class="v sm" id="statRate">—</div>
+      </div>
+      <div class="stat" title="等待超过 30 分钟才得到回复的次数">
+        <div class="k">超时响应</div><div class="v sm" id="statSlow">—</div>
+      </div>
+      <div class="stat" title="单次对话中最长的一段客服无回应时长">
+        <div class="k">最长断档</div><div class="v sm" id="statGap">—</div>
+      </div>
+    </div>
+
+    <div class="card" style="grid-column:1 / -1;">
+      <h2>客服工作量与响应效率 <span class="tag">客服分析</span>
+        <span class="tag-warn" id="effNote" style="display:none">响应指标已排除占位消息</span>
+      </h2>
+      <div class="table-wrap" style="overflow:auto;">
+        <table>
+          <thead>
+            <tr>
+              <th title="客服账号">客服</th>
+              <th title="该客服发出的消息数">客服消息数</th>
+              <th title="该客服参与过的会话中，客户发出的消息数">接待客户消息</th>
+              <th title="该客服参与过的会话（客户）数">会话数</th>
+              <th title="客户提问后客服首次回应的等待时长（中位数）">首次响应</th>
+              <th title="每次客户提问到客服回复的平均间隔">平均响应</th>
+              <th title="该客服回复掉的客户提问占比">响应率</th>
+              <th title="等待超过 30 分钟才回复的次数">超时数</th>
+              <th title="客服消息的平均字数">平均回复字数</th>
+              <th title="占客服消息总数的比例">消息占比</th>
+            </tr>
+          </thead>
+          <tbody id="agentBody"><tr><td colspan="10" class="empty">正在加载…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+<script>
+(function () {
+  'use strict';
+  var allRecords = [];   // 全量
+  var filtered = [];     // 筛选后
+
+  /* 筛选状态：preset='' 表示未选快捷项（避免初始就高亮「全部」造成语义误导） */
+  var filters = { start: '', end: '', preset: '', store: '', agent: '' };
+
+  var SLOW_SEC = 30 * 60;   // 超过 30 分钟视为超时响应
+  var MAX_GAP_SEC = 86400;  // 跨天以上的间隔不计入响应（视为新会话）
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function isAgent(r) {
+    var role = (r.role || '').trim();
+    return role.indexOf('客服') >= 0 || role.indexOf('小二') >= 0 || role.indexOf('卖家') >= 0;
+  }
+  function isCustomer(r) {
+    return !isAgent(r) && !!(r.content || '').trim();
+  }
+  function esc(s) { return s == null ? '' : String(s); }
+
+  /* 千牛导出里约 20% 是「请在客户端查看原始聊天记录」占位文本，
+     响应效率与文本分析必须先剔除，否则会把无意义的消息算成提问。 */
+  var PH = '请在客户端查看原始聊天记录';
+  function isRealMsg(r) {
+    var c = (r.content || '').trim();
+    return !!c && c.indexOf(PH) < 0 && !/^https?:\/\//.test(c) && c.length >= 2;
+  }
+
+  /* date="2026/9/12"（不补零）+ time="17:32:27" → 时间戳 */
+  function tsOf(r) {
+    var p = String(r.date || '').split('/');
+    if (p.length < 3) return null;
+    var t = String(r.time || '00:00:00').split(':');
+    var d = new Date(+p[0], (+p[1]) - 1, +p[2], +(t[0] || 0), +(t[1] || 0), +(t[2] || 0));
+    return isNaN(d.getTime()) ? null : d.getTime();
+  }
+  /* 记录日期 → 'YYYY-MM-DD'（用于日期筛选比较） */
+  function dsOf(r) {
+    var p = String(r.date || '').split('/');
+    if (p.length < 3) return '';
+    function pad(n) { return String(n).length < 2 ? '0' + n : String(n); }
+    return p[0] + '-' + pad(+p[1]) + '-' + pad(+p[2]);
+  }
+  function toDS(d) {
+    function pad(n) { return String(n).length < 2 ? '0' + n : String(n); }
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+  }
+  function median(a) {
+    if (!a.length) return null;
+    var s = a.slice().sort(function (x, y) { return x - y; });
+    var m = s.length >> 1;
+    return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
+  }
+  function avg(a) { return a.length ? a.reduce(function (x, y) { return x + y; }, 0) / a.length : null; }
+  function fmtSec(s) {
+    if (s == null) return '—';
+    if (s < 60) return Math.round(s) + ' 秒';
+    if (s < 3600) return (s / 60).toFixed(1) + ' 分';
+    return (s / 3600).toFixed(1) + ' 小时';
+  }
+
+  /* 核心：按客户聚合成会话，逐条配对「买家提问 → 客服回复」算出响应时长。
+     ⚠ conversationId 不能用来聚合会话：客服侧是「店铺:客服」、买家侧是客户昵称，
+        同一个会话两边 ID 对不上。真正的会话标识是 customerId。 */
+  function computeResponse(rows) {
+    var byCust = {};
+    rows.forEach(function (r) {
+      var k = (r.customerId || '').trim() || '?';
+      (byCust[k] = byCust[k] || []).push(r);
+    });
+
+    var perAgent = {};   // 每个客服的响应数据
+    var firsts = [], all = [];
+    var asked = 0, answered = 0, slow = 0, maxGap = null;
+
+    Object.keys(byCust).forEach(function (cid) {
+      var arr = byCust[cid].map(function (r) {
+        return { r: r, t: tsOf(r) };
+      }).filter(function (x) { return x.t != null; })
+        .sort(function (a, b) { return a.t - b.t; });
+
+      var lastBuyer = null, firstDone = false;
+      arr.forEach(function (x) {
+        var r = x.r;
+        if (r.role === '买家') {
+          if (isRealMsg(r)) { lastBuyer = x.t; asked++; }
+          return;
+        }
+        if (r.role !== '客服') return;   // 机器人是自动回复，不计入客服响应效率
+        if (lastBuyer == null) return;
+
+        var gap = (x.t - lastBuyer) / 1000;
+        lastBuyer = null;
+        if (gap < 0 || gap > MAX_GAP_SEC) return;
+
+        var a = (r.agent || '').trim() || '未识别客服';
+        var g = perAgent[a] = perAgent[a] || { firsts: [], all: [], slow: 0, asked: 0, answered: 0 };
+
+        all.push(gap);
+        g.all.push(gap);
+        if (!firstDone) { firsts.push(gap); g.firsts.push(gap); firstDone = true; }
+        if (gap > SLOW_SEC) { slow++; g.slow++; }
+        if (maxGap == null || gap > maxGap) maxGap = gap;
+        answered++;
+        g.answered++;
+      });
+      // 客户提问按归属客服统计（该会话中出现过的客服）
+      arr.forEach(function (x) {
+        if (x.r.role === '买家' && isRealMsg(x.r)) {
+          var owner = null;
+          arr.forEach(function (y) { if (y.r.role === '客服' && y.r.agent) owner = y.r.agent; });
+          var a = (owner || '').trim() || '未识别客服';
+          var g = perAgent[a] = perAgent[a] || { firsts: [], all: [], slow: 0, asked: 0, answered: 0 };
+          g.asked++;
+        }
+      });
+    });
+
+    return {
+      perAgent: perAgent,
+      firstMed: median(firsts), firstAvg: avg(firsts),
+      allMed: median(all), allAvg: avg(all),
+      asked: asked, answered: answered,
+      rate: asked ? (answered * 100 / asked) : null,
+      slow: slow, maxGap: maxGap
+    };
+  }
+
+  /* 客服工作量表：只统计客服侧消息。
+     ⚠ 不能把所有记录按 r.agent 分组 —— 买家消息没有 agent 字段，
+        会被统统归入「未识别客服」，导致该行虚高（曾占到 55%）。
+     正确做法：先按客服取他参与过的会话，再统计这些会话里的客户消息。 */
+  function renderAgents(resp) {
+    var agents = {};
+    var totalAgentMsgs = 0;
+
+    function bucket(name) {
+      if (!agents[name]) agents[name] = { agent: name, msgs: 0, chars: 0, custs: {} };
+      return agents[name];
+    }
+
+    /* 第一轮：客服自己的消息量与字数 */
+    filtered.forEach(function (r) {
+      if (!isAgent(r)) return;
+      var a = (r.agent || '').trim() || '未识别客服';
+      var g = bucket(a);
+      g.msgs++;
+      g.chars += (r.content || '').length;
+      if (r.customerId) g.custs[r.customerId] = true;
+      totalAgentMsgs++;
+    });
+
+    /* 第二轮：每个客服接待的客户消息数（按他参与过的会话归集） */
+    var agentCusts = {};                       // customerId -> Set(客服名)
+    filtered.forEach(function (r) {
+      if (!isAgent(r) || !r.customerId) return;
+      var a = (r.agent || '').trim() || '未识别客服';
+      (agentCusts[r.customerId] = agentCusts[r.customerId] || {})[a] = true;
+    });
+    var recvCount = {};                        // 客服名 -> 接待的客户消息数
+    filtered.forEach(function (r) {
+      if (r.role !== '买家' || !r.customerId) return;
+      var owners = agentCusts[r.customerId];
+      if (!owners) return;
+      Object.keys(owners).forEach(function (a) {
+        recvCount[a] = (recvCount[a] || 0) + 1;
+      });
+    });
+
+    var arr = Object.keys(agents).map(function (k) {
+      var g = agents[k];
+      g.custMsgs = recvCount[k] || 0;
+      return g;
+    });
+    arr.sort(function (a, b) { return b.msgs - a.msgs; });
+
+    var tbody = $('agentBody');
+    tbody.innerHTML = '';
+    if (!arr.length) {
+      tbody.innerHTML = '<tr><td colspan="10" class="empty">暂无数据</td></tr>';
+      return;
+    }
+    arr.forEach(function (g) {
+      var e = resp.perAgent[g.agent] || { firsts: [], all: [], slow: 0, asked: 0, answered: 0 };
+      var tr = document.createElement('tr');
+      var avgChars = g.msgs ? Math.round(g.chars / g.msgs) : 0;
+      var pct = totalAgentMsgs ? ((g.msgs / totalAgentMsgs) * 100).toFixed(1) + '%' : '0%';
+      var rate = e.asked ? (e.answered * 100 / e.asked).toFixed(0) + '%' : '—';
+      var cells = [
+        esc(g.agent),
+        g.msgs,
+        g.custMsgs,
+        Object.keys(g.custs).length,
+        fmtSec(median(e.firsts)),
+        fmtSec(avg(e.all)),
+        rate,
+        e.slow,
+        avgChars,
+        pct
+      ];
+      cells.forEach(function (v, i) {
+        var td = document.createElement('td');
+        td.className = 'num';
+        td.textContent = v;
+        /* 超时数 > 0 标红提示 */
+        if (i === 7 && e.slow > 0) td.style.color = 'var(--danger)';
+        /* 响应率 < 60% 标红 */
+        if (i === 6 && e.asked && (e.answered * 100 / e.asked) < 60) td.style.color = 'var(--danger)';
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+  }
+
+  function renderStats(resp) {
+    var custMsgs = 0, agentMsgs = 0;
+    var custs = {};      // 会话数按客户算（不再用 conversationId）
+    var agents = {};
+    filtered.forEach(function (r) {
+      if (isCustomer(r)) custMsgs++;
+      if (isAgent(r)) agentMsgs++;
+      if (r.customerId) custs[r.customerId] = true;
+      if (r.agent) agents[r.agent] = true;
+    });
+    $('statTotal').textContent = filtered.length;
+    $('statCust').textContent = custMsgs;
+    $('statAgent').textContent = agentMsgs;
+    $('statConv').textContent = Object.keys(custs).length;
+    $('statAgents').textContent = Object.keys(agents).length;
+
+    /* 响应效率卡片 */
+    setEff('statFirst', resp.firstMed, 60, 300);
+    setEff('statAvg', resp.allMed, 60, 300);
+    var rateEl = $('statRate');
+    if (resp.rate == null) { rateEl.textContent = '—'; rateEl.className = 'v sm'; }
+    else {
+      rateEl.textContent = resp.rate.toFixed(1) + '%';
+      rateEl.className = 'v sm ' + (resp.rate >= 80 ? 'v-good' : (resp.rate < 60 ? 'v-bad' : ''));
+    }
+    var slowEl = $('statSlow');
+    slowEl.textContent = resp.slow;
+    slowEl.className = 'v sm ' + (resp.slow === 0 ? 'v-good' : (resp.slow > 10 ? 'v-bad' : ''));
+    $('statGap').textContent = fmtSec(resp.maxGap);
+
+    /* 有占位消息时提示用户：响应指标已排除 */
+    var hasPh = filtered.some(function (r) { return (r.content || '').indexOf(PH) >= 0; });
+    $('effNote').style.display = hasPh ? '' : 'none';
+  }
+
+  /* 把秒数写进卡片并按阈值着色（好=绿 / 差=红） */
+  function setEff(id, sec, goodMax, badMin) {
+    var el = $(id);
+    if (sec == null) { el.textContent = '—'; el.className = 'v sm'; return; }
+    el.textContent = fmtSec(sec);
+    el.className = 'v sm ' + (sec <= goodMax ? 'v-good' : (sec >= badMin ? 'v-bad' : ''));
+  }
+
+  function applyFilters() {
+    var kwStore = filters.store, kwAgent = filters.agent;
+    filtered = allRecords.filter(function (r) {
+      var ds = dsOf(r);
+      if (filters.start && ds && ds < filters.start) return false;
+      if (filters.end && ds && ds > filters.end) return false;
+      if (kwStore && (r.store || '') !== kwStore) return false;
+      if (kwAgent && ((r.agent || '').trim() || '未识别客服') !== kwAgent) return false;
+      return true;
+    });
+
+    var resp = computeResponse(filtered);
+    renderStats(resp);
+    renderAgents(resp);
+    renderHint();
+  }
+
+  function renderHint() {
+    var el = $('filterHint');
+    var parts = [];
+    if (filters.start || filters.end) parts.push((filters.start || '最早') + ' ~ ' + (filters.end || '最新'));
+    if (filters.store) parts.push(filters.store);
+    if (filters.agent) parts.push(filters.agent);
+    el.textContent = parts.length ? ('当前口径：' + parts.join(' · ')) : '';
+  }
+
+  /* 快捷区间：用本地零点构造，不用 toISOString（时区会差一天） */
+  function computePreset(name) {
+    var now = new Date();
+    var today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    var s, e;
+    if (name === 'today') { s = e = today; }
+    else if (name === 'yesterday') { s = e = new Date(today.getTime() - 86400000); }
+    else if (name === '7d') { s = new Date(today.getTime() - 6 * 86400000); e = today; }
+    else if (name === '30d') { s = new Date(today.getTime() - 29 * 86400000); e = today; }
+    else if (name === 'month') { s = new Date(now.getFullYear(), now.getMonth(), 1); e = today; }
+    else { return { start: '', end: '' }; }
+    return { start: toDS(s), end: toDS(e) };
+  }
+  function syncDateUI() {
+    var btns = document.querySelectorAll('#dateQuick button');
+    Array.prototype.forEach.call(btns, function (b) {
+      b.classList.toggle('on', !!filters.preset && b.getAttribute('data-range') === filters.preset);
+    });
+    $('dateStart').value = filters.start || '';
+    $('dateEnd').value = filters.end || '';
+  }
+  function setDate(preset) {
+    var r = computePreset(preset);
+    filters.start = r.start; filters.end = r.end; filters.preset = preset;
+    syncDateUI();
+    applyFilters();
+  }
+  function onManualDate() {
+    var s = $('dateStart').value, e = $('dateEnd').value;
+    if (s && e && s > e) { var t = s; s = e; e = t; }   // 起止倒置自动对调
+    filters.start = s; filters.end = e; filters.preset = '';
+    syncDateUI();
+    applyFilters();
+  }
+
+  function buildSelects() {
+    var stores = {}, agents = {};
+    allRecords.forEach(function (r) {
+      if (r.store) stores[r.store] = true;
+      if ((r.agent || '').trim()) agents[(r.agent || '').trim()] = true;
+    });
+    fillSel('selStore', '全部店铺', Object.keys(stores).sort(), filters.store);
+    fillSel('selAgent', '全部客服', Object.keys(agents).sort(), filters.agent);
+  }
+  function fillSel(id, allLabel, list, cur) {
+    var sel = $(id);
+    var html = '<option value="">' + allLabel + '</option>';
+    list.forEach(function (v) {
+      html += '<option value="' + v.replace(/"/g, '&quot;') + '">' + esc(v) + '</option>';
+    });
+    sel.innerHTML = html;
+    sel.value = cur || '';
+  }
+
+  function bind() {
+    Array.prototype.forEach.call(document.querySelectorAll('#dateQuick button'), function (b) {
+      b.addEventListener('click', function () { setDate(b.getAttribute('data-range')); });
+    });
+    $('dateStart').addEventListener('change', onManualDate);
+    $('dateEnd').addEventListener('change', onManualDate);
+    $('selStore').addEventListener('change', function () { filters.store = this.value; applyFilters(); });
+    $('selAgent').addEventListener('change', function () { filters.agent = this.value; applyFilters(); });
+    $('btnClearFilter').addEventListener('click', function () {
+      filters = { start: '', end: '', preset: '', store: '', agent: '' };
+      syncDateUI();
+      applyFilters();
+    });
+    $('btnRefresh').addEventListener('click', loadData);
+  }
+
+  function loadData() {
+    $('banner').classList.remove('show');
+    fetch('/api/qianniu-chat')
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        if (j && j.ok) {
+          allRecords = Array.isArray(j.records) ? j.records : [];
+          buildSelects();
+          applyFilters();
+        } else {
+          showError((j && j.error) || '数据读取失败');
+        }
+      })
+      .catch(function () {
+        if (location.protocol === 'file:') {
+          showError('当前是通过本地文件方式打开的，无法读取数据。请访问：http://127.0.0.1:8787/客服分析.html');
+        } else {
+          showError('无法连接运营工作台服务，请先双击「启动工作台.bat」启动本地服务。');
+        }
+      });
+  }
+
+  function showError(msg) {
+    $('banner').textContent = msg;
+    $('banner').classList.add('show');
+    allRecords = [];
+    applyFilters();
+  }
+
+  bind();
+  loadData();
+})();
+</script>
+</body>
+</html>

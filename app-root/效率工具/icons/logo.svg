@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1677FF" />
+      <stop offset="100%" stop-color="#0958D9" />
+    </linearGradient>
+    <linearGradient id="arrowGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00F5D4" />
+      <stop offset="100%" stop-color="#FFD666" />
+    </linearGradient>
+    <filter id="softShadow" x="-15%" y="-15%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="5" stdDeviation="4" flood-color="#002140" flood-opacity="0.3" />
+    </filter>
+  </defs>
+  <rect x="8" y="8" width="112" height="112" rx="26" fill="url(#bgGrad)" />
+  <g filter="url(#softShadow)">
+    <rect x="22" y="24" width="52" height="66" rx="5" fill="#FFFFFF" fill-opacity="0.25" transform="rotate(-8 48 57)" />
+    <rect x="28" y="26" width="54" height="68" rx="5" fill="#FFFFFF" fill-opacity="0.45" transform="rotate(-4 55 60)" />
+    <rect x="34" y="28" width="56" height="70" rx="6" fill="#FFFFFF" />
+    <line x1="42" y1="40" x2="66" y2="40" stroke="#1677FF" stroke-width="4" stroke-linecap="round" />
+    <line x1="42" y1="50" x2="76" y2="50" stroke="#BAE0FF" stroke-width="3" stroke-linecap="round" />
+    <line x1="42" y1="60" x2="60" y2="60" stroke="#BAE0FF" stroke-width="3" stroke-linecap="round" />
+    <line x1="42" y1="70" x2="72" y2="70" stroke="#BAE0FF" stroke-width="3" stroke-linecap="round" />
+    <line x1="42" y1="80" x2="54" y2="80" stroke="#BAE0FF" stroke-width="3" stroke-linecap="round" />
+    <g transform="translate(10, 8)">
+      <path d="M 62 48 A 22 22 0 1 1 82 72" fill="none" stroke="url(#arrowGrad)" stroke-width="7" stroke-linecap="round" />
+      <path d="M 82 78 L 92 68 L 74 64 Z" fill="#FFD666" stroke="#1677FF" stroke-width="1.5" stroke-linejoin="round" />
+    </g>
+  </g>
+</svg>

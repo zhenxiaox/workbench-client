@@ -1,0 +1,141 @@
+/* ============================================================
+   运营工作台 · 手机端移动适配层
+   仅 @media (max-width: 860px) 生效，桌面端零影响。
+   配套 mobile-adapter.js：注入 data-label、抽屉/返回、图表自适应。
+   设计语言：奶油白底 + 柔和描边，与 theme-light.css / 手机工作台 一致。
+   ============================================================ */
+
+@media (max-width: 860px) {
+
+  /* ---------- 画布 ---------- */
+  html { font-size: 15px; }
+  body {
+    padding-bottom: calc(20px + env(safe-area-inset-bottom));
+    -webkit-text-size-adjust: 100%;
+  }
+  img { max-width: 100%; }
+
+  /* ---------- 侧栏 → 主区全宽 ---------- */
+  .main, .main-content, .app-layout { margin-left: 0 !important; width: 100% !important; }
+
+  /* 仅给「无 mobile-header 且带 sidebar」的页（店铺分析）挂抽屉 */
+  .sidebar.m-drawer {
+    position: fixed !important; top: 0; left: 0; height: 100%;
+    width: 80% !important; max-width: 320px; z-index: 120;
+    transform: translateX(-100%); transition: transform .25s ease;
+    box-shadow: 0 0 40px rgba(15,23,42,.25);
+  }
+  body.m-nav .sidebar.m-drawer { transform: translateX(0) !important; }
+  body.m-nav .m-backdrop { display: block !important; }
+  .m-backdrop {
+    display: none; position: fixed; inset: 0; z-index: 115;
+    background: rgba(15,23,42,.45);
+  }
+
+  /* ---------- 顶栏（店铺分析等无 header 的页，由 adapter 注入）---------- */
+  .m-topbar {
+    position: sticky; top: 0; z-index: 110;
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px; background: #fff;
+    border-bottom: 1px solid #E5E9F0;
+    box-shadow: 0 2px 10px rgba(15,23,42,.04);
+  }
+  .m-topbar .m-menu, .m-topbar .m-back {
+    border: 1px solid #E5E9F0; background: #F8FAFC; color: #475569;
+    border-radius: 10px; font-size: 14px; padding: 6px 12px; text-decoration: none;
+  }
+  .m-topbar .m-title { font-size: 16px; font-weight: 700; color: #111827; }
+  .m-topbar .m-back { margin-left: auto; }
+
+  /* 现成 <header> 吸顶 + 返回链接（由 adapter 注入 .m-back-link）*/
+  header {
+    position: sticky; top: 0; z-index: 60;
+    display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+    background: #fff !important; border-bottom: 1px solid #E5E9F0 !important;
+  }
+  .m-back-link {
+    order: -1; display: inline-flex; align-items: center;
+    border: 1px solid #E5E9F0; background: #F8FAFC; color: #475569;
+    border-radius: 10px; font-size: 13px; padding: 5px 11px; text-decoration: none;
+  }
+
+  /* 悬浮返回（单品等有 mobile-header 的页，由 adapter 注入）*/
+  .m-back-fab {
+    position: fixed; left: 12px; bottom: calc(14px + env(safe-area-inset-bottom));
+    z-index: 200; width: 44px; height: 44px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    background: #fff; color: #C8A37E; border: 1px solid #F1E9DC;
+    box-shadow: 0 4px 16px rgba(15,23,42,.12); text-decoration: none; font-size: 22px;
+  }
+
+  /* ---------- 概览指标 2 列 ---------- */
+  .summary, .stats-grid, .kpi-grid {
+    display: grid !important; grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important;
+  }
+  .summary { margin: 10px 0 !important; padding: 0 12px !important; }
+  .stat, .stat-item, .kpi-card {
+    background: #fff !important; border: 1px solid #F1F5F9 !important;
+    border-radius: 14px !important; padding: 12px !important;
+    box-shadow: 0 2px 10px rgba(15,23,42,.05) !important;
+  }
+  .stat .k, .stat-item .label, .kpi-label { font-size: 11px !important; color: #64748B !important; }
+  .stat .v, .stat-item .value, .kpi-value { font-size: 19px !important; font-weight: 800 !important; color: #111827 !important; }
+
+  /* ---------- 卡片容器 ---------- */
+  .wrap, .page, .card, .content { padding-left: 12px !important; padding-right: 12px !important; }
+  .card { margin: 10px 0 !important; border-radius: 16px !important; box-shadow: 0 4px 20px rgba(15,23,42,.05) !important; }
+  .card h2 { font-size: 15px !important; }
+  .grid { display: grid !important; grid-template-columns: 1fr !important; gap: 10px !important; }
+  .chart-grid { grid-template-columns: 1fr !important; }
+
+  /* ---------- 筛选 / 工具条换行 ---------- */
+  .toolbar, .filter-bar {
+    display: flex !important; flex-wrap: wrap !important; gap: 8px !important; padding: 10px 12px !important;
+  }
+  .toolbar input, .toolbar select,
+  .filter-bar input, .filter-bar select, .filter-bar button {
+    flex: 1 1 140px !important; min-width: 0; font-size: 14px !important;
+  }
+  .toolbar .spacer, .filter-bar .spacer { display: none !important; }
+
+  /* ============================================================
+     核心：表格 → 堆叠卡（由 adapter 给 <td> 注入 data-label）
+     ============================================================ */
+  .data-table-wrapper, .table-wrap {
+    max-height: none !important; overflow: visible !important;
+    border: 0 !important; background: transparent !important;
+  }
+
+  table[data-mobile-cards="1"] { display: block !important; width: 100% !important; border: 0 !important; }
+  table[data-mobile-cards="1"] thead { display: none !important; }
+  table[data-mobile-cards="1"] tbody { display: block !important; }
+
+  table[data-mobile-cards="1"] tr {
+    display: block !important; background: #fff !important;
+    border: 1px solid #F1F5F9 !important; border-radius: 14px !important;
+    margin: 0 0 10px !important; padding: 10px 12px !important;
+    box-shadow: 0 2px 10px rgba(15,23,42,.05) !important;
+  }
+  table[data-mobile-cards="1"] tr.mobile-skip { display: none !important; }
+
+  table[data-mobile-cards="1"] td {
+    display: flex !important; justify-content: space-between !important; gap: 12px;
+    padding: 5px 0 !important; border: 0 !important; border-top: 1px dashed #EEF2F7 !important;
+    font-size: 13px !important; text-align: right !important; color: #111827 !important;
+  }
+  table[data-mobile-cards="1"] tr td:first-child { border-top: 0 !important; }
+  table[data-mobile-cards="1"] td::before {
+    content: attr(data-label); color: #64748B !important; font-weight: 600 !important;
+    text-align: left !important; flex: 0 0 auto !important; max-width: 46% !important;
+  }
+  /* 首列作为卡片标题 */
+  table[data-mobile-cards="1"] tr td:first-child {
+    font-weight: 700 !important; font-size: 14px !important; color: #111827 !important;
+    padding-bottom: 8px !important;
+  }
+
+  /* ---------- 图表容器全宽 ---------- */
+  [id*="chart"], [class*="chart"], .chart-grid, .charts {
+    width: 100% !important; max-width: 100% !important;
+  }
+}

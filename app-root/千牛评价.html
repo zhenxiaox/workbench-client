@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="mobile-ui.css">
+<script src="mobile-adapter.js"></script>
+<title>评价管理 · 运营工作台</title>
+<style>
+  :root[data-theme="eye"]{
+    --bg:#F5F1E8; --panel:#FBF8F1; --panel2:#F0EADC;
+    --line:#E5DCCB; --line2:#D5C9B4;
+    --ink:#3C3229; --muted:#7A6E5F; --muted2:#A2957F;
+    --accent:#F97316; --accent-d:#EA580C; --accent-soft:rgba(249,115,10,0.12);
+    --ok:#16A34A; --danger:#EF4444;
+    --shadow:0 6px 24px rgba(60,50,41,.08);
+    --radius:14px;
+  }
+  :root{
+    --bg:#100E0C; --panel:#171412; --panel2:#221C18;
+    --line:#2A231E; --line2:#3D332C;
+    --ink:#F1F5F9; --muted:#94A3B8; --muted2:#64748B;
+    --accent:#F97316; --accent-d:#EA580C; --accent-soft:rgba(249,115,10,0.12);
+    --ok:#34D399; --danger:#F87171;
+    --shadow:0 8px 28px rgba(0,0,0,.40);
+    --radius:14px;
+  }
+  /* 暗色主题：显式声明，不再依赖 :root 默认值（防止默认值变更后暗色失效） */
+  :root[data-theme="dark"]{
+    --bg:#100E0C; --panel:#171412; --panel2:#221C18;
+    --line:#2A231E; --line2:#3D332C;
+    --ink:#F5EFEA; --muted:#B4A49A; --muted2:#8A7A70;
+    --accent:#FB923C; --accent-d:#F97316; --accent-soft:rgba(251,146,60,0.14);
+    --ok:#34D399; --danger:#F87171;
+    --shadow:0 8px 28px rgba(0,0,0,.40);
+    --radius:14px;
+  }
+  :root[data-theme="light"]{
+    --bg:#FAF7F5; --panel:#FFFFFF; --panel2:#F3EDE8;
+    --line:#EFE6DE; --line2:#DCD2C9;
+    --ink:#111827; --muted:#475569; --muted2:#94A3B8;
+    --accent:#F97316; --accent-d:#EA580C; --accent-soft:rgba(249,115,10,0.12);
+    --ok:#16A34A; --danger:#EF4444;
+    --shadow:0 6px 24px rgba(15,23,42,.10);
+    --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;margin:0;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    background:var(--bg); color:var(--ink);
+    display:flex; flex-direction:column; min-height:100vh;
+  }
+
+  header{
+    padding:16px 24px; border-bottom:1px solid var(--line);
+    display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+    background:linear-gradient(180deg, rgba(249,115,10,0.06), transparent);
+  }
+  header h1{font-size:19px; margin:0; font-weight:700; display:flex; align-items:center; gap:10px;}
+  header .dot{width:10px; height:10px; border-radius:50%; background:var(--accent); box-shadow:0 0 0 4px rgba(249,115,10,0.15);}
+  header .sub{font-size:12px; color:var(--muted);}
+  header .spacer{flex:1;}
+  .refresh-btn{
+    padding:8px 16px; border-radius:9px; border:1px solid var(--line2);
+    background:var(--panel2); color:var(--ink); cursor:pointer; font-size:13px; transition:.15s;
+  }
+  .refresh-btn:hover{border-color:var(--accent); color:var(--accent);}
+
+  .summary{display:flex; gap:12px; padding:14px 24px; flex-wrap:wrap; align-items:stretch;}
+  .stat{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:12px 18px; min-width:120px;}
+  .stat .k{font-size:12px; color:var(--muted); margin-bottom:6px;}
+  .stat .v{font-size:20px; font-weight:700; color:var(--accent);}
+  /* 统计口径提示：卡片跟随筛选（店铺/计分/情感/搜索）实时变化，此处标明当前口径 */
+  .sum-scope{
+    align-self:center; font-size:12px; color:var(--muted); margin-left:auto;
+    display:flex; align-items:center; gap:6px; white-space:nowrap;
+  }
+  .sum-scope .chip{
+    background:var(--panel); border:1px solid var(--line2); border-radius:999px;
+    padding:4px 12px; color:var(--muted);
+  }
+  .sum-scope.filtered .chip{
+    background:var(--accent-soft);
+    border-color:var(--accent); color:var(--accent); font-weight:600;
+  }
+  .sum-scope button{
+    background:none; border:none; color:var(--accent); cursor:pointer;
+    font-size:12px; font-family:inherit; text-decoration:underline; padding:0 2px;
+  }
+
+  .toolbar{display:flex; gap:10px; padding:0 24px 14px; flex-wrap:wrap; align-items:center;}
+  .toolbar input, .toolbar select{
+    background:var(--panel2); border:1px solid var(--line2); color:var(--ink);
+    border-radius:9px; padding:8px 12px; font-size:13px; outline:none; transition:.15s;
+  }
+  .toolbar input:focus, .toolbar select:focus{border-color:var(--accent);}
+  .toolbar input[type="text"]{min-width:240px;}
+  .toolbar .btn{
+    padding:8px 16px; border-radius:9px; border:1px solid var(--line2);
+    background:var(--panel2); color:var(--ink); cursor:pointer; font-size:13px; transition:.15s; white-space:nowrap;
+  }
+  .toolbar .btn:hover{border-color:var(--accent); color:var(--accent);}
+  .toolbar .btn.primary{background:var(--accent); border-color:var(--accent); color:#1a1206; font-weight:600;}
+  .toolbar .btn.primary:hover{background:var(--accent-d); border-color:var(--accent-d); color:#fff;}
+
+  .table-wrap{flex:1; padding:0 24px; overflow:auto; min-height:0;}
+  /* 列多（最多 8 基础 + N 晒图 + 3 增值），给足最小宽度避免被挤成一团 */
+  table{width:100%; border-collapse:collapse; font-size:13px; min-width:1700px;}
+  thead th{
+    position:sticky; top:0; background:var(--panel2); color:var(--muted);
+    text-align:left; padding:11px 12px; border-bottom:1px solid var(--line2);
+    font-weight:600; white-space:nowrap; z-index:2;
+  }
+  /* 店铺列置顶后必须给足宽度（店铺名 + 天猫/淘宝徽标），否则会挤成三行 */
+  thead th:first-child, tbody td:first-child{min-width:150px;}
+  /* 商品标题较长，给一个下限让它不至于和订单号抢空间 */
+  thead th:nth-child(5), tbody td:nth-child(5){min-width:170px;}
+  tbody td{padding:10px 12px; border-bottom:1px solid var(--line); vertical-align:top; color:var(--ink); word-break:break-word; line-height:1.5;}
+  /* 订单号 / 商品ID 等长数字串：不折行，避免被挤成两行 */
+  td.nowrap{white-space:nowrap;}
+  tbody tr:hover{background:var(--panel);}
+  /* 买家晒图缩略图（与聊天记录页 / SKU 页保持同一视觉口径） */
+  .img-cell{padding:8px 8px !important;}
+  .img-cell a{display:inline-block; line-height:0; border-radius:6px; overflow:hidden; border:1px solid var(--line2);}
+  .img-cell img{width:46px; height:46px; object-fit:cover; display:block; cursor:zoom-in; transition:.15s;}
+  .img-cell a:hover img{transform:scale(1.06); border-color:var(--accent);}
+  .img-fallback{
+    display:inline-block; width:46px; height:46px; border-radius:6px;
+    border:1px dashed var(--line2); color:var(--muted2); font-size:10px;
+    text-align:center; line-height:46px; overflow:hidden;
+  }
+  .empty{text-align:center; color:var(--muted); padding:48px 0; font-size:14px;}
+  .tag{display:inline-block; padding:1px 8px; border-radius:999px; font-size:12px; font-weight:600;}
+  .tag-good{background:rgba(52,211,153,.15); color:#34D399;}
+  .tag-mid{background:rgba(249,115,10,.15); color:#F97316;}
+  .tag-bad{background:rgba(248,113,113,.15); color:#F87171;}
+  .tag-pos{background:rgba(52,211,153,.12); color:#16A34A; border:1px solid rgba(22,163,74,.25);}
+  .tag-neg{background:rgba(239,68,68,.12); color:#DC2626; border:1px solid rgba(220,38,38,.25);}
+  .muted2{color:var(--muted2);}
+  /* 未采集字段的占位（比「—」更明确，说明是数据源没给，而不是页面算不出） */
+  .na{
+    display:inline-block; font-size:11px; line-height:1.6;
+    color:var(--muted2); border:1px dashed var(--line2);
+    border-radius:6px; padding:0 6px; white-space:nowrap;
+  }
+  /* 店铺类型徽标（依据店铺名推断，非权威字段） */
+  .store-type{
+    display:inline-block; font-size:11px; font-weight:600; line-height:1.7;
+    padding:0 6px; border-radius:5px; margin-left:6px; vertical-align:1px;
+    border:1px solid transparent;
+  }
+  .store-type.tmall{ background:rgba(239,68,68,.12); color:#DC2626; border-color:rgba(239,68,68,.28); }
+  .store-type.taobao{ background:rgba(249,115,10,.12); color:#EA580C; border-color:rgba(249,115,10,.28); }
+  /* 店铺筛选下拉里的类型后缀 */
+  .store-note{font-size:12px; color:var(--muted);}
+
+  .pagination{display:flex; align-items:center; gap:10px; padding:14px 24px; border-top:1px solid var(--line); flex-wrap:wrap;}
+  .pagination .info{font-size:12px; color:var(--muted);}
+  .pagination button{
+    padding:7px 14px; border-radius:8px; border:1px solid var(--line2);
+    background:var(--panel2); color:var(--ink); cursor:pointer; font-size:13px; transition:.15s;
+  }
+  .pagination button:disabled{opacity:.4; cursor:not-allowed;}
+  .pagination button:not(:disabled):hover{border-color:var(--accent); color:var(--accent);}
+  .pagination .pages{font-size:13px; color:var(--muted);}
+
+  .banner{
+    margin:14px 24px 0; padding:12px 16px; border-radius:10px;
+    background:rgba(248,113,113,0.12); border:1px solid rgba(248,113,113,0.35);
+    color:#FECACA; font-size:13px; display:none;
+  }
+  .banner.show{display:block;}
+</style>
+<script>
+(function(){
+  var WP='wb_theme', WS='wb_theme_auto_start', WE='wb_theme_auto_end';
+  function mins(t){ var p=String(t||'00:00').split(':'); return (parseInt(p[0],10)||0)*60+(parseInt(p[1],10)||0); }
+  function resolve(mode){
+    if(mode==='light'||mode==='dark'||mode==='eye') return mode;
+    if(mode!=='auto') return 'light';
+    var d=new Date(), m=d.getHours()*60+d.getMinutes(), s=1080, e=360;
+    try{ s=mins(localStorage.getItem(WS)||'18:00'); e=mins(localStorage.getItem(WE)||'06:00'); }catch(x){}
+    var dark=(s<e)?(m>=s&&m<e):(m>=s||m<e);
+    return dark?'dark':'light';
+  }
+  window.__wbResolveTheme = resolve;
+  function apply(){
+    var mode='light'; try{ mode=localStorage.getItem(WP)||'light'; }catch(e){}
+    document.documentElement.setAttribute('data-theme', resolve(mode));
+  }
+  apply();
+  window.addEventListener('message', function(e){
+    if(e.data && e.data.type==='wb-theme'){
+      var t=e.data.theme||e.data.mode;
+      if(t) document.documentElement.setAttribute('data-theme', resolve(t));
+      else apply();
+    }
+  });
+  try{ window.addEventListener('storage', function(e){ if(!e.key||e.key===WP||e.key===WS||e.key===WE) apply(); }); }catch(e){}
+})();
+</script>
+<script>var APP_VERSION='v1.0.8';</script>
+<link rel="stylesheet" href="scrollbar.css?v=1">
+</head>
+<body>
+  <header>
+    <h1><span class="dot"></span>评价管理</h1>
+    <span class="sub">来自浏览器扩展导入的买家评价明细 · 本地存储</span>
+    <span class="spacer"></span>
+    <button class="refresh-btn" id="btnRefresh">↻ 刷新数据</button>
+  </header>
+
+  <div class="summary" id="summary">
+    <div class="stat"><div class="k">评价总数</div><div class="v" id="statTotal">0</div></div>
+    <div class="stat"><div class="k">店铺数</div><div class="v" id="statStore">0</div></div>
+    <div class="stat" title="按「商品ID」列去重统计（缺失商品ID的记录不计数）">
+      <div class="k">商品数</div><div class="v" id="statProduct">0</div>
+    </div>
+    <div class="stat"><div class="k">含卖家回复数</div><div class="v" id="statReply">0</div></div>
+    <div class="stat"><div class="k">正面评价</div><div class="v" id="statPos" style="color:var(--ok)">0</div></div>
+    <div class="stat"><div class="k">负面评价</div><div class="v" id="statNeg" style="color:var(--danger)">0</div></div>
+    <div class="sum-scope" id="sumScope">
+      <span class="chip" id="sumScopeChip">全部数据</span>
+      <button type="button" id="sumScopeClear" style="display:none">清空筛选</button>
+    </div>
+  </div>
+
+  <div class="banner" id="banner">无法连接运营工作台服务，请先双击「启动工作台.bat」启动本地服务。</div>
+  <div class="banner" id="storeNote" style="background:rgba(249,115,10,.10); border-color:rgba(249,115,10,.30); color:var(--muted);"></div>
+
+  <div class="toolbar" id="toolbar">
+    <input type="text" id="kw" placeholder="搜索：评价内容 / 订单号 / 买家客户ID / 商品标题 / 商品ID">
+    <select id="selStore"><option value="">全部店铺</option></select>
+    <select id="selScore">
+      <option value="">全部计分</option>
+      <option value="good">好评</option>
+      <option value="mid">中评</option>
+      <option value="bad">差评</option>
+      <option value="reply">仅看含回复</option>
+      <option value="noreply">仅看未回复</option>
+    </select>
+    <select id="selSentiment">
+      <option value="">全部情感</option>
+      <option value="pos">正面评价</option>
+      <option value="neg">负面评价</option>
+    </select>
+    <button class="btn" id="btnDelStore" title="删除当前选中的店铺及其全部评价">删除店铺</button>
+    <button class="btn" id="btnClearFilter">清空筛选</button>
+    <span class="spacer" style="flex:1"></span>
+    <button class="btn" id="btnCsv">导出 CSV</button>
+    <button class="btn" id="btnJson">导出 JSON</button>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr id="theadRow">
+          <!-- 店铺置顶（多店混存时先看清来源），其后 7 列严格对齐插件「评价导出」CSV：
+               订单号 | 买家客户ID | 商品ID | 商品标题 | 计分状态 | 评价内容 | 初次评价时间
+               「买家晒图1..N」由 JS 按实际最大晒图数动态追加（与插件 CSV 的动态列一致）
+               末尾额外补页面增值列：情感分类（本地规则计算）、评分、卖家回复时间 -->
+          <th>店铺</th>
+          <th>订单号</th>
+          <th>买家客户ID</th>
+          <th>商品ID</th>
+          <th>商品标题</th>
+          <th>计分状态</th>
+          <th>评价内容</th>
+          <th>初次评价时间</th>
+        </tr>
+      </thead>
+      <tbody id="tbody">
+        <tr><td colspan="8" class="empty">正在加载数据…</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="pagination">
+    <span class="info" id="pageInfo">共 0 条</span>
+    <button id="btnPrev">‹ 上一页</button>
+    <span class="pages" id="pageLabel">第 1 / 1 页</span>
+    <button id="btnNext">下一页 ›</button>
+    <span class="spacer" style="flex:1"></span>
+    <span class="info">每页 <select id="pageSize" style="background:var(--panel2);color:var(--ink);border:1px solid var(--line2);border-radius:7px;padding:4px 6px;">
+      <option value="50">50</option><option value="100" selected>100</option><option value="200">200</option><option value="500">500</option>
+    </select> 条</span>
+  </div>
+
+<script>
+(function () {
+  'use strict';
+
+  var allRecords = [];
+  var filtered = [];
+  var page = 1;
+  var pageSize = 100;
+
+  var $ = function (id) { return document.getElementById(id); };
+  function esc(s) { return (s == null) ? '' : String(s); }
+
+  /* ===== 买家晒图 =====
+     插件导出 CSV 里晒图列是动态的（买家晒图1..N，N = 本批数据最大晒图数），
+     工作台表格保持同一口径：先算出最大张数 → 动态渲染表头 → 每行按序补缩略图。
+     images 可能是数组（新插件）或 undefined（旧数据，尚未补采）。 */
+  var IMG_TOKEN_RE = /\[图片[:：]?\s*([^\]\s]+)\s*\]/g;
+  function normImgUrl(u) {
+    var s = String(u == null ? '' : u).trim();
+    if (!s) return '';
+    if (s.indexOf('//') === 0) return 'https:' + s;          // 协议相对 URL
+    if (/^https?:\/\//i.test(s)) return s;
+    if (/^(javascript|data|vbscript|file):/i.test(s)) return ''; // 拒绝伪协议
+    return '';
+  }
+  function recImages(r) {
+    var out = [];
+    if (r && Array.isArray(r.images)) {
+      r.images.forEach(function (u) { var n = normImgUrl(u); if (n) out.push(n); });
+    }
+    /* 兜底：老数据没有 images 字段，就从评价正文里抓 [图片: url] 令牌 */
+    if (!out.length && r && r.content) {
+      var m; IMG_TOKEN_RE.lastIndex = 0;
+      while ((m = IMG_TOKEN_RE.exec(String(r.content))) !== null) {
+        var n = normImgUrl(m[1]); if (n) out.push(n);
+      }
+    }
+    return out;
+  }
+  function maxImgCount(records) {
+    var n = 0;
+    (records || []).forEach(function (r) { var c = recImages(r).length; if (c > n) n = c; });
+    return n;
+  }
+  var imgColCount = 0;
+  var headersInit = false;   // 表头是否已初始化过（增值列只需补一次骨架即可）
+  /* 增值列（页面自有，插件 CSV 没有）：固定放在晒图列之后，顺序稳定 */
+  var VALUE_COLS = ['情感分类', '评分', '卖家回复时间'];
+  /* 基础列数 = 店铺(置顶) + 插件导出 CSV 的 7 列 */
+  var BASE_COL_COUNT = 8;
+
+  /* 动态渲染「买家晒图N」表头：先清掉上次生成的动态列，再按 n 重建，
+     最后补上增值列。
+     注意：不能简单用 `n === imgColCount` 提前返回——初始状态下两者都是 0，
+     会导致「一条晒图都没有」时增值列表头根本不渲染（表头 7 列 vs 数据行 11 格）。
+     所以首次调用必须强制执行一次，之后数量没变才跳过。 */
+  function renderImgHeaders(n) {
+    n = Math.max(0, parseInt(n, 10) || 0);
+    if (headersInit && n === imgColCount) return;   // 已初始化且数量没变 → 表头已是对的
+    headersInit = true;
+    imgColCount = n;
+    var row = $('theadRow');
+    if (!row) return;
+    /* 清掉所有上一次生成的动态列（晒图 + 增值），再按新数量重建 */
+    Array.prototype.slice.call(row.querySelectorAll('[data-dyn-col]')).forEach(function (th) { th.remove(); });
+    for (var i = 1; i <= n; i++) {
+      var th = document.createElement('th');
+      th.setAttribute('data-dyn-col', 'img');
+      th.textContent = '买家晒图' + i;
+      row.appendChild(th);
+    }
+    VALUE_COLS.forEach(function (t) {
+      var th = document.createElement('th');
+      th.setAttribute('data-dyn-col', 'value');
+      th.textContent = t;
+      row.appendChild(th);
+    });
+  }
+
+  function uniq(arr) {
+    var seen = {}, out = [];
+    (arr || []).forEach(function (x) {
+      var k = String(x == null ? '' : x).trim();
+      if (k && !seen[k]) { seen[k] = true; out.push(k); }
+    });
+    return out.sort(function (a, b) { return a.localeCompare(b, 'zh'); });
+  }
+
+  function isReplied(r) { return !!(r && r.replyTime && String(r.replyTime).trim()); }
+
+  /* ===== 店铺类型推断 =====
+     插件里店铺名是用户手填的（如「小木の良品旗舰店」/「PurrKnave朋内企业店」），
+     并不带权威的「天猫/淘宝」字段。这里按名称惯例推断，仅用于提示。
+     命名惯例：旗舰店/专卖店/专营店 → 天猫；个人店/集市店 或无后缀 → 淘宝。 */
+  function storeType(store) {
+    var s = String(store || '');
+    if (/旗舰店|专卖店|专营店|天猫/i.test(s)) return 'tmall';
+    return 'taobao';
+  }
+  function storeTypeLabel(t) {
+    if (t === 'tmall') return '天猫';
+    if (t === 'taobao') return '淘宝';
+    return '';
+  }
+  function storeBadge(store) {
+    var t = storeType(store);
+    var lb = storeTypeLabel(t);
+    if (!lb) return '';
+    return '<span class="store-type ' + t + '" title="依据店铺名推断，仅供区分来源">' + lb + '</span>';
+  }
+
+  /* ===== 字段可用性判定 =====
+     部分店铺（如天猫店）导出时 scoreType / credit 为空——插件解析的是
+     千牛淘宝版评价结构（span.img-text 的「好评/中评/差评」+「信用分±N分」），
+     天猫评价没有这两项，因此字段确实缺失。页面标明「未采集」而不是显示「—」，
+     让使用者知道是数据源没给，而非页面算不出。 */
+  function hasScore(r) { return !!(r && String(r.scoreType || '').trim()); }
+  function hasCredit(r) { return !!(r && String(r.credit || '').trim()); }
+  function na(text) { return '<span class="na">' + (text || '未采集') + '</span>'; }
+
+  /* 评价里没有显式的「好评/中评/差评」字段，这里按评分推断：
+     5/4 ≈ 好评，3 ≈ 中评，2/1 ≈ 差评（淘宝常见 1~5 星）。无评分时归为「未知」。 */
+  function scoreClass(r) {
+    var c = String(r && r.credit == null ? '' : r.credit).trim();
+    if (/好/.test(r && r.scoreType || '')) return 'good';
+    if (/中/.test(r && r.scoreType || '')) return 'mid';
+    if (/差|恶|bad|neg/i.test(r && r.scoreType || '')) return 'bad';
+    var n = parseFloat(c);
+    if (!isNaN(n)) { if (n >= 4) return 'good'; if (n >= 3) return 'mid'; if (n >= 1) return 'bad'; }
+    return '';
+  }
+  function scoreTag(r) {
+    var cls = scoreClass(r);
+    var label = esc(r && r.scoreType);
+    if (!label) return na('未采集');
+    if (cls === 'good') return '<span class="tag tag-good">' + label + '</span>';
+    if (cls === 'mid') return '<span class="tag tag-mid">' + label + '</span>';
+    if (cls === 'bad') return '<span class="tag tag-bad">' + label + '</span>';
+    return '<span class="muted2">' + label + '</span>';
+  }
+  /* 评分列（插件口径即 credit「信用分±N分」）。缺失时明确标为未采集。 */
+  function creditCell(r) {
+    var c = esc(r && r.credit);
+    if (!c) return na('未采集');
+    return '<span class="muted2">' + c + '</span>';
+  }
+
+  /* ===== 情感分类（规则引擎：评分 + 内容关键词） =====
+     返回 'pos'(正面) / 'neg'(负面) / ''(中性/无法判定)
+     口径参考天猫评价管理的「正面评价/负面评价」标签。 */
+  var POS_WORDS = ['好','棒','赞','喜欢','满意','不错','超值','物超所值','性价比高','推荐',
+    '漂亮','好看','可爱','精致','质量好','做工好','结实','实用','方便','舒服',
+    '快速','及时','耐心','态度好','服务好','包邮','发货快','包装好','完好',
+    '惊喜','超出预期','回购','会再买','值得','完美','优秀','给力','爱了',
+    '很棒','非常好','特别好评','好评','五分','满分','物有所值'];
+  var NEG_WORDS = ['差','烂','垃圾','假货','次品','破损','坏掉','掉色','异味',
+    '退换货','退款','投诉','差评','骗','坑','忽悠','失望','不值','太差',
+    '不好用','质量差','做工差','不结实','不实用','不舒服','难看','丑',
+    '慢','拖延','不耐烦','态度差','服务差','漏发','少发','破损','脏',
+    '后悔','不会回购','不会再买','浪费钱','踩雷','避雷','劝退',
+    '非常差','特别差','一分','零分','虚假宣传','货不对板','图文不符',
+    '不推荐','别买','慎入','糟糕','恼火','生气','欺骗','问题多'];
+  function sentimentClass(r) {
+    var content = String(r && r.content || '').toLowerCase();
+    /* 先看评分：5/4星 → 倾向正面；1/2星 → 倾向负面 */
+    var sc = scoreClass(r);
+    if (sc === 'bad') return 'neg';
+    if (sc === 'good') {
+      /* 高分但内容含强负面关键词 → 降为负面（ sarcasm / 套路好评被反制） */
+      var negHits = 0;
+      NEG_WORDS.forEach(function (w) { if (content.indexOf(w) >= 0) negHits++; });
+      if (negHits >= 2) return 'neg';
+      return 'pos';
+    }
+    /* 中评或无评分：纯靠关键词判定 */
+    var posHits = 0, negHits = 0;
+    POS_WORDS.forEach(function (w) { if (content.indexOf(w) >= 0) posHits++; });
+    NEG_WORDS.forEach(function (w) { if (content.indexOf(w) >= 0) negHits++; });
+    if (posHits >= 2 && negHits <= 0) return 'pos';
+    if (negHits >= 2 && posHits <= 0) return 'neg';
+    if (negHits > posHits + 1) return 'neg';
+    if (posHits > negHits + 1) return 'pos';
+    return ''; // 中性
+  }
+  function sentimentTag(r) {
+    var cls = sentimentClass(r);
+    if (cls === 'pos') return '<span class="tag tag-pos">正面评价</span>';
+    if (cls === 'neg') return '<span class="tag tag-neg">负面评价</span>';
+    return '<span class="muted2">—</span>';
+  }
+
+  function buildSelects() {
+    var stores = uniq(allRecords.map(function (r) { return r.store || '默认店铺'; }));
+    var curS = $('selStore').value;
+    var htmlS = '<option value="">全部店铺</option>';
+    stores.forEach(function (s) {
+      // 下拉项后缀标注类型，方便区分天猫/淘宝
+      var badge = storeType(s) === 'tmall' ? '（天猫）' : '（淘宝）';
+      htmlS += '<option value="' + s.replace(/"/g, '&quot;') + '">' + esc(s) + badge + '</option>';
+    });
+    $('selStore').innerHTML = htmlS;
+    $('selStore').value = curS;
+    renderStoreNotice();
+  }
+
+  /* 数据完整性提示：哪些店铺缺少「计分状态 / 信用分」。
+     这是插件导出时的结构差异（天猫评价无 好评/中评/差评 与 信用分），
+     不是页面问题——明确告知，避免误以为数据丢了。 */
+  function renderStoreNotice() {
+    var el = $('storeNote');
+    if (!el) return;
+    var stores = uniq(allRecords.map(function (r) { return r.store || '默认店铺'; }));
+    var missing = stores.filter(function (s) {
+      var rs = allRecords.filter(function (r) { return (r.store || '默认店铺') === s; });
+      return rs.length && !rs.some(hasScore);
+    });
+    if (!missing.length) { el.classList.remove('show'); el.textContent = ''; return; }
+    el.innerHTML = '⚠ ' + missing.map(function (s) {
+      return esc(s) + storeBadge(s);
+    }).join('、') + ' 的「计分状态 / 评分」在导出数据中为空（该类店铺评价无此字段），页面以「未采集」标注；情感分类仍按评价文本推断。';
+    el.classList.add('show');
+  }
+
+  function applyFilters() {
+    var kw = ($('kw').value || '').trim().toLowerCase();
+    var s = $('selStore').value;
+    var sc = $('selScore').value;
+    var se = $('selSentiment').value;
+
+    filtered = allRecords.filter(function (r) {
+      if (kw) {
+        var hay = [r.content, r.orderId, r.buyer, r.product, r.feedId, r.scoreType, r.credit].join('\u0001').toLowerCase();
+        if (hay.indexOf(kw) < 0) return false;
+      }
+      if (s && ((r.store || '默认店铺').trim() !== s)) return false;
+      if (sc) {
+        if (sc === 'good' || sc === 'mid' || sc === 'bad') { if (scoreClass(r) !== sc) return false; }
+        else if (sc === 'reply') { if (!isReplied(r)) return false; }
+        else if (sc === 'noreply') { if (isReplied(r)) return false; }
+      }
+      if (se) {
+        if (se === 'pos' && sentimentClass(r) !== 'pos') return false;
+        if (se === 'neg' && sentimentClass(r) !== 'neg') return false;
+      }
+      return true;
+    });
+
+    page = 1;
+    renderImgHeaders(maxImgCount(filtered));  // 表头随当前筛选结果的最大晒图数变化
+    renderStats();   // 卡片口径 = 当前筛选结果，随店铺/计分/情感/搜索同步刷新
+    render();
+  }
+
+  function render() {
+    var total = filtered.length;
+    var totalPages = Math.max(1, Math.ceil(total / pageSize));
+    if (page > totalPages) page = totalPages;
+    var start = (page - 1) * pageSize;
+    var slice = filtered.slice(start, start + pageSize);
+
+    var tbody = $('tbody');
+    tbody.innerHTML = '';
+    var colTotal = BASE_COL_COUNT + imgColCount + VALUE_COLS.length;
+    if (!slice.length) {
+      var tr = document.createElement('tr');
+      var td = document.createElement('td');
+      td.colSpan = colTotal; td.className = 'empty';
+      td.textContent = allRecords.length ? '没有符合筛选条件的记录' : '暂无数据，请先用浏览器扩展导出评价并「发送到运营工作台」';
+      tr.appendChild(td); tbody.appendChild(tr);
+    } else {
+      slice.forEach(function (r) {
+        var tr = document.createElement('tr');
+        /* 店铺置顶，其后 7 列与插件导出 CSV 完全同序
+           （订单号/买家客户ID/商品ID/商品标题/计分状态/评价内容/初次评价时间） */
+        var cells = [
+          esc(r.store || '默认店铺') + storeBadge(r.store),
+          esc(r.orderId) || na('—'),
+          esc(r.buyer) || na('—'),
+          /* 「商品ID」列必须用 productId，不能用 feedId。
+             feedId 是「主评ID」（每条评价唯一，去重后恒等于评价总数，做商品数毫无意义）；
+             productId 才是商品标识（多条评价可指向同一商品）。
+             插件在没有 feedId 时会用 productId 兜底，导致两者历史上被混用过。 */
+          esc(r.productId) || na('未采集'),
+          esc(r.product) || na('—'),
+          scoreTag(r),
+          esc(r.content) || na('—'),
+          esc(r.reviewTime) || na('—')
+        ];
+        cells.forEach(function (v, i) {
+          var td = document.createElement('td');
+          /* 订单号是 18~19 位长数字，商品ID 也长，不折行 */
+          if (i === 1 || i === 3) td.className = 'nowrap';
+          td.innerHTML = v;
+          tr.appendChild(td);
+        });
+        /* 买家晒图1..N：按序补单元格，缺位留空 */
+        var imgs = recImages(r);
+        for (var k = 0; k < imgColCount; k++) {
+          var tdI = document.createElement('td');
+          tdI.className = 'img-cell';
+          if (imgs[k]) {
+            tdI.innerHTML = '<a href="' + esc(imgs[k]) + '" target="_blank" rel="noopener" title="点击查看原图">' +
+              '<img loading="lazy" src="' + esc(imgs[k]) + '" alt="买家晒图' + (k + 1) + '"' +
+              ' onerror="this.parentNode.outerHTML=\'<span class=&quot;img-fallback&quot;>加载失败</span>\'"></a>';
+          } else {
+            tdI.innerHTML = '<span class="muted2">—</span>';
+          }
+          tr.appendChild(tdI);
+        }
+        /* 增值列：情感分类 / 评分 / 卖家回复时间（店铺已移到第一列） */
+        var vcells = [
+          sentimentTag(r),
+          creditCell(r),
+          isReplied(r) ? esc(r.replyTime) : '<span class="muted2">—</span>'
+        ];
+        vcells.forEach(function (v) {
+          var td = document.createElement('td');
+          td.innerHTML = v;
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
+    }
+
+    $('pageInfo').textContent = '共 ' + total + ' 条';
+    $('pageLabel').textContent = '第 ' + page + ' / ' + totalPages + ' 页';
+    $('btnPrev').disabled = page <= 1;
+    $('btnNext').disabled = page >= totalPages;
+  }
+
+  /* 统计卡片：口径跟随当前筛选结果（filtered），与下方表格保持一致。
+     切换店铺 / 计分 / 情感 / 搜索词时卡片会同步刷新。 */
+  function renderStats() {
+    var rows = Array.isArray(filtered) ? filtered : allRecords;
+    // 口径只看「是否有生效的筛选条件」——不能用 rows !== allRecords 判断，
+    // 因为 applyFilters 每次都 filter() 出新数组，恒为 true。
+    var scoped = hasActiveFilter();
+
+    $('statTotal').textContent = rows.length;
+    $('statStore').textContent = uniq(rows.map(function (r) { return r.store || '默认店铺'; })).length;
+    /* 商品数：按「商品ID」列（productId）去重统计，与列表该列口径一致。
+       缺失 productId 的记录不计数（uniq 内部已跳过空值）。 */
+    $('statProduct').textContent = uniq(rows.map(function (r) { return r.productId; })).length;
+    $('statReply').textContent = rows.filter(isReplied).length;
+    var posCnt = 0, negCnt = 0;
+    rows.forEach(function (r) { var s = sentimentClass(r); if (s === 'pos') posCnt++; else if (s === 'neg') negCnt++; });
+    $('statPos').textContent = posCnt;
+    $('statNeg').textContent = negCnt;
+
+    renderScope(scoped, rows);
+  }
+
+  /* 判断当前是否有生效的筛选条件（店铺 / 计分 / 情感 / 关键词） */
+  function hasActiveFilter() {
+    var kw = ($('kw') && $('kw').value || '').trim();
+    var s = $('selStore') && $('selStore').value;
+    var sc = $('selScore') && $('selScore').value;
+    var se = $('selSentiment') && $('selSentiment').value;
+    return !!(kw || s || sc || se);
+  }
+
+  /* 右上角口径提示：未筛选时显示「全部数据」，筛选中显示命中条数并可一键清空 */
+  function renderScope(filteredScope, rows) {
+    var wrap = $('sumScope');
+    if (!wrap) return;
+    var chip = $('sumScopeChip');
+    var btn = $('sumScopeClear');
+    if (filteredScope) {
+      var label = describeFilter();
+      chip.textContent = label + ' · ' + rows.length + ' 条';
+      wrap.classList.add('filtered');
+      if (btn) btn.style.display = '';
+    } else {
+      chip.textContent = '全部数据';
+      wrap.classList.remove('filtered');
+      if (btn) btn.style.display = 'none';
+    }
+  }
+
+  /* 把当前筛选条件拼成一句人话，如「店铺：小木の良品旗舰店 · 好评」 */
+  function describeFilter() {
+    var parts = [];
+    var s = $('selStore') && $('selStore').value;
+    if (s) parts.push('店铺：' + s);
+    var sc = $('selScore') && $('selScore').value;
+    if (sc) {
+      var map = { good: '好评', mid: '中评', bad: '差评', reply: '含回复', noreply: '未回复' };
+      parts.push(map[sc] || sc);
+    }
+    var se = $('selSentiment') && $('selSentiment').value;
+    if (se) parts.push(se === 'pos' ? '正面' : '负面');
+    var kw = ($('kw') && $('kw').value || '').trim();
+    if (kw) parts.push('搜索「' + kw + '」');
+    return parts.length ? parts.join(' · ') : '筛选结果';
+  }
+
+  function loadData() {
+    $('banner').classList.remove('show');
+    $('tbody').innerHTML = '<tr><td colspan="' + (BASE_COL_COUNT + imgColCount + VALUE_COLS.length) + '" class="empty">正在加载数据…</td></tr>';
+    fetch('/api/qianniu-review')
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        if (j && j.ok) {
+          allRecords = Array.isArray(j.records) ? j.records : [];
+          buildSelects();
+          applyUrlFilter();   // ★ 必须在 buildSelects() 之后（下拉框的 option 得先建出来）
+          applyFilters();   // 内部会调 renderStats()，卡片与表格口径一致
+        } else {
+          showError((j && j.error) || '数据读取失败');
+        }
+      })
+      .catch(function () {
+        if (location.protocol === 'file:') {
+          showError('当前是通过本地文件方式打开的，无法读取数据。请在浏览器地址栏输入并访问：http://127.0.0.1:8787/千牛评价.html');
+        } else {
+          showError('无法连接运营工作台服务，请先双击「启动工作台.bat」启动本地服务。');
+        }
+      });
+  }
+
+  function showError(msg) {
+    $('banner').textContent = msg;
+    $('banner').classList.add('show');
+    allRecords = [];
+    filtered = [];
+    renderImgHeaders(0);
+    applyFilters();   // 内部会调 renderStats()，卡片归零
+  }
+
+  function downloadBlob(blob, name) {
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = name;
+    document.body.appendChild(a); a.click();
+    setTimeout(function () { URL.revokeObjectURL(url); a.remove(); }, 100);
+  }
+
+  function buildCsv(records) {
+    /* 店铺置顶（与页面表格一致），其后 7 列与插件「评价导出」CSV 同序，
+       再追加动态晒图列「买家晒图1..N」，末尾补页面自有列
+       （情感分类、评分、卖家回复时间、店铺类型）。
+       订单号/商品ID 用 ="..." 包裹，防止 Excel 把长数字转成科学计数法。 */
+    var maxImg = maxImgCount(records);
+    /* 店铺置顶（与页面表格一致），其后对齐插件 CSV 列序 */
+    var headers = ['店铺', '订单号', '买家客户ID', '商品ID', '商品标题', '计分状态', '评价内容', '初次评价时间'];
+    for (var i = 1; i <= maxImg; i++) headers.push('买家晒图' + i);
+    headers = headers.concat(['情感分类', '评分', '卖家回复时间', '店铺类型']);
+
+    function q(v) {
+      var s = String(v == null ? '' : v).replace(/\r\n/g, '\n').replace(/\r/g, '\n').replace(/\n+/g, ' ').trim();
+      return /[",]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+    }
+
+    var lines = [headers.join(',')];
+    records.forEach(function (r) {
+      var sent = sentimentClass(r);
+      var sentLabel = sent === 'pos' ? '正面评价' : (sent === 'neg' ? '负面评价' : '');
+      var imgs = recImages(r);
+      var row = [
+        q(r.store),
+        '="' + String(r.orderId == null ? '' : r.orderId) + '"',
+        q(r.buyer),
+        /* 商品ID 用 productId（与页面表格、商品数卡片口径保持一致），不是 feedId */
+        '="' + String(r.productId == null ? '' : r.productId) + '"',
+        q(r.product),
+        q(r.scoreType),
+        q(r.content),
+        q(r.reviewTime)
+      ];
+      for (var k = 0; k < maxImg; k++) {
+        row.push(imgs[k] ? q('=HYPERLINK("' + imgs[k] + '","点击看大图' + (k + 1) + '")') : '""');
+      }
+      row = row.concat([sentLabel, q(r.credit), q(r.replyTime), storeTypeLabel(storeType(r.store))]);
+      lines.push(row.join(','));
+    });
+    return '\ufeff' + lines.join('\r\n');
+  }
+
+  function pad(n) { return String(n).padStart(2, '0'); }
+  function stamp() { var d = new Date(); return d.getFullYear() + pad(d.getMonth()+1) + pad(d.getDate()) + '_' + pad(d.getHours()) + pad(d.getMinutes()); }
+
+  /* 一键清空全部筛选条件（工具栏按钮与卡片口径栏按钮共用） */
+  function clearFilters() {
+    $('kw').value = '';
+    $('selStore').value = '';
+    $('selScore').value = '';
+    $('selSentiment').value = '';
+    applyFilters();
+  }
+
+  /* ★ URL 筛选参数（2026-09-14）：首页的待办卡片会跳到
+     「千牛评价.html?filter=unreplied|bad|good|mid|reply|noreply|pos|neg」。
+     ⚠️ 只在参数**合法**时才动下拉框；参数不认识 / 没参数 → 完全不动，
+        保证「直接打开本页」和以前的行为一模一样。
+     效果不用另外做提示：上面的口径栏（describeFilter）会自动写成「未回复 · 130 条」。 */
+  var URL_FILTER_MAP = {
+    unreplied: ['selScore', 'noreply'],   // 首页叫「待回复」，本页下拉框的取值是 noreply
+    noreply:   ['selScore', 'noreply'],
+    reply:     ['selScore', 'reply'],
+    good:      ['selScore', 'good'],
+    mid:       ['selScore', 'mid'],
+    bad:       ['selScore', 'bad'],
+    pos:       ['selSentiment', 'pos'],
+    neg:       ['selSentiment', 'neg']
+  };
+  function applyUrlFilter() {
+    var f = '';
+    try { f = (new URLSearchParams(location.search).get('filter') || '').trim(); } catch (e) { f = ''; }
+    if (!f) return '';
+    var hit = URL_FILTER_MAP[f];
+    if (!hit) return '';
+    var el = $(hit[0]);
+    if (el) el.value = hit[1];
+    return f;
+  }
+
+  function exportCsv() {
+    if (!filtered.length) { alert('没有可导出的记录'); return; }
+    downloadBlob(new Blob([buildCsv(filtered)], { type: 'text/csv;charset=utf-8;' }), '评价管理_' + stamp() + '.csv');
+  }
+
+  function exportJson() {
+    if (!filtered.length) { alert('没有可导出的记录'); return; }
+    downloadBlob(new Blob(['\ufeff' + JSON.stringify(filtered, null, 2)], { type: 'application/json;charset=utf-8;' }), '评价管理_' + stamp() + '.json');
+  }
+
+  function bind() {
+    $('btnRefresh').addEventListener('click', loadData);
+
+    var debounceTimer = null;
+    $('kw').addEventListener('input', function () {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(applyFilters, 250);
+    });
+    $('selStore').addEventListener('change', applyFilters);
+    $('selScore').addEventListener('change', applyFilters);
+    $('selSentiment').addEventListener('change', applyFilters);
+
+    $('btnClearFilter').addEventListener('click', clearFilters);
+    // 卡片右上角口径栏里的「清空筛选」走同一份逻辑
+    var scopeClear = $('sumScopeClear');
+    if (scopeClear) scopeClear.addEventListener('click', clearFilters);
+
+    $('btnDelStore').addEventListener('click', function () {
+      var store = $('selStore').value;
+      if (!store) { alert('请先在下拉框里选择要删除的店铺（不能删「全部店铺」）'); return; }
+      if (!confirm('确定删除店铺「' + store + '」的全部评价数据吗？此操作不可恢复。')) return;
+      fetch('/api/qianniu-review/remove-store', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ store: store })
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+          if (j && j.ok) { alert('已删除「' + store + '」数据：' + (j.removed || 0) + ' 条'); loadData(); }
+          else { alert('删除失败：' + ((j && j.error) || '未知错误')); }
+        })
+        .catch(function (e) { alert('删除失败：' + e.message); });
+    });
+
+    $('btnPrev').addEventListener('click', function () { if (page > 1) { page--; render(); } });
+    $('btnNext').addEventListener('click', function () {
+      var totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+      if (page < totalPages) { page++; render(); }
+    });
+    $('pageSize').addEventListener('change', function () {
+      pageSize = parseInt(this.value, 10) || 100;
+      page = 1;
+      render();
+    });
+
+    $('btnCsv').addEventListener('click', exportCsv);
+    $('btnJson').addEventListener('click', exportJson);
+  }
+
+  bind();
+  loadData();
+})();
+</script>
+</body>
+</html>

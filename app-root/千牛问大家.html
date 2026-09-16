@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="mobile-ui.css">
+<script src="mobile-adapter.js"></script>
+<title>问大家管理 · 运营工作台</title>
+<style>
+  :root[data-theme="eye"]{
+    --bg:#F5F1E8; --panel:#FBF8F1; --panel2:#F0EADC;
+    --line:#E5DCCB; --line2:#D5C9B4;
+    --ink:#3C3229; --muted:#7A6E5F; --muted2:#A2957F;
+    --accent:#F97316; --accent-d:#EA580C; --accent-soft:rgba(249,115,10,0.12);
+    --ok:#16A34A; --danger:#EF4444;
+    --shadow:0 6px 24px rgba(60,50,41,.08);
+    --radius:14px;
+  }
+  :root{
+    --bg:#100E0C; --panel:#171412; --panel2:#221C18;
+    --line:#2A231E; --line2:#3D332C;
+    --ink:#F1F5F9; --muted:#94A3B8; --muted2:#64748B;
+    --accent:#F97316; --accent-d:#EA580C; --accent-soft:rgba(249,115,10,0.12);
+    --ok:#34D399; --danger:#F87171;
+    --shadow:0 8px 28px rgba(0,0,0,.40);
+    --radius:14px;
+  }
+  /* 暗色主题：显式声明，不再依赖 :root 默认值（防止默认值变更后暗色失效） */
+  :root[data-theme="dark"]{
+    --bg:#100E0C; --panel:#171412; --panel2:#221C18;
+    --line:#2A231E; --line2:#3D332C;
+    --ink:#F5EFEA; --muted:#B4A49A; --muted2:#8A7A70;
+    --accent:#FB923C; --accent-d:#F97316; --accent-soft:rgba(251,146,60,0.14);
+    --ok:#34D399; --danger:#F87171;
+    --shadow:0 8px 28px rgba(0,0,0,.40);
+    --radius:14px;
+  }
+  :root[data-theme="light"]{
+    --bg:#FAF7F5; --panel:#FFFFFF; --panel2:#F3EDE8;
+    --line:#EFE6DE; --line2:#DCD2C9;
+    --ink:#111827; --muted:#475569; --muted2:#94A3B8;
+    --accent:#F97316; --accent-d:#EA580C; --accent-soft:rgba(249,115,10,0.12);
+    --ok:#16A34A; --danger:#EF4444;
+    --shadow:0 6px 24px rgba(15,23,42,.10);
+    --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;margin:0;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    background:var(--bg); color:var(--ink);
+    display:flex; flex-direction:column; min-height:100vh;
+  }
+
+  header{
+    padding:16px 24px; border-bottom:1px solid var(--line);
+    display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+    background:linear-gradient(180deg, rgba(249,115,10,0.06), transparent);
+  }
+  header h1{font-size:19px; margin:0; font-weight:700; display:flex; align-items:center; gap:10px;}
+  header .dot{width:10px; height:10px; border-radius:50%; background:var(--accent); box-shadow:0 0 0 4px rgba(249,115,10,0.15);}
+  header .sub{font-size:12px; color:var(--muted);}
+  header .spacer{flex:1;}
+  .refresh-btn{
+    padding:8px 16px; border-radius:9px; border:1px solid var(--line2);
+    background:var(--panel2); color:var(--ink); cursor:pointer; font-size:13px; transition:.15s;
+  }
+  .refresh-btn:hover{border-color:var(--accent); color:var(--accent);}
+
+  .summary{display:flex; gap:12px; padding:14px 24px; flex-wrap:wrap; align-items:stretch;}
+  .stat{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:12px 18px; min-width:120px;}
+  .stat .k{font-size:12px; color:var(--muted); margin-bottom:6px;}
+  .stat .v{font-size:20px; font-weight:700; color:var(--accent);}
+  /* 统计口径提示：卡片跟随筛选（店铺/计分/情感/搜索）实时变化，此处标明当前口径 */
+  .sum-scope{
+    align-self:center; font-size:12px; color:var(--muted); margin-left:auto;
+    display:flex; align-items:center; gap:6px; white-space:nowrap;
+  }
+  .sum-scope .chip{
+    background:var(--panel); border:1px solid var(--line2); border-radius:999px;
+    padding:4px 12px; color:var(--muted);
+  }
+  .sum-scope.filtered .chip{
+    background:var(--accent-soft);
+    border-color:var(--accent); color:var(--accent); font-weight:600;
+  }
+  .sum-scope button{
+    background:none; border:none; color:var(--accent); cursor:pointer;
+    font-size:12px; font-family:inherit; text-decoration:underline; padding:0 2px;
+  }
+
+  .toolbar{display:flex; gap:10px; padding:0 24px 14px; flex-wrap:wrap; align-items:center;}
+  .toolbar input, .toolbar select{
+    background:var(--panel2); border:1px solid var(--line2); color:var(--ink);
+    border-radius:9px; padding:8px 12px; font-size:13px; outline:none; transition:.15s;
+  }
+  .toolbar input:focus, .toolbar select:focus{border-color:var(--accent);}
+  .toolbar input[type="text"]{min-width:240px;}
+  .toolbar .btn{
+    padding:8px 16px; border-radius:9px; border:1px solid var(--line2);
+    background:var(--panel2); color:var(--ink); cursor:pointer; font-size:13px; transition:.15s; white-space:nowrap;
+  }
+  .toolbar .btn:hover{border-color:var(--accent); color:var(--accent);}
+  .toolbar .btn.primary{background:var(--accent); border-color:var(--accent); color:#1a1206; font-weight:600;}
+  .toolbar .btn.primary:hover{background:var(--accent-d); border-color:var(--accent-d); color:#fff;}
+
+  .table-wrap{flex:1; padding:0 24px; overflow:auto; min-height:0;}
+  /* 列多（最多 8 基础 + N 晒图 + 3 增值），给足最小宽度避免被挤成一团 */
+  table{width:100%; border-collapse:collapse; font-size:13px; min-width:1700px;}
+  thead th{
+    position:sticky; top:0; background:var(--panel2); color:var(--muted);
+    text-align:left; padding:11px 12px; border-bottom:1px solid var(--line2);
+    font-weight:600; white-space:nowrap; z-index:2;
+  }
+  /* 店铺列置顶后必须给足宽度（店铺名 + 天猫/淘宝徽标），否则会挤成三行 */
+  thead th:first-child, tbody td:first-child{min-width:150px;}
+  /* 商品标题较长，给一个下限让它不至于和订单号抢空间 */
+  thead th:nth-child(5), tbody td:nth-child(5){min-width:170px;}
+  tbody td{padding:10px 12px; border-bottom:1px solid var(--line); vertical-align:top; color:var(--ink); word-break:break-word; line-height:1.5;}
+  /* 订单号 / 商品ID 等长数字串：不折行，避免被挤成两行 */
+  td.nowrap{white-space:nowrap;}
+  .mono{font-family:monospace; font-size:12px;}
+  tbody tr:hover{background:var(--panel);}
+  /* 买家晒图缩略图（与聊天记录页 / SKU 页保持同一视觉口径） */
+  .img-cell{padding:8px 8px !important;}
+  .img-cell a{display:inline-block; line-height:0; border-radius:6px; overflow:hidden; border:1px solid var(--line2);}
+  .img-cell img{width:46px; height:46px; object-fit:cover; display:block; cursor:zoom-in; transition:.15s;}
+  .img-cell a:hover img{transform:scale(1.06); border-color:var(--accent);}
+  .img-fallback{
+    display:inline-block; width:46px; height:46px; border-radius:6px;
+    border:1px dashed var(--line2); color:var(--muted2); font-size:10px;
+    text-align:center; line-height:46px; overflow:hidden;
+  }
+  .empty{text-align:center; color:var(--muted); padding:48px 0; font-size:14px;}
+  .tag{display:inline-block; padding:1px 8px; border-radius:999px; font-size:12px; font-weight:600;}
+  .tag-good{background:rgba(52,211,153,.15); color:#34D399;}
+  .tag-mid{background:rgba(249,115,10,.15); color:#F97316;}
+  .tag-bad{background:rgba(248,113,113,.15); color:#F87171;}
+  .tag-pos{background:rgba(52,211,153,.12); color:#16A34A; border:1px solid rgba(22,163,74,.25);}
+  .tag-neg{background:rgba(239,68,68,.12); color:#DC2626; border:1px solid rgba(220,38,38,.25);}
+  .muted2{color:var(--muted2);}
+  /* 未采集字段的占位（比「—」更明确，说明是数据源没给，而不是页面算不出） */
+  .na{
+    display:inline-block; font-size:11px; line-height:1.6;
+    color:var(--muted2); border:1px dashed var(--line2);
+    border-radius:6px; padding:0 6px; white-space:nowrap;
+  }
+  /* 店铺类型徽标（依据店铺名推断，非权威字段） */
+  .store-type{
+    display:inline-block; font-size:11px; font-weight:600; line-height:1.7;
+    padding:0 6px; border-radius:5px; margin-left:6px; vertical-align:1px;
+    border:1px solid transparent;
+  }
+  .store-type.tmall{ background:rgba(239,68,68,.12); color:#DC2626; border-color:rgba(239,68,68,.28); }
+  .store-type.taobao{ background:rgba(249,115,10,.12); color:#EA580C; border-color:rgba(249,115,10,.28); }
+  /* 店铺筛选下拉里的类型后缀 */
+  .store-note{font-size:12px; color:var(--muted);}
+
+  .pagination{display:flex; align-items:center; gap:10px; padding:14px 24px; border-top:1px solid var(--line); flex-wrap:wrap;}
+  .pagination .info{font-size:12px; color:var(--muted);}
+  .pagination button{
+    padding:7px 14px; border-radius:8px; border:1px solid var(--line2);
+    background:var(--panel2); color:var(--ink); cursor:pointer; font-size:13px; transition:.15s;
+  }
+  .pagination button:disabled{opacity:.4; cursor:not-allowed;}
+  .pagination button:not(:disabled):hover{border-color:var(--accent); color:var(--accent);}
+  .pagination .pages{font-size:13px; color:var(--muted);}
+
+  .banner{
+    margin:14px 24px 0; padding:12px 16px; border-radius:10px;
+    background:rgba(248,113,113,0.12); border:1px solid rgba(248,113,113,0.35);
+    color:#FECACA; font-size:13px; display:none;
+  }
+  .banner.show{display:block;}
+  /* ===== 问大家页专有样式（在评价页基础上追加，不动公共部分）===== */
+  table{min-width:1900px;}
+  thead th:first-child, tbody td:first-child{min-width:150px;}
+  /* 问题列：加粗、给足宽度（问题是这一页的主视觉） */
+  td.q-cell{font-weight:600; min-width:220px;}
+  thead th:nth-child(2), tbody td:nth-child(2){min-width:220px;}
+  thead th:nth-child(5), tbody td:nth-child(5){min-width:190px;}
+  /* 回答单元格：正文 + 副行（回答人·时间）+ 配图 */
+  td.ans-cell{min-width:240px; max-width:360px;}
+  .ans-body{white-space:pre-wrap;}
+  .ans-meta{margin-top:5px; font-size:11px; color:var(--muted2);}
+  .ans-who{color:var(--muted); font-weight:600;}
+  .ans-time{color:var(--muted2);}
+  .ans-id{color:var(--muted2); font-family:monospace; font-size:10.5px;}
+  .ans-seller{
+    display:inline-block; margin-left:4px; padding:0 5px; border-radius:4px;
+    font-size:10px; font-weight:700; line-height:1.6;
+    background:rgba(249,115,10,.14); color:#EA580C; border:1px solid rgba(249,115,10,.3);
+  }
+  .ans-imgs{margin-top:6px; display:flex; gap:4px; align-items:center; flex-wrap:wrap;}
+  .ans-imgs a{display:inline-block; line-height:0; border-radius:5px; overflow:hidden; border:1px solid var(--line2);}
+  .ans-imgs img{width:38px; height:38px; object-fit:cover; display:block; cursor:zoom-in; transition:.15s;}
+  .ans-imgs a:hover img{transform:scale(1.08); border-color:var(--accent);}
+  .ans-more{font-size:11px; color:var(--muted2);}
+  /* 回答数单元格 */
+  .ans-num{
+    display:inline-block; min-width:20px; text-align:center;
+    font-weight:700; font-size:15px; color:var(--muted);
+  }
+  .ans-num.has{color:var(--ok);}
+  .ans-note{display:block; margin-top:2px; font-size:10.5px; color:var(--muted2);}
+  .ans-flag-seller{
+    display:inline-block; margin-left:5px; padding:0 5px; border-radius:4px;
+    font-size:10px; font-weight:700; line-height:1.6;
+    background:rgba(249,115,10,.14); color:#EA580C; border:1px solid rgba(249,115,10,.3);
+  }
+</style>
+<script>
+(function(){
+  var WP='wb_theme', WS='wb_theme_auto_start', WE='wb_theme_auto_end';
+  function mins(t){ var p=String(t||'00:00').split(':'); return (parseInt(p[0],10)||0)*60+(parseInt(p[1],10)||0); }
+  function resolve(mode){
+    if(mode==='light'||mode==='dark'||mode==='eye') return mode;
+    if(mode!=='auto') return 'light';
+    var d=new Date(), m=d.getHours()*60+d.getMinutes(), s=1080, e=360;
+    try{ s=mins(localStorage.getItem(WS)||'18:00'); e=mins(localStorage.getItem(WE)||'06:00'); }catch(x){}
+    var dark=(s<e)?(m>=s&&m<e):(m>=s||m<e);
+    return dark?'dark':'light';
+  }
+  window.__wbResolveTheme = resolve;
+  function apply(){
+    var mode='light'; try{ mode=localStorage.getItem(WP)||'light'; }catch(e){}
+    document.documentElement.setAttribute('data-theme', resolve(mode));
+  }
+  apply();
+  window.addEventListener('message', function(e){
+    if(e.data && e.data.type==='wb-theme'){
+      var t=e.data.theme||e.data.mode;
+      if(t) document.documentElement.setAttribute('data-theme', resolve(t));
+      else apply();
+    }
+  });
+  try{ window.addEventListener('storage', function(e){ if(!e.key||e.key===WP||e.key===WS||e.key===WE) apply(); }); }catch(e){}
+})();
+</script>
+<script>var APP_VERSION='v1.0.8';</script>
+<link rel="stylesheet" href="scrollbar.css?v=1">
+</head>
+<body>
+  <header>
+    <h1><span class="dot"></span>问大家管理</h1>
+    <span class="sub">来自浏览器扩展导入的「问大家」问题与回答 · 本地存储</span>
+    <span class="spacer"></span>
+    <button class="refresh-btn" id="btnRefresh">↻ 刷新数据</button>
+  </header>
+
+  <div class="summary" id="summary">
+    <div class="stat"><div class="k">问题总数</div><div class="v" id="statTotal">0</div></div>
+    <div class="stat"><div class="k">店铺数</div><div class="v" id="statStore">0</div></div>
+    <div class="stat" title="按「商品ID」列去重统计（缺失商品ID的记录不计数）">
+      <div class="k">商品数</div><div class="v" id="statProduct">0</div>
+    </div>
+    <div class="stat" title="页面显示「有回答」的问题数（回答数 >= 1）">
+      <div class="k">有人回答</div><div class="v" id="statReply">0</div>
+    </div>
+    <div class="stat" title="已抓到的回答正文条数（需采集时勾选「连回答正文一起抓」）">
+      <div class="k">回答正文数</div><div class="v" id="statAnswers" style="color:var(--ok)">0</div>
+    </div>
+    <div class="stat" title="页面声明的回答总数（含未采集正文的）">
+      <div class="k">回答总数</div><div class="v" id="statDeclared">0</div>
+    </div>
+    <div class="stat"><div class="k">有回答的问题</div><div class="v" id="statAnswered">0</div></div>
+    <div class="stat"><div class="k">无人回答</div><div class="v" id="statUnanswered" style="color:var(--muted2)">0</div></div>
+    <div class="sum-scope" id="sumScope">
+      <span class="chip" id="sumScopeChip">全部数据</span>
+      <button type="button" id="sumScopeClear" style="display:none">清空筛选</button>
+    </div>
+  </div>
+
+  <div class="banner" id="banner">无法连接运营工作台服务，请先双击「启动工作台.bat」启动本地服务。</div>
+  <div class="banner" id="storeNote" style="background:rgba(249,115,10,.10); border-color:rgba(249,115,10,.30); color:var(--muted);"></div>
+
+  <div class="toolbar" id="toolbar">
+    <input type="text" id="kw" placeholder="搜索：问题 / 回答正文 / 提问人 / 商品标题 / 商品ID">
+    <select id="selStore"><option value="">全部店铺</option></select>
+    <select id="selProduct"><option value="">全部商品</option></select>
+    <select id="selStatus">
+      <option value="">全部状态</option>
+      <option value="answered">有回答正文</option>
+      <option value="hasnum">有人回答</option>
+      <option value="unanswered">无人回答</option>
+      <option value="seller">含卖家回答</option>
+    </select>
+    <button class="btn" id="btnDelStore" title="删除当前选中的店铺及其全部问大家数据">删除店铺</button>
+    <button class="btn" id="btnClearFilter">清空筛选</button>
+    <span class="spacer" style="flex:1"></span>
+    <button class="btn" id="btnCsv">导出 CSV</button>
+    <button class="btn" id="btnJson">导出 JSON</button>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr id="theadRow">
+          <!-- ★ 列序严格对齐插件「问大家导出」CSV（2026-09-15 修正）：
+               插件表头 = 问题 | 提问人 | 提问时间 | 回答数 | 商品标题 | 商品ID | 剩余可回答天数 | 回答1..N
+               本页表头 = 店铺(前置增值) + 上面 7 列 + 回答1..N + 问题ID(尾部增值)
+               ⚠️ 修正前本页是「…商品标题 | 回答数 | 回答1..N | 剩余可回答天数 | 商品ID」，
+                  与插件**两处顺序不同**（商品标题/回答数互换、回答列插在中间、尾部两列倒序），
+                  逐列对不上 —— 用户对「没对齐」很敏感（SKU 页已因同类问题报过一次）。
+               改列序要**同时改 5 处**：本 thead / BASE_COL_COUNT / VALUE_COLS /
+               render() 的 cells 与 vc 两个数组 / buildCsv() 的 headers 与 row。 -->
+          <th>店铺</th>
+          <th>问题</th>
+          <th>提问人</th>
+          <th>提问时间</th>
+          <th>回答数</th>
+          <th>商品标题</th>
+          <th>商品ID</th>
+          <th>剩余可回答天数</th>
+        </tr>
+      </thead>
+      <tbody id="tbody">
+        <tr><td colspan="9" class="empty">正在加载数据…</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="pagination">
+    <span class="info" id="pageInfo">共 0 条</span>
+    <button id="btnPrev">‹ 上一页</button>
+    <span class="pages" id="pageLabel">第 1 / 1 页</span>
+    <button id="btnNext">下一页 ›</button>
+    <span class="spacer" style="flex:1"></span>
+    <span class="info">每页 <select id="pageSize" style="background:var(--panel2);color:var(--ink);border:1px solid var(--line2);border-radius:7px;padding:4px 6px;">
+      <option value="50">50</option><option value="100" selected>100</option><option value="200">200</option><option value="500">500</option>
+    </select> 条</span>
+  </div>
+
+<script>
+(function () {
+  'use strict';
+
+  var allRecords = [];
+  var filtered = [];
+  var page = 1;
+  var pageSize = 100;
+  var expanded = {};   // 展开的回答行：{ '键': true }
+
+  var $ = function (id) { return document.getElementById(id); };
+  function esc(s) { return (s == null) ? '' : String(s); }
+
+  /* ===== 回答 =====
+     插件侧字段：answers = [{ answerer, answerTime, content, isSeller, images }]
+     只有勾了「连回答正文一起抓」的行才有 answers；其余只有 answerNum（回答数）。
+     两者都要能正常显示 —— 有数量没正文时标「未采集正文」，而不是显示成「无回答」。 */
+  function recAnswers(r) { return (r && Array.isArray(r.answers)) ? r.answers : []; }
+  function answerTotal(records) {
+    var n = 0;
+    (records || []).forEach(function (r) { n += recAnswers(r).length; });
+    return n;
+  }
+  function maxAnswerCount(records) {
+    var n = 0;
+    (records || []).forEach(function (r) { var c = recAnswers(r).length; if (c > n) n = c; });
+    return n;
+  }
+  /* 页面声明的回答数（字符串，可能是「-」）→ 数字 */
+  function declaredNum(r) {
+    var s = String((r && r.answerNum) || '').trim();
+    if (!s || s === '-' || s === '—') return 0;
+    var m = s.match(/\d+/);
+    return m ? parseInt(m[0], 10) : 0;
+  }
+
+  /* ===== 回答里的图片 ===== */
+  function normImgUrl(u) {
+    var s = String(u == null ? '' : u).trim();
+    if (!s) return '';
+    if (s.indexOf('//') === 0) return 'https:' + s;
+    if (/^https?:\/\//i.test(s)) return s;
+    if (/^(javascript|data|vbscript|file):/i.test(s)) return '';
+    return '';
+  }
+  function answerImages(a) {
+    var out = [];
+    (a && Array.isArray(a.images) ? a.images : []).forEach(function (u) { var n = normImgUrl(u); if (n) out.push(n); });
+    return out;
+  }
+
+  function na(text) { return '<span class="na">' + (text || '未采集') + '</span>'; }
+
+  /* ===== 店铺类型推断（与评价页同一口径）===== */
+  function storeType(store) {
+    var s = String(store || '');
+    if (/旗舰店|专卖店|专营店|天猫/i.test(s)) return 'tmall';
+    return 'taobao';
+  }
+  function storeTypeLabel(t) {
+    if (t === 'tmall') return '天猫';
+    if (t === 'taobao') return '淘宝';
+    return '';
+  }
+  function storeBadge(store) {
+    var t = storeType(store);
+    var lb = storeTypeLabel(t);
+    if (!lb) return '';
+    return '<span class="store-type ' + t + '" title="依据店铺名推断，仅供区分来源">' + lb + '</span>';
+  }
+
+  function uniq(arr) {
+    var seen = {}, out = [];
+    (arr || []).forEach(function (x) {
+      var k = String(x == null ? '' : x).trim();
+      if (k && !seen[k]) { seen[k] = true; out.push(k); }
+    });
+    return out.sort(function (a, b) { return a.localeCompare(b, 'zh'); });
+  }
+
+  /* ===== 动态表头：回答1..N =====
+     与评价页的「买家晒图1..N」同一套机制：出现数最多的那批列数决定表头。
+     同样用 headersInit 双门，避免「一条回答都没有」时把尾部增值列吃掉。 */
+  var ansColCount = 0;
+  var headersInit = false;
+  var BASE_COL_COUNT = 8;   // 店铺 / 问题 / 提问人 / 提问时间 / 回答数 / 商品标题 / 商品ID / 剩余可回答天数
+  var VALUE_COLS = ['问题ID'];   // 尾部增值列（回答1..N 插在它前面，见 renderAnswerHeaders）
+  function renderAnswerHeaders(n) {
+    n = Math.max(0, parseInt(n, 10) || 0);
+    if (headersInit && n === ansColCount) return;
+    headersInit = true;
+    ansColCount = n;
+    var row = $('theadRow');
+    if (!row) return;
+    Array.prototype.slice.call(row.querySelectorAll('[data-dyn-col]')).forEach(function (th) { th.remove(); });
+    for (var i = 1; i <= n; i++) {
+      var th = document.createElement('th');
+      th.setAttribute('data-dyn-col', 'ans');
+      th.textContent = '回答' + i;
+      row.appendChild(th);
+    }
+    VALUE_COLS.forEach(function (t) {
+      var th = document.createElement('th');
+      th.setAttribute('data-dyn-col', 'value');
+      th.textContent = t;
+      row.appendChild(th);
+    });
+  }
+
+  /* ===== 单条回答单元格：正文 + 「— 回答人 · 时间」副行 ===== */
+  function answerCell(a) {
+    if (!a) return '<span class="muted2">—</span>';
+    var meta = [];
+    if (a.answerer) meta.push('<span class="ans-who">' + esc(a.answerer) + '</span>');
+    if (a.answerTime) meta.push('<span class="ans-time">' + esc(a.answerTime) + '</span>');
+    if (a.isSeller) meta.push('<span class="ans-seller">卖家</span>');
+    if (a.answerId) meta.push('<span class="ans-id" title="回答ID">ID ' + esc(a.answerId) + '</span>');
+    var imgs = answerImages(a);
+    var imgHtml = imgs.length
+      ? '<div class="ans-imgs">' + imgs.slice(0, 4).map(function (u) {
+          return '<a href="' + esc(u) + '" target="_blank" rel="noopener" title="点击查看原图">' +
+            '<img loading="lazy" src="' + esc(u) + '" alt="回答配图"></a>';
+        }).join('') + (imgs.length > 4 ? '<span class="ans-more">+' + (imgs.length - 4) + '</span>' : '') + '</div>'
+      : '';
+    var body = a.content
+      ? '<div class="ans-body">' + esc(a.content) + '</div>'
+      : '<span class="muted2">（回答无正文）</span>';
+    var metaHtml = meta.length ? '<div class="ans-meta">— ' + meta.join(' · ') + '</div>' : '';
+    return body + metaHtml + imgHtml;
+  }
+
+  /* ===== 回答数量单元格 =====
+     三种情况区分清楚：
+       ① 抓到正文了 → 显示「N 条」（可点开展开）
+       ② 页面说有 N 条但没抓正文 → 「N 条 · 未采集正文」（灰字）
+       ③ 页面显示「-」→ 无人回答 */
+  function answerNumCell(r) {
+    var got = recAnswers(r).length;
+    var dec = declaredNum(r);
+    var raw = String((r && r.answerNum) || '').trim();
+    if (got) {
+      var seller = recAnswers(r).filter(function (a) { return a.isSeller; }).length;
+      return '<span class="ans-num has">' + got + '</span>' +
+        (seller ? '<span class="ans-flag-seller">卖家答</span>' : '');
+    }
+    if (dec) return '<span class="ans-num">' + dec + '</span><span class="ans-note">未采集正文</span>';
+    if (raw === '-' || raw === '—' || raw === '') return '<span class="muted2">—</span>';
+    return esc(raw);
+  }
+
+  function buildSelects() {
+    var stores = uniq(allRecords.map(function (r) { return r.store || '默认店铺'; }));
+    var curS = $('selStore').value;
+    var htmlS = '<option value="">全部店铺</option>';
+    stores.forEach(function (s) {
+      var badge = storeType(s) === 'tmall' ? '（天猫）' : '（淘宝）';
+      htmlS += '<option value="' + s.replace(/"/g, '&quot;') + '">' + esc(s) + badge + '</option>';
+    });
+    $('selStore').innerHTML = htmlS;
+    $('selStore').value = curS;
+    // 商品下拉：按商品标题去重，方便只看某个商品的问题
+    var prods = uniq(allRecords.map(function (r) { return r.product; }));
+    var curP = $('selProduct').value;
+    var htmlP = '<option value="">全部商品</option>';
+    prods.forEach(function (p) {
+      htmlP += '<option value="' + p.replace(/"/g, '&quot;') + '">' + esc(p.length > 28 ? p.slice(0, 28) + '…' : p) + '</option>';
+    });
+    $('selProduct').innerHTML = htmlP;
+    $('selProduct').value = curP;
+    renderStoreNotice();
+  }
+
+  function renderStoreNotice() {
+    var el = $('storeNote');
+    if (!el) return;
+    /* 提示「有回答数、但没抓到回答正文」的问题。
+       为什么不按店铺整体判断：一个店铺往往一半抓了一半没抓（分批采集），
+       按店铺判断会整体不提示，漏掉真正缺正文的那部分。
+       所以按【记录】粒度统计更准：只要存在这种记录就提示。 */
+    var missing = allRecords.filter(function (r) { return declaredNum(r) > 0 && recAnswers(r).length === 0; });
+    var noQid = allRecords.filter(function (r) { return !String(r.questionId || '').trim(); });
+    if (!missing.length && !noQid.length) { el.classList.remove('show'); el.textContent = ''; return; }
+    var parts = [];
+    if (missing.length) {
+      var missStores = uniq(missing.map(function (r) { return r.store || '默认店铺'; }));
+      parts.push('有 <b>' + missing.length + '</b> 个问题只采集了「回答数」、没有回答正文（涉及店铺：' +
+        missStores.map(function (s) { return esc(s) + storeBadge(s); }).join('、') +
+        '）。采集时勾选「连回答正文一起抓」再发送一次即可补上 —— 插件按业务主键去重，已采的问题不会重复，缺的正文会被补进已有记录。');
+    }
+    if (noQid.length && noQid.length < allRecords.length) {
+      parts.push('另有 <b>' + noQid.length + '</b> 条缺「问题ID」（说明当时只抓了列表、没点开过回答弹窗）—— 这种记录的店铺/IP 若与其它记录相同，去重时会退用「提问人 + 问题」作主键，一般也够用。');
+    }
+    el.innerHTML = '⚠ ' + parts.join('<br>⚠ ');
+    el.classList.add('show');
+  }
+
+  function isAnswered(r) { return recAnswers(r).length > 0; }
+  function hasDeclaredAnswer(r) { return declaredNum(r) > 0; }
+
+  function applyFilters() {
+    var kw = ($('kw').value || '').trim().toLowerCase();
+    var s = $('selStore').value;
+    var p = $('selProduct').value;
+    var st = $('selStatus').value;
+
+    filtered = allRecords.filter(function (r) {
+      if (kw) {
+        var hay = [];
+        hay.push(r.question, r.asker, r.askTime, r.product, r.productId, r.store, r.answerNum, r.questionId);
+        recAnswers(r).forEach(function (a) { hay.push(a.content, a.answerer, a.answerTime, a.answerId); });
+        if (hay.join('\u0001').toLowerCase().indexOf(kw) < 0) return false;
+      }
+      if (s && ((r.store || '默认店铺').trim() !== s)) return false;
+      if (p && String(r.product || '') !== p) return false;
+      if (st === 'answered' && !isAnswered(r)) return false;
+      if (st === 'unanswered' && (isAnswered(r) || hasDeclaredAnswer(r))) return false;
+      if (st === 'hasnum' && !hasDeclaredAnswer(r)) return false;
+      if (st === 'seller' && !recAnswers(r).some(function (a) { return a.isSeller; })) return false;
+      return true;
+    });
+
+    page = 1;
+    renderAnswerHeaders(maxAnswerCount(filtered));
+    renderStats();
+    render();
+  }
+
+  function render() {
+    var total = filtered.length;
+    var totalPages = Math.max(1, Math.ceil(total / pageSize));
+    if (page > totalPages) page = totalPages;
+    var start = (page - 1) * pageSize;
+    var slice = filtered.slice(start, start + pageSize);
+
+    var tbody = $('tbody');
+    tbody.innerHTML = '';
+    var colTotal = BASE_COL_COUNT + ansColCount + VALUE_COLS.length;
+    if (!slice.length) {
+      var tr0 = document.createElement('tr');
+      var td0 = document.createElement('td');
+      td0.colSpan = colTotal; td0.className = 'empty';
+      td0.textContent = allRecords.length ? '没有符合筛选条件的记录' : '暂无数据，请先用浏览器扩展在「问大家」页采集并「发送到运营工作台」';
+      tr0.appendChild(td0); tbody.appendChild(tr0);
+    } else {
+      slice.forEach(function (r) {
+        var tr = document.createElement('tr');
+        /* ★ 顺序必须与静态 thead / 插件导出 CSV 完全一致（改一处就要改三处，见 thead 上方注释） */
+        var cells = [
+          esc(r.store || '默认店铺') + storeBadge(r.store),
+          esc(r.question) || na('—'),
+          esc(r.asker) || na('—'),
+          esc(r.askTime) || na('—'),
+          answerNumCell(r),
+          esc(r.product) || na('—'),
+          r.productId ? '<span class="nowrap">' + esc(r.productId) + '</span>' : na('未采集'),
+          r.answerDays ? '<span class="muted2">' + esc(r.answerDays) + '</span>' : '<span class="muted2">—</span>'
+        ];
+        cells.forEach(function (v, i) {
+          var td = document.createElement('td');
+          if (i === 1) td.className = 'q-cell';   // 问题列加粗
+          td.innerHTML = v;
+          tr.appendChild(td);
+        });
+        // 回答1..N
+        var ans = recAnswers(r);
+        for (var k = 0; k < ansColCount; k++) {
+          var tdA = document.createElement('td');
+          tdA.className = 'ans-cell';
+          tdA.innerHTML = answerCell(ans[k]);
+          tr.appendChild(tdA);
+        }
+        // 尾部增值列：问题ID
+        var vc = [
+          r.questionId ? '<span class="nowrap mono">' + esc(r.questionId) + '</span>' : na('未采集')
+        ];
+        vc.forEach(function (v) {
+          var td = document.createElement('td');
+          td.innerHTML = v;
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
+    }
+
+    $('pageInfo').textContent = '共 ' + total + ' 条';
+    $('pageLabel').textContent = '第 ' + page + ' / ' + totalPages + ' 页';
+    $('btnPrev').disabled = page <= 1;
+    $('btnNext').disabled = page >= totalPages;
+  }
+
+  function renderStats() {
+    var rows = Array.isArray(filtered) ? filtered : allRecords;
+    var scoped = hasActiveFilter();
+
+    $('statTotal').textContent = rows.length;
+    $('statStore').textContent = uniq(rows.map(function (r) { return r.store || '默认店铺'; })).length;
+    $('statProduct').textContent = uniq(rows.map(function (r) { return r.productId; })).length;
+    // 回答数：页面声明的总数（不能只用抓到的正文数，否则会显示成 0）
+    var declared = 0, got = 0;
+    $('statReply').textContent = rows.filter(function (r) { return declaredNum(r) > 0; }).length;   // 「有人回答」的问题数
+    rows.forEach(function (r) { declared += declaredNum(r); got += recAnswers(r).length; });
+    $('statDeclared').textContent = declared;
+    $('statAnswers').textContent = got;
+    var answered = rows.filter(isAnswered).length;
+    $('statAnswered').textContent = answered;
+    $('statUnanswered').textContent = rows.length - rows.filter(function (r) { return isAnswered(r) || hasDeclaredAnswer(r); }).length;
+
+    renderScope(scoped, rows);
+  }
+
+  function hasActiveFilter() {
+    var kw = ($('kw') && $('kw').value || '').trim();
+    var s = $('selStore') && $('selStore').value;
+    var p = $('selProduct') && $('selProduct').value;
+    var st = $('selStatus') && $('selStatus').value;
+    return !!(kw || s || p || st);
+  }
+
+  function renderScope(isScoped, rows) {
+    var wrap = $('sumScope');
+    if (!wrap) return;
+    var chip = $('sumScopeChip');
+    var btn = $('sumScopeClear');
+    if (isScoped) {
+      chip.textContent = describeFilter() + ' · ' + rows.length + ' 条';
+      wrap.classList.add('filtered');
+      if (btn) btn.style.display = '';
+    } else {
+      chip.textContent = '全部数据';
+      wrap.classList.remove('filtered');
+      if (btn) btn.style.display = 'none';
+    }
+  }
+
+  function describeFilter() {
+    var parts = [];
+    var s = $('selStore') && $('selStore').value;
+    if (s) parts.push('店铺：' + s);
+    var p = $('selProduct') && $('selProduct').value;
+    if (p) parts.push('商品：' + (p.length > 18 ? p.slice(0, 18) + '…' : p));
+    var st = $('selStatus') && $('selStatus').value;
+    if (st) {
+      var map = { answered: '有回答正文', hasnum: '有人回答', unanswered: '无人回答', seller: '含卖家回答' };
+      parts.push(map[st] || st);
+    }
+    var kw = ($('kw') && $('kw').value || '').trim();
+    if (kw) parts.push('搜索「' + kw + '」');
+    return parts.length ? parts.join(' · ') : '筛选结果';
+  }
+
+  function loadData() {
+    $('banner').classList.remove('show');
+    $('tbody').innerHTML = '<tr><td colspan="' + (BASE_COL_COUNT + ansColCount + VALUE_COLS.length) + '" class="empty">正在加载数据…</td></tr>';
+    fetch('/api/qianniu-ask')
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        if (j && j.ok) {
+          allRecords = Array.isArray(j.records) ? j.records : [];
+          buildSelects();
+          applyUrlFilter();   // ★ 必须在 buildSelects() 之后（下拉框的 option 得先建出来）
+          /* ★ 渲染整体包一层 try/catch（2026-09-14）：
+             之前任何一条记录结构异常都会让 applyFilters/render 抛错，
+             表现为「整个表格空白 + 控制台才有报错」——用户侧几乎无法自查。
+             现在把异常显示到顶部横幅，并把出错的第一条记录摘出来。 */
+          try {
+            applyFilters();
+          } catch (e) {
+            showError('数据渲染出错：' + (e && e.message ? e.message : String(e)) +
+              '（共读到 ' + allRecords.length + ' 条记录，请把这条提示反馈给开发者）');
+            if (window.console && console.error) console.error('[问大家] 渲染异常', e, allRecords[0]);
+          }
+        } else {
+          showError((j && j.error) || '数据读取失败');
+        }
+      })
+      .catch(function () {
+        if (location.protocol === 'file:') {
+          showError('当前是通过本地文件方式打开的，无法读取数据。请在浏览器地址栏输入并访问：http://127.0.0.1:8787/千牛问大家.html');
+        } else {
+          showError('无法连接运营工作台服务，请先双击「启动工作台.bat」启动本地服务。');
+        }
+      });
+  }
+
+  function showError(msg) {
+    $('banner').textContent = msg;
+    $('banner').classList.add('show');
+    allRecords = [];
+    filtered = [];
+    renderAnswerHeaders(0);
+    applyFilters();
+  }
+
+  function downloadBlob(blob, name) {
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = name;
+    document.body.appendChild(a); a.click();
+    setTimeout(function () { URL.revokeObjectURL(url); a.remove(); }, 100);
+  }
+
+  function buildCsv(records) {
+    /* CSV 约定与评价页 / 插件完全一致：
+       · 问题/回答里的换行压成空格、含逗号或引号时用 "..." 包裹、内部引号翻倍
+       · 商品ID 用 ="..." 防 Excel 科学计数法
+       · 首行 BOM 防中文乱码 */
+    var maxAns = maxAnswerCount(records);
+    /* ★ 前 7 列必须与插件 askDownloadExport() 的表头**逐字逐序**相同：
+       问题 | 提问人 | 提问时间 | 回答数 | 商品标题 | 商品ID | 剩余可回答天数
+       然后是动态的 回答1..N，最后才是本页的增值列。
+       （2026-09-15 修正：此前「商品标题/回答数」互换、回答列插在中间、尾部两列倒序。） */
+    var headers = ['店铺', '问题', '提问人', '提问时间', '回答数', '商品标题', '商品ID', '剩余可回答天数'];
+    for (var i = 1; i <= maxAns; i++) headers.push('回答' + i);
+    headers = headers.concat(['问题ID', '店铺类型', '回答正文条数']);
+
+    function q(v) {
+      var s = String(v == null ? '' : v).replace(/\r\n/g, '\n').replace(/\r/g, '\n').replace(/\n+/g, ' ').trim();
+      return /[",]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+    }
+
+    var lines = [headers.join(',')];
+    records.forEach(function (r) {
+      var ans = recAnswers(r);
+      var row = [
+        q(r.store),
+        q(r.question),
+        q(r.asker),
+        q(r.askTime),
+        q(r.answerNum),
+        q(r.product),
+        '="' + String(r.productId == null ? '' : r.productId) + '"',
+        q(r.answerDays)
+      ];
+      for (var k = 0; k < maxAns; k++) {
+        var a = ans[k];
+        if (!a) { row.push('""'); continue; }
+        var cell = a.content || '';
+        var meta = [];
+        if (a.answerer) meta.push(a.answerer);
+        if (a.answerTime) meta.push(a.answerTime);
+        if (a.isSeller) meta.push('卖家回答');
+        if (a.answerId) meta.push('回答ID ' + a.answerId);
+        if (meta.length) cell += (cell ? ' ｜ ' : '') + meta.join(' · ');
+        row.push(q(cell));
+      }
+      row = row.concat([
+        '="' + String(r.questionId == null ? '' : r.questionId) + '"',
+        storeTypeLabel(storeType(r.store)),
+        q(String(ans.length))
+      ]);
+      lines.push(row.join(','));
+    });
+    return '\ufeff' + lines.join('\r\n');
+  }
+
+  function pad(n) { return String(n).padStart(2, '0'); }
+  function stamp() { var d = new Date(); return d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate()) + '_' + pad(d.getHours()) + pad(d.getMinutes()); }
+
+  function clearFilters() {
+    $('kw').value = '';
+    $('selStore').value = '';
+    $('selProduct').value = '';
+    $('selStatus').value = '';
+    applyFilters();
+  }
+
+  /* ★ URL 筛选参数（2026-09-14）：首页的待办卡片会跳到
+     「千牛问大家.html?filter=unanswered|answered|hasnum|seller」。
+     ⚠️ 只在参数**合法**时才动下拉框；参数不认识 / 没参数 → 完全不动，
+        保证「直接打开本页」和以前的行为一模一样。
+     提示不用另做：口径栏（scopeText）会自动写成「无人回答 · 6 条」。 */
+  var URL_FILTER_MAP = {
+    unanswered: ['selStatus', 'unanswered'],
+    answered:   ['selStatus', 'answered'],
+    hasnum:     ['selStatus', 'hasnum'],
+    seller:     ['selStatus', 'seller']
+  };
+  function applyUrlFilter() {
+    var f = '';
+    try { f = (new URLSearchParams(location.search).get('filter') || '').trim(); } catch (e) { f = ''; }
+    if (!f) return '';
+    var hit = URL_FILTER_MAP[f];
+    if (!hit) return '';
+    var el = $(hit[0]);
+    if (el) el.value = hit[1];
+    return f;
+  }
+
+  function exportCsv() {
+    if (!filtered.length) { alert('没有可导出的记录'); return; }
+    downloadBlob(new Blob([buildCsv(filtered)], { type: 'text/csv;charset=utf-8;' }), '问大家_' + stamp() + '.csv');
+  }
+
+  function exportJson() {
+    if (!filtered.length) { alert('没有可导出的记录'); return; }
+    downloadBlob(new Blob(['\ufeff' + JSON.stringify(filtered, null, 2)], { type: 'application/json;charset=utf-8;' }), '问大家_' + stamp() + '.json');
+  }
+
+  function bind() {
+    $('btnRefresh').addEventListener('click', loadData);
+
+    var t = null;
+    $('kw').addEventListener('input', function () { clearTimeout(t); t = setTimeout(applyFilters, 250); });
+    $('selStore').addEventListener('change', applyFilters);
+    $('selProduct').addEventListener('change', applyFilters);
+    $('selStatus').addEventListener('change', applyFilters);
+
+    $('btnClearFilter').addEventListener('click', clearFilters);
+    var sc = $('sumScopeClear');
+    if (sc) sc.addEventListener('click', clearFilters);
+
+    $('btnDelStore').addEventListener('click', function () {
+      var store = $('selStore').value;
+      if (!store) { alert('请先在下拉框里选择要删除的店铺（不能删「全部店铺」）'); return; }
+      if (!confirm('确定删除店铺「' + store + '」的全部问大家数据吗？此操作不可恢复。')) return;
+      fetch('/api/qianniu-ask/remove-store', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ store: store })
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+          if (j && j.ok) { alert('已删除「' + store + '」数据：' + (j.removed || 0) + ' 条'); loadData(); }
+          else { alert('删除失败：' + ((j && j.error) || '未知错误')); }
+        })
+        .catch(function (e) { alert('删除失败：' + e.message); });
+    });
+
+    $('btnPrev').addEventListener('click', function () { if (page > 1) { page--; render(); } });
+    $('btnNext').addEventListener('click', function () {
+      var totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+      if (page < totalPages) { page++; render(); }
+    });
+    $('pageSize').addEventListener('change', function () {
+      pageSize = parseInt(this.value, 10) || 100;
+      page = 1;
+      render();
+    });
+
+    $('btnCsv').addEventListener('click', exportCsv);
+    $('btnJson').addEventListener('click', exportJson);
+  }
+
+  bind();
+  loadData();
+})();
+
+</script>
+</body>
+</html>

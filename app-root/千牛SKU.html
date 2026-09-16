@@ -1,0 +1,1032 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="mobile-ui.css">
+<script src="mobile-adapter.js"></script>
+<title>SKU管理 · 运营工作台</title>
+<style>
+  :root[data-theme="eye"]{
+    --bg:#F5F1E8; --panel:#FBF8F1; --panel2:#F0EADC;
+    --line:#E5DCCB; --line2:#D5C9B4;
+    --ink:#3C3229; --muted:#7A6E5F; --muted2:#A2957F;
+    --accent:#F97316; --accent-d:#EA580C; --accent-soft:rgba(249,115,10,0.12);
+    --ok:#16A34A; --danger:#EF4444;
+    --shadow:0 6px 24px rgba(60,50,41,.08);
+    --radius:14px;
+  }
+  :root{
+    --bg:#100E0C; --panel:#171412; --panel2:#221C18;
+    --line:#2A231E; --line2:#3D332C;
+    --ink:#F1F5F9; --muted:#94A3B8; --muted2:#64748B;
+    --accent:#F97316; --accent-d:#EA580C; --accent-soft:rgba(249,115,10,0.12);
+    --ok:#34D399; --danger:#F87171;
+    --shadow:0 8px 28px rgba(0,0,0,.40);
+    --radius:14px;
+  }
+  /* 暗色主题：显式声明，不再依赖 :root 默认值（防止默认值变更后暗色失效） */
+  :root[data-theme="dark"]{
+    --bg:#100E0C; --panel:#171412; --panel2:#221C18;
+    --line:#2A231E; --line2:#3D332C;
+    --ink:#F5EFEA; --muted:#B4A49A; --muted2:#8A7A70;
+    --accent:#FB923C; --accent-d:#F97316; --accent-soft:rgba(251,146,60,0.14);
+    --ok:#34D399; --danger:#F87171;
+    --shadow:0 8px 28px rgba(0,0,0,.40);
+    --radius:14px;
+  }
+  :root[data-theme="light"]{
+    --bg:#FAF7F5; --panel:#FFFFFF; --panel2:#F3EDE8;
+    --line:#EFE6DE; --line2:#DCD2C9;
+    --ink:#111827; --muted:#475569; --muted2:#94A3B8;
+    --accent:#F97316; --accent-d:#EA580C; --accent-soft:rgba(249,115,10,0.12);
+    --ok:#16A34A; --danger:#EF4444;
+    --shadow:0 6px 24px rgba(15,23,42,.10);
+    --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;margin:0;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    background:var(--bg); color:var(--ink);
+    display:flex; flex-direction:column; min-height:100vh;
+  }
+
+  header{
+    padding:16px 24px; border-bottom:1px solid var(--line);
+    display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+    background:linear-gradient(180deg, rgba(249,115,10,0.06), transparent);
+  }
+  header h1{font-size:19px; margin:0; font-weight:700; display:flex; align-items:center; gap:10px;}
+  header .dot{width:10px; height:10px; border-radius:50%; background:var(--accent); box-shadow:0 0 0 4px rgba(249,115,10,0.15);}
+  header .sub{font-size:12px; color:var(--muted);}
+  header .spacer{flex:1;}
+  .refresh-btn{
+    padding:8px 16px; border-radius:9px; border:1px solid var(--line2);
+    background:var(--panel2); color:var(--ink); cursor:pointer; font-size:13px; transition:.15s;
+  }
+  .refresh-btn:hover{border-color:var(--accent); color:var(--accent);}
+
+  .summary{display:flex; gap:12px; padding:14px 24px; flex-wrap:wrap;}
+  .stat{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:12px 18px; min-width:120px; box-shadow:var(--shadow);}
+  .stat .k{font-size:12px; color:var(--muted); margin-bottom:6px;}
+  .stat .v{font-size:20px; font-weight:700; color:var(--accent);}
+
+  .toolbar{display:flex; gap:10px; padding:0 24px 14px; flex-wrap:wrap; align-items:center;}
+  .toolbar input, .toolbar select{
+    background:var(--panel2); border:1px solid var(--line2); color:var(--ink);
+    border-radius:9px; padding:8px 12px; font-size:13px; outline:none; transition:.15s;
+  }
+  .toolbar input:focus, .toolbar select:focus{border-color:var(--accent);}
+  .toolbar input[type="text"]{min-width:240px;}
+  /* 从首页带筛选跳进来时的提示 chip（见 applyUrlFilter） */
+  .filter-hint{
+    display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:600;
+    color:var(--accent); background:var(--accent-soft); border:1px solid rgba(249,115,10,.32);
+    border-radius:999px; padding:4px 12px;
+  }
+  .toolbar .btn{
+    padding:8px 16px; border-radius:9px; border:1px solid var(--line2);
+    background:var(--panel2); color:var(--ink); cursor:pointer; font-size:13px; transition:.15s; white-space:nowrap;
+  }
+  .toolbar .btn:hover{border-color:var(--accent); color:var(--accent);}
+  .toolbar .btn.primary{background:var(--accent); border-color:var(--accent); color:#1a1206; font-weight:600;}
+  .toolbar .btn.primary:hover{background:var(--accent-d); border-color:var(--accent-d); color:#fff;}
+
+  .table-wrap{flex:1; padding:0 24px; overflow:auto; min-height:0;}
+  table{width:100%; border-collapse:collapse; font-size:13px; min-width:1480px;}
+  thead th{
+    position:sticky; top:0; background:var(--panel2); color:var(--muted);
+    text-align:left; padding:11px 12px; border-bottom:1px solid var(--line2);
+    font-weight:600; white-space:nowrap; z-index:2;
+  }
+  /* tbody td：CJK 内容不要按字断行（keep-all），只在空格/标点处换行；
+     英文/长 URL 仍允许 overflow-wrap 断字。
+     2026-09-15 修复 SKU 描述列被挤窄后每个汉字竖着排成一行的视觉问题。 */
+  tbody td{padding:10px 12px; border-bottom:1px solid var(--line); vertical-align:middle; color:var(--ink); word-break:keep-all; overflow-wrap:break-word;}
+  /* ID / 编码 / 价格 / 库存等短字段不换行，避免加列后被挤成两行 */
+  tbody td.nowrap{white-space:nowrap;}
+  /* 商品标题：固定单行显示，不自动换行；过长省略，鼠标悬停看完整标题 */
+  td.cell-title{white-space:nowrap;}
+  td.cell-title > span{display:block; max-width:320px; overflow:hidden; text-overflow:ellipsis;}
+  /* CJK 多的几列给最小宽度，避免窄列下被挤成 1 个字宽竖排
+     （表格整体 min-width 1480px，20 列必然会横向滚动 —— 但希望列里内容别再被压垮） */
+  td.cell-sku-desc{min-width:130px;}
+  td.cell-attrs{min-width:130px;}
+  /* 可手动填写的 9 列：售价 / 成本 / 运费 / 供应商 / 在线采购 / 地址管理 / 测试下单时间 / 订单揽收时间 / 发货时长
+     （2026-09-15 调整：售价=价格×5折 为新增列，且这三列价格相关的一起挪到「供应商」之前） */
+  tbody td.cell-edit{min-width:104px; white-space:nowrap; cursor:text; outline:none; transition:background .15s, box-shadow .15s;}
+  tbody td.cell-edit:hover{background:var(--panel2);}
+  tbody td.cell-edit:focus{background:var(--panel); box-shadow:inset 0 0 0 2px var(--accent); color:var(--ink); font-style:normal;}
+  tbody td.cell-edit:empty::before{content:'点击填写'; color:var(--muted); opacity:.4; font-size:12px;}
+  /* 左侧橙条 = 这一格是手动填过的（区别于自动/导入的值） */
+  tbody td.cell-edit.has-manual{box-shadow:inset 3px 0 0 var(--accent);}
+  tbody td.cell-edit.has-manual:focus{box-shadow:inset 3px 0 0 var(--accent), inset 0 0 0 2px var(--accent);}
+  /* 由「测试下单时间 ~ 订单揽收时间」自动算出的发货时长：淡色斜体，表示非手填 */
+  tbody td.cell-auto{color:var(--muted); font-style:italic;}
+  /* 表头标记：这几列可以手动填写 */
+  thead th.th-manual::after{content:'✎'; font-size:10px; margin-left:4px; opacity:.55; font-weight:400;}
+  tbody tr:hover{background:var(--panel);}
+  .empty{text-align:center; color:var(--muted); padding:48px 0; font-size:14px;}
+  /* 图片列（2 列）：缩略图 + 点击看大图。
+     第 1 列「商品主图」= 商品级（r.productImg）；第 8 列「SKU搜索主图」= SKU 级（r.imgUrl）。
+     两列列序/列名与插件 SKU 导出的 SKU_HEADERS 严格一致。 */
+  .img-cell{text-align:center; white-space:nowrap;}
+  .img-cell a{display:inline-block; line-height:0; border-radius:8px; overflow:hidden; border:1px solid var(--line2); transition:.15s; vertical-align:middle;}
+  .img-cell a:hover{border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft);}
+  .img-cell img{width:46px; height:46px; object-fit:cover; display:block; background:var(--panel2);}
+  .img-cell .img-fallback{display:inline-block; padding:4px 8px; border-radius:7px; font-size:12px; color:var(--accent); border:1px solid var(--line2); text-decoration:none;}
+  .img-cell .img-fallback:hover{border-color:var(--accent);}
+  .cell-search-title{max-width:260px; min-width:120px; color:var(--muted); font-size:12.5px;}
+
+  .pagination{display:flex; align-items:center; gap:10px; padding:14px 24px; border-top:1px solid var(--line); flex-wrap:wrap;}
+  .pagination .info{font-size:12px; color:var(--muted);}
+  .pagination button{
+    padding:7px 14px; border-radius:8px; border:1px solid var(--line2);
+    background:var(--panel2); color:var(--ink); cursor:pointer; font-size:13px; transition:.15s;
+  }
+  .pagination button:disabled{opacity:.4; cursor:not-allowed;}
+  .pagination button:not(:disabled):hover{border-color:var(--accent); color:var(--accent);}
+  .pagination .pages{font-size:13px; color:var(--muted);}
+
+  .banner{
+    margin:14px 24px 0; padding:12px 16px; border-radius:10px;
+    background:rgba(248,113,113,0.12); border:1px solid rgba(248,113,113,0.35);
+    color:#FECACA; font-size:13px; display:none;
+  }
+  .banner.show{display:block;}
+
+  /* 手动填写后的轻提示（右下角，1.6s 自动消失） */
+  .toast{
+    position:fixed; right:24px; bottom:24px; z-index:60;
+    padding:9px 16px; border-radius:9px; font-size:13px;
+    background:var(--ink); color:var(--panel);
+    opacity:0; transform:translateY(8px); pointer-events:none;
+    transition:opacity .2s, transform .2s;
+  }
+  .toast.show{opacity:.94; transform:translateY(0);}
+  .toast.warn{background:#DC2626; color:#fff;}
+</style>
+<script>
+(function(){
+  var WP='wb_theme', WS='wb_theme_auto_start', WE='wb_theme_auto_end';
+  function mins(t){ var p=String(t||'00:00').split(':'); return (parseInt(p[0],10)||0)*60+(parseInt(p[1],10)||0); }
+  function resolve(mode){
+    if(mode==='light'||mode==='dark'||mode==='eye') return mode;
+    if(mode!=='auto') return 'light';
+    var d=new Date(), m=d.getHours()*60+d.getMinutes(), s=1080, e=360;
+    try{ s=mins(localStorage.getItem(WS)||'18:00'); e=mins(localStorage.getItem(WE)||'06:00'); }catch(x){}
+    var dark=(s<e)?(m>=s&&m<e):(m>=s||m<e);
+    return dark?'dark':'light';
+  }
+  window.__wbResolveTheme = resolve;
+  function apply(){
+    var mode='light'; try{ mode=localStorage.getItem(WP)||'light'; }catch(e){}
+    document.documentElement.setAttribute('data-theme', resolve(mode));
+  }
+  apply();
+  window.addEventListener('message', function(e){
+    if(e.data && e.data.type==='wb-theme'){
+      var t=e.data.theme||e.data.mode;
+      if(t) document.documentElement.setAttribute('data-theme', resolve(t));
+      else apply();
+    }
+  });
+  try{ window.addEventListener('storage', function(e){ if(!e.key||e.key===WP||e.key===WS||e.key===WE) apply(); }); }catch(e){}
+})();
+</script>
+<link rel="stylesheet" href="scrollbar.css?v=1">
+</head>
+<body>
+  <header>
+    <h1><span class="dot"></span>SKU管理</h1>
+    <span class="sub">来自浏览器扩展导入的 SKU 明细 · 本地存储</span>
+    <span class="spacer"></span>
+    <button class="refresh-btn" id="btnRefresh">↻ 刷新数据</button>
+  </header>
+
+  <div class="summary" id="summary">
+    <div class="stat"><div class="k">SKU 总数</div><div class="v" id="statTotal">0</div></div>
+    <div class="stat"><div class="k">商品数</div><div class="v" id="statItem">0</div></div>
+    <div class="stat"><div class="k">店铺数</div><div class="v" id="statStore">0</div></div>
+    <div class="stat"><div class="k">有供应商 / 测试下单</div><div class="v" id="statOps">0</div></div>
+  </div>
+
+  <div class="banner" id="banner">无法连接运营工作台服务，请先双击「启动工作台.bat」启动本地服务。</div>
+
+  <div class="toolbar" id="toolbar">
+    <input type="text" id="kw" placeholder="搜索：商品标题 / 商品ID / 商家编码 / SKU描述 / SKUID">
+    <select id="selStore"><option value="">全部店铺</option></select>
+    <select id="selGap" title="只看缺字段的商品（首页的待办卡片会带参数跳到这里）">
+      <option value="">全部数据</option>
+      <option value="nocode">缺商家编码</option>
+      <option value="noimg">缺商品主图</option>
+    </select>
+    <span class="filter-hint" id="filterHint" style="display:none"></span>
+    <button class="btn" id="btnDelStore" title="删除当前选中的店铺及其全部数据">删除店铺</button>
+    <button class="btn" id="btnClearFilter">清空筛选</button>
+    <span class="spacer" style="flex:1"></span>
+    <button class="btn" id="btnCsv">导出 CSV</button>
+    <button class="btn" id="btnJson">导出 JSON</button>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>商品主图</th>
+          <th>商品标题</th>
+          <th>商品ID</th>
+          <th>商家编码</th>
+          <th>SKU描述</th>
+          <th>SKUID</th>
+          <th>状态标签</th>
+          <th>SKU搜索主图</th>
+          <th>搜索标题</th>
+          <th>价格</th>
+          <th>库存</th>
+          <th>属性</th>
+          <th class="th-manual" title="默认按「价格 × 5 折」自动计算，可直接输入覆盖（清空则恢复自动值）。按 SKU 独立保存">售价</th>
+          <th class="th-manual" title="可手动填写。按 SKU 独立保存 —— 同一商品不同规格各填各的">成本</th>
+          <th class="th-manual" title="可手动填写。按 SKU 独立保存 —— 同一商品不同规格各填各的">运费</th>
+          <th class="th-manual" title="可手动填写（同一商品的各 SKU 共用一份）">供应商</th>
+          <th class="th-manual" title="可手动填写（同一商品的各 SKU 共用一份）">在线采购</th>
+          <th class="th-manual" title="可手动填写（同一商品的各 SKU 共用一份）">地址管理</th>
+          <th class="th-manual" title="可手动填写，格式如 2026-09-14（同一商品的各 SKU 共用一份）">测试下单时间</th>
+          <th class="th-manual" title="可手动填写，格式如 2026-09-14（同一商品的各 SKU 共用一份）">订单揽收时间</th>
+          <th class="th-manual" title="留空时按「测试下单时间 → 订单揽收时间」自动计算；也可手动覆盖">发货时长</th>
+        </tr>
+      </thead>
+      <tbody id="tbody">
+        <tr><td colspan="21" class="empty">正在加载数据…</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="pagination">
+    <span class="info" id="pageInfo">共 0 条</span>
+    <button id="btnPrev">‹ 上一页</button>
+    <span class="pages" id="pageLabel">第 1 / 1 页</span>
+    <button id="btnNext">下一页 ›</button>
+    <span class="spacer" style="flex:1"></span>
+    <span class="info">每页 <select id="pageSize" style="background:var(--panel2);color:var(--ink);border:1px solid var(--line2);border-radius:7px;padding:4px 6px;">
+      <option value="50">50</option><option value="100" selected>100</option><option value="200">200</option><option value="500">500</option>
+    </select> 条</span>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  'use strict';
+  var APP_VERSION = 'v1.0.13';   // 2026-09-15：列序与插件 SKU 导出对齐（21 列）——
+                                          // 新增第 1 列「商品主图」(r.productImg)，原「主图」→「SKU搜索主图」(r.imgUrl)，
+                                          // 「状态」→「状态标签」，「搜索标题」挪到图片列之后；v1.0.12：第 4 列名统一为「商家编码」（原「商品商家编码」）
+                                          // v1.0.13：「成本」由商品级改为 SKU 级（同商品不同规格进价不同，见 SKU_LEVEL_FIELDS）
+                                          // 表格 / CSV 表头 / CSV 行映射三处一起改（改一处会静默错位）
+
+  var allRecords = [];
+  var filtered = [];
+  // 店铺 items 索引（store + productId 关联 → SKU 的 itemId），用于在 SKU 表里回填
+  // 「供应商/在线采购/地址管理/测试下单时间/订单揽收时间/发货时长」这几列
+  // （这些字段原本在店铺商品总览页里手输，本页消费同一份数据）
+  var itemMetaByKey = {};   // key = store + '||' + itemId
+  // 手动填写的内容，两种 key 混存同一个对象里：
+  //   商品级 `store||itemId`            → { supplier, onlinePurchase, addressMgmt,
+  //                                        testOrderTime, collectTime, shipDuration }
+  //   SKU 级  `store||itemId||skuId`    → { salePrice, cost, shipping }
+  // 存服务端独立槽位 wb_sku_manual（/api/backup?app=skumeta），与 SKU 导入数据、店铺数据都不互相覆盖。
+  // 具体哪些字段按哪个维度存，见下面的 SKU_LEVEL_FIELDS。
+  var manualByKey = {};
+  var page = 1;
+  var pageSize = 100;
+
+  // 可手动填写的 9 列（顺序与表头一致）
+  // ⚠️ 2026-09-15 调整：原「售价」列改名「价格」（它是插件抓来的原始数据，不可改），
+  //    另新增一列「售价」= 价格 × 5 折（默认自动算，可手填覆盖）；
+  //    并把 售价 / 成本 / 运费 三列一起挪到「供应商」之前，让价格相关的列挨在一起。
+  var MANUAL_FIELDS = ['salePrice', 'cost', 'shipping',
+                       'supplier', 'onlinePurchase', 'addressMgmt', 'testOrderTime',
+                       'collectTime', 'shipDuration'];
+
+  var $ = function (id) { return document.getElementById(id); };
+  function esc(s) { return (s == null) ? '' : String(s); }
+  function keyOf(r) { return (r && r.store || '') + '||' + (r && r.itemId || ''); }
+  function keyOfSku(r) { return keyOf(r) + '||' + (r && r.skuId || ''); }
+
+  /* ★★ 手填字段的**存储维度**（2026-09-15 建，2026-09-16 补运费）：
+     - **SKU 级（`店铺||商品ID||SKUID`，每行各自一份）：售价 / 成本 / 运费**
+       · 售价：由「价格」推出，而价格本身就是 SKU 级（实测同一商品 4 个 SKU 价格
+         300 / 1366 / 2520 / 200，自动售价 150 / 683 / 1260 / 100）。
+         存成商品级的话，随便填一个售价就会把该商品**其它 SKU 各自算出来的售价全部抹掉**，
+         真实事故：1075183534061 的 26.00 被 16.90 覆盖、1075290244009 的 683/1260/100 被 150 覆盖。
+       · 成本：同一商品不同规格的进价本来就不同（「黄色（单只）」与「黄色（2只装）」不是一个价）。
+         按商品级存会表现为「改一行、全商品跟着变」——
+         真实事故：1075183534061 只填过一次 7.9，两个规格都显示 7.9。
+       · 运费：2026-09-16 按用户要求改 SKU 级 —— 不同规格的体积/重量不同，运费本来就不一样。
+         历史上按商品级存过的 成本 / 运费，会在 loadData() 之后由 migrateToSkuLevel()
+         一次性平铺到该商品下每个 SKU，再删掉商品级那条（幂等，跑完就空转）。
+     - 商品级（`店铺||商品ID`，同商品所有 SKU 行共用一份）：
+       供应商 / 在线采购 / 地址管理 / 测试下单时间 / 订单揽收时间 / 发货时长
+       —— 这些确实是商品级信息，填一次全商品通用。 */
+  var SKU_LEVEL_FIELDS = { salePrice: 1, cost: 1, shipping: 1 };
+  /* SKU 级字段的中文名 —— 单元格 title / 提示文案按字段名生成，
+     不要再在分支里硬编码（2026-09-16：运费改 SKU 级时就是因为硬编码而误显示了「成本」的说明）。 */
+  var SKU_FIELD_LABEL = { salePrice: '售价', cost: '成本', shipping: '运费' };
+  function isSkuLevel(field) { return !!SKU_LEVEL_FIELDS[field]; }
+  function keyFor(r, field) { return SKU_LEVEL_FIELDS[field] ? keyOfSku(r) : keyOf(r); }
+  /* 商家编码（商品级字段）取值：
+     ① SKU 记录自带 ② 退到「商品管理」页同一店铺+商品ID 的 items（历史搬运值）。
+     为什么要 ②：商家编码是**商品级**字段，商品导出（列表页）抓到过；
+     SKU 页的左侧列表是虚拟滚动、极少数商品条目扫不到（实测 PurrKnave 133 个里有 3 个）
+     → 工作台这边按 store+itemId 精确关联就能补上，用户不用为了 3 行去重采全店。 */
+  function codeOf(r) {
+    var own = (r && r.merchantCode != null) ? String(r.merchantCode).trim() : '';
+    if (own) return own;
+    var m = itemMetaByKey[keyOf(r)];
+    return (m && m.merchantCode != null) ? String(m.merchantCode).trim() : '';
+  }
+  function codeFromMetaOnly(r) { return !((r && r.merchantCode != null) && String(r.merchantCode).trim()); }
+  function manualGet(key, field) {
+    var m = manualByKey[key];
+    return (m && m[field] != null) ? String(m[field]) : '';
+  }
+
+  /* 「本 SKU 没有手填」时这一格该显示什么 —— 清空手填值后就还原成它。
+     顺序：商品级手填 > SKU 记录自身 > 「商品管理」搬运值 */
+  function extFallback(r, key) {
+    var pv = manualGet(keyOf(r), key);
+    if (pv.trim() !== '') return pv;
+    if (r && r[key] != null && String(r[key]).trim() !== '') return r[key];
+    var m = itemMetaByKey[keyOf(r)];
+    return (m && m[key] != null) ? m[key] : '';
+  }
+  // 取扩展字段，优先级：本 SKU 手填 > 商品级手填 > SKU 记录自身 > 店铺商品 items（历史搬运过来的值）
+  // ⚠️ 手填第一层的 key 必须走 keyFor()：售价 / 成本是 SKU 级，其余是商品级
+  function ext(r, key) {
+    if (SKU_LEVEL_FIELDS[key]) {
+      var own = manualGet(keyOfSku(r), key);
+      if (own.trim() !== '') return own;
+    }
+    return extFallback(r, key);
+  }
+  // 该字段是否由「本行」手填（SKU 级看本 SKU，商品级看整个商品）
+  function isManual(r, key) { return manualGet(keyFor(r, key), key).trim() !== ''; }
+
+  /* ---------- 手动填写内容的读写 ---------- */
+
+  var toastTimer = null;
+  function toast(msg, warn) {
+    var el = $('toast');
+    if (!el) return;
+    el.textContent = msg;
+    el.className = 'toast show' + (warn ? ' warn' : '');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { el.className = 'toast'; }, 1600);
+  }
+
+  // 读取已保存的手动内容（失败时静默，页面仍可用，只是没有历史填写）
+  function loadManual() {
+    return fetch('/api/backup?app=skumeta', { cache: 'no-store' }).then(function (r) {
+      if (r.status === 204) return null;
+      return r.json();
+    }).then(function (j) {
+      manualByKey = (j && typeof j === 'object' && !Array.isArray(j)) ? j : {};
+    }).catch(function () { manualByKey = {}; });
+  }
+
+  /* ★ 一次性迁移：把历史上按「商品级」存过的字段，平铺到该商品下每一个 SKU。
+     2026-09-15：成本 cost 改 SKU 级；2026-09-16：运费 shipping 也改 SKU 级。
+     迁移后每个 SKU 各有一份独立值，商品级那条同时删掉，避免它变成看不见的默认值。
+     幂等：跑完商品级那几个字段就没了，后续每次 loadData() 都是空转。 */
+  var SKU_MIGRATE_FIELDS = ['cost', 'shipping'];
+  function migrateToSkuLevel() {
+    if (!allRecords.length) return 0;
+    var moved = 0;
+    Object.keys(manualByKey).forEach(function (pk) {
+      if (pk.split('||').length !== 2) return;          // 只处理商品级 key
+      var m = manualByKey[pk];
+      if (!m) return;
+      SKU_MIGRATE_FIELDS.forEach(function (f) {
+        if (m[f] == null || String(m[f]).trim() === '') return;
+        var val = String(m[f]).trim(), hit = 0;
+        allRecords.forEach(function (r) {
+          if (keyOf(r) !== pk) return;
+          if (!r.skuId) return;                            // 没有 SKUID 就没法建 SKU 级 key
+          var sk = keyOfSku(r);
+          var sm = manualByKey[sk] || {};
+          if (sm[f] == null || String(sm[f]).trim() === '') { sm[f] = val; manualByKey[sk] = sm; hit++; }
+        });
+        if (hit) { delete m[f]; moved += hit; }
+      });
+      if (manualByKey[pk] && Object.keys(manualByKey[pk]).length === 0) delete manualByKey[pk];
+    });
+    if (moved) {
+      saveManual();
+      toast('已把 ' + moved + ' 项商品级手填值改为按 SKU 独立保存');
+    }
+    return moved;
+  }
+
+  // 保存（防抖 400ms 合并连续编辑；卸载前用 sendBeacon 兜底，避免「改完立刻刷新」丢数据）
+  var saveTimer = null;
+  var pendingSave = false;
+
+  function flushManual() {
+    if (!pendingSave) return Promise.resolve();
+    pendingSave = false;
+    var payload = JSON.stringify(manualByKey);   // 先快照，避免请求发出前被重新加载覆盖
+    return fetch('/api/backup?app=skumeta', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: payload
+    }).then(function (r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      toast('已保存');
+    }).catch(function () {
+      pendingSave = true;   // 保留待保存标记，下次编辑 / 刷新时重试
+      toast('保存失败：请确认本地服务已启动', true);
+    });
+  }
+
+  function saveManual() {
+    pendingSave = true;
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(flushManual, 400);
+  }
+
+  // 关页 / 刷新时兜底送出未保存的内容（fetch 在卸载时会被取消，sendBeacon 不会）
+  window.addEventListener('beforeunload', function () {
+    if (!pendingSave) return;
+    clearTimeout(saveTimer);
+    try {
+      if (navigator.sendBeacon) {
+        navigator.sendBeacon('/api/backup?app=skumeta',
+          new Blob([JSON.stringify(manualByKey)], { type: 'application/json' }));
+        pendingSave = false;
+      }
+    } catch (e) { /* 兜底失败就算了，下次编辑会重试 */ }
+  });
+
+  // 计算发货时长：与店铺分析页口径一致（testOrderTime ~ collectTime，小时数）
+  function calcShipDuration(testOrderTime, collectTime) {    var ot = String(testOrderTime || '').trim();
+    var ct = String(collectTime || '').trim();
+    if (!ot || !ct) return '';
+    var d1 = new Date(ot), d2 = new Date(ct);
+    if (isNaN(d1.getTime()) || isNaN(d2.getTime())) return '';
+    return ((d2 - d1) / (1000 * 60 * 60)).toFixed(1) + 'h';
+  }
+
+  /* 计算「售价」= 价格 × 5 折（保留 2 位小数）。价格来自插件抓的原始数据（r.price）。
+     价格为空 / 非数字 / ≤0 → 返回空串（该格留空，用户可自己填）。
+     ⚠️ 与「发货时长」同一套路：默认显示这个自动值（淡色斜体），直接输入即覆盖成手填值，
+        清空后又回到自动值。自动值会写进单元格的 data-auto，清空时据此还原。 */
+  function calcSalePrice(r) {
+    var raw = String((r && r.price) == null ? '' : r.price).replace(/[^\d.\-]/g, '');
+    var p = parseFloat(raw);
+    if (!isFinite(p) || p <= 0) return '';
+    return (Math.round(p * 50) / 100).toFixed(2);   // p * 0.5，先乘 50 再除 100 规避浮点误差
+  }
+
+  /* ---------- 单元格编辑：提交 / 同步 / 重算 ---------- */
+
+  function findRecord(key) {
+    for (var i = 0; i < allRecords.length; i++) {
+      if (keyOf(allRecords[i]) === key) return allRecords[i];
+    }
+    return null;
+  }
+
+  // 重算某一行（或其所在行）的「发货时长」——仅当该格没有手填时才自动算
+  function recalcShipDuration(td) {
+    var tr = td.parentNode;
+    if (!tr) return;
+    var key = td.getAttribute('data-key');
+    if (manualGet(key, 'shipDuration').trim()) return;   // 手填过就不动
+    var shipTd = tr.querySelector('[data-field="shipDuration"]');
+    if (!shipTd) return;
+    var otTd = tr.querySelector('[data-field="testOrderTime"]');
+    var ctTd = tr.querySelector('[data-field="collectTime"]');
+    var v = calcShipDuration(otTd && otTd.textContent, ctTd && ctTd.textContent);
+    if (!v) { var r = findRecord(key); v = r ? (ext(r, 'shipDuration') || '') : ''; }
+    shipTd.textContent = v;
+    shipTd.classList.add('cell-auto');
+  }
+
+  // 商品级字段：同一商品的多个 SKU 行共用一份数据 → 把刚改的值同步到本页其它行
+  // （SKU 级字段如售价 / 成本，key 里带 SKUID，天然只匹配到自己那一行，不会串行）
+  function syncRowGroup(key, field, val) {
+    var list = document.querySelectorAll('#tbody td.cell-edit');
+    for (var i = 0; i < list.length; i++) {
+      var td = list[i];
+      if (td.getAttribute('data-key') !== key || td.getAttribute('data-field') !== field) continue;
+      if (String(td.textContent || '').replace(/\s+/g, ' ').trim() === val) continue;
+      if (!val && isSkuLevel(field)) {
+        /* 清空 → 恢复本行各自的默认值（不同 SKU 价格/成本不同，不能抄别行的） */
+        td.textContent = td.getAttribute('data-auto') || '';
+        td.classList.add('cell-auto');
+      } else {
+        td.textContent = val;
+      }
+      td.classList.toggle('has-manual', !!val);
+      if (!val && !isSkuLevel(field)) td.innerHTML = '';
+      /* 被同步的行也要更新 data-orig，理由同 onCellCommit 里那段说明 */
+      td.setAttribute('data-orig', String(td.textContent || '').replace(/\s+/g, ' ').trim());
+    }
+  }
+
+  // 失焦提交一格
+  function onCellCommit(td) {
+    var key = td.getAttribute('data-key');
+    var field = td.getAttribute('data-field');
+    if (!key || !field) return;
+    var val = String(td.textContent || '').replace(/\s+/g, ' ').trim();
+
+    var m = manualByKey[key] || {};
+    var prev = m[field] != null ? String(m[field]) : '';
+    var orig = td.getAttribute('data-orig') || '';
+    if (prev === val) { if (!val) td.innerHTML = ''; return; }   // 没变（与已存的手填值相同）
+    /* ★★ 从没手填过、且值等于渲染时这一格本来显示的值 → 用户只是点了一下没改，
+       绝不能把它写成手填值。原来只跟「已存的手填值」比，于是：
+       点一下「售价」（格子里是自动算出来的 16.90）再点走 → 立刻被固化成手填 16.90，
+       左侧出现橙色竖条、并发一次保存请求；更糟的是手填值会盖住自动值 ——
+       2026-09-15 真实事故：1075290244009 的四个 SKU 自动售价 150/683/1260/100
+       被一个 150.00 全部覆盖。 */
+    if (!prev && val === orig) { if (!val) td.innerHTML = ''; return; }
+
+    if (val) m[field] = val; else delete m[field];
+    if (Object.keys(m).length) manualByKey[key] = m; else delete manualByKey[key];
+
+    td.classList.toggle('has-manual', !!val);
+    if (!val && !isSkuLevel(field)) td.innerHTML = '';   // 清空后恢复「点击填写」占位
+    if (field === 'shipDuration') td.classList.toggle('cell-auto', !val);
+    if (isSkuLevel(field)) {
+      /* 清空 → 回到本行的默认值（data-auto 在 render 时写好）：
+         售价 = 价格 × 5 折；成本 = 同商品默认成本；运费 = SKU 记录里的 shippingFee */
+      if (val) td.classList.remove('cell-auto');
+      else { td.textContent = td.getAttribute('data-auto') || ''; td.classList.add('cell-auto'); }
+    }
+    /* ★ 提交后同步 data-orig（= 这一格现在显示的值）。
+       不更新的话：清空一格后 data-orig 还停在清空前的旧值，
+       用户想把值改回原来那个数时，会被上面那句「没手填过且等于渲染值」的判定
+       直接 return —— **填不进去**。（2026-09-16 测运费时发现；售价 / 成本同样受影响。） */
+    td.setAttribute('data-orig', String(td.textContent || '').replace(/\s+/g, ' ').trim());
+
+    syncRowGroup(key, field, val);
+
+    // 改了时间字段 → 本页同一商品的所有行都重算发货时长
+    if (field === 'testOrderTime' || field === 'collectTime') {
+      var rows = document.querySelectorAll('#tbody tr');
+      for (var i = 0; i < rows.length; i++) {
+        var shipTd = rows[i].querySelector('[data-field="shipDuration"]');
+        if (shipTd && shipTd.getAttribute('data-key') === key) recalcShipDuration(shipTd);
+      }
+    }
+
+    renderStats();
+    saveManual();
+  }
+
+  // 图片地址归一化：千牛主图常是「//img.alicdn.com/…」协议相对地址，补上 https:
+  function normalizeImgUrl(u) {
+    var s = String(u == null ? '' : u).trim();
+    if (!s) return '';
+    if (s.indexOf('//') === 0) return 'https:' + s;
+    if (/^https?:\/\//i.test(s)) return s;
+    // 非 http 开头的按相对路径补全（避免出现 javascript: 之类的伪协议）
+    if (/^[a-z][a-z0-9+.-]*:/i.test(s)) return '';
+    return s;
+  }
+
+  function uniq(arr) {
+    var seen = {}, out = [];
+    (arr || []).forEach(function (x) {
+      var k = String(x == null ? '' : x).trim();
+      if (k && !seen[k]) { seen[k] = true; out.push(k); }
+    });
+    return out.sort(function (a, b) { return a.localeCompare(b, 'zh'); });
+  }
+
+  function buildSelects() {
+    var stores = uniq(allRecords.map(function (r) { return r.store || '默认店铺'; }));
+    var curS = $('selStore').value;
+    var htmlS = '<option value="">全部店铺</option>';
+    stores.forEach(function (s) { htmlS += '<option value="' + s.replace(/"/g, '&quot;') + '">' + esc(s) + '</option>'; });
+    $('selStore').innerHTML = htmlS;
+    $('selStore').value = curS;
+  }
+
+  function applyFilters() {
+    var kw = ($('kw').value || '').trim().toLowerCase();
+    var s = $('selStore').value;
+    /* 数据缺口筛选（首页「商品缺商家编码 / 缺主图」跳过来的入口）。
+       ⚠️ 编码判定用 codeOf(r)（含「商品管理」兜底），与首页 /api/overview 同口径，
+          否则首页说 60 个、这里筛出来 40 个，用户会以为漏了。 */
+    var g = $('selGap') ? $('selGap').value : '';
+
+    filtered = allRecords.filter(function (r) {
+      if (kw) {
+        var hay = [r.title, r.itemId, codeOf(r), r.skuDesc, r.skuId, r.status].join('\u0001').toLowerCase();
+        if (hay.indexOf(kw) < 0) return false;
+      }
+      if (s && ((r.store || '默认店铺').trim() !== s)) return false;
+      if (g === 'nocode' && codeOf(r)) return false;
+      if (g === 'noimg' && String(r.productImg == null ? '' : r.productImg).trim() !== '') return false;
+      return true;
+    });
+
+    page = 1;
+    renderStats();
+    render();
+  }
+
+  /* ★ URL 筛选参数（2026-09-14）：首页的待办卡片会跳到
+     「千牛SKU.html?filter=nocode|noimg」。
+     ⚠️ 只在参数**合法**时才动下拉框；参数不认识 / 没参数 → 完全不动，
+        保证「直接打开本页」和以前的行为一模一样。 */
+  var URL_FILTER_MAP = { nocode: 'nocode', noimg: 'noimg' };
+  var URL_FILTER_TEXT = { nocode: '只看缺商家编码的商品', noimg: '只看缺商品主图的商品' };
+  function applyUrlFilter() {
+    var f = '';
+    try { f = (new URLSearchParams(location.search).get('filter') || '').trim(); } catch (e) { f = ''; }
+    if (!f || !URL_FILTER_MAP[f]) return '';
+    var el = $('selGap');
+    if (el) el.value = URL_FILTER_MAP[f];
+    var hint = $('filterHint');
+    if (hint) { hint.textContent = '首页跳转：' + (URL_FILTER_TEXT[f] || f); hint.style.display = ''; }
+    return f;
+  }
+
+  function render() {
+    var total = filtered.length;
+    var totalPages = Math.max(1, Math.ceil(total / pageSize));
+    if (page > totalPages) page = totalPages;
+    var start = (page - 1) * pageSize;
+    var slice = filtered.slice(start, start + pageSize);
+
+    /* 列序定义（2026-09-15 起与插件 SKU 导出严格同序同名）：
+       商品主图 | 商品标题 | 商品ID | 商家编码 | SKU描述 | SKUID | 状态标签 |
+       SKU搜索主图 | 搜索标题 | 价格 | 库存 | 属性 | + 9 列可手动填写
+       ⚠️ 以后改列序只改这里的数组和下面的调用顺序，**不要**再写裸下标。 */
+    var NW = { itemId:1, merchantCode:1, skuId:1, status:1, price:1, stock:1,
+               salePrice:1, supplier:1, onlinePurchase:1, addressMgmt:1,
+               shipDuration:1, cost:1, shipping:1 };
+    function textCell(field, val) {
+      var td = document.createElement('td');
+      if (NW[field]) td.className = 'nowrap';
+      if (field === 'searchTitle') td.className = 'cell-search-title';
+      if (field === 'skuDesc') td.className = 'cell-sku-desc';
+      if (field === 'attrs') td.className = 'cell-attrs';
+      td.textContent = esc(val);
+      return td;
+    }
+    function imgCell(url, altText) {
+      var td = document.createElement('td');
+      td.className = 'img-cell';
+      var u = normalizeImgUrl(url);
+      if (u) {
+        var a = document.createElement('a');
+        a.href = u; a.target = '_blank'; a.rel = 'noopener noreferrer'; a.title = '点击看大图';
+        var im = document.createElement('img');
+        im.src = u; im.alt = altText || '主图'; im.loading = 'lazy';
+        im.setAttribute('data-url', u);
+        im.onerror = function () {
+          var p = this.parentNode; if (!p) return;
+          var fb = document.createElement('a');
+          fb.className = 'img-fallback'; fb.href = this.getAttribute('data-url') || '#';
+          fb.target = '_blank'; fb.rel = 'noopener noreferrer'; fb.textContent = '点击看大图';
+          p.parentNode.replaceChild(fb, p);
+        };
+        a.appendChild(im); td.appendChild(a);
+      }
+      return td;
+    }
+
+    var tbody = $('tbody');
+    tbody.innerHTML = '';
+    if (!slice.length) {
+      var tr = document.createElement('tr');
+      var td = document.createElement('td');
+      td.colSpan = 21; td.className = 'empty';
+      td.textContent = allRecords.length ? '没有符合筛选条件的记录' : '暂无数据，请先用浏览器扩展导出 SKU 并「发送到运营工作台」';
+      tr.appendChild(td); tbody.appendChild(tr);
+    } else {
+      slice.forEach(function (r) {
+        var tr = document.createElement('tr');
+        // 1. 商品主图（商品级 —— 插件 SKU 导出第 1 列）
+        tr.appendChild(imgCell(r.productImg, '商品主图'));
+        // 2. 商品标题（单行显示，不自动换行；过长省略，鼠标悬停看完整标题）
+        var tdTitle = document.createElement('td');
+        tdTitle.className = 'cell-title';
+        var tSpan = document.createElement('span');
+        tSpan.textContent = esc(r.title);
+        if (r.title) tdTitle.title = esc(r.title);
+        tdTitle.appendChild(tSpan);
+        tr.appendChild(tdTitle);
+        // 3~7. 商品ID / 商家编码 / SKU描述 / SKUID / 状态标签
+        [['itemId', r.itemId], ['merchantCode', codeOf(r)], ['skuDesc', r.skuDesc],
+         ['skuId', r.skuId], ['status', r.status]].forEach(function (p) {
+          var td = textCell(p[0], p[1]);
+          /* 编码来自「商品管理」而不是本次 SKU 抓取 → 加个提示，别让人以为 SKU 页抓到了 */
+          if (p[0] === 'merchantCode' && p[1] && codeFromMetaOnly(r)) {
+            td.title = '来自「商品管理」的商家编码（本次 SKU 抓取未取到，属商品级字段，同商品共用）';
+          }
+          tr.appendChild(td);
+        });
+        // 8. SKU搜索主图（SKU 级，可能随规格变化）
+        tr.appendChild(imgCell(r.imgUrl, 'SKU搜索主图'));
+        // 9~12. 搜索标题 / 价格 / 库存 / 属性
+        [['searchTitle', r.searchTitle], ['price', r.price],
+         ['stock', r.stock], ['attrs', r.attrs]].forEach(function (p) {
+          tr.appendChild(textCell(p[0], p[1]));
+        });
+        // 13~21. 9 列可手动填写（售价/成本/运费/供应商/在线采购/地址管理/测试下单时间/订单揽收时间/发货时长）
+        // ⚠️ 列序与表头严格一致：售价 / 成本 / 运费 在「供应商」之前（2026-09-15 调整）
+        // 取值优先级：手动填写 > SKU 记录自身 > 店铺商品 items（历史搬运值）
+        var rowKey = keyOf(r);
+        var saleKey = keyFor(r, 'salePrice');   // 售价按 SKU 存（见 SKU_LEVEL_FIELDS）
+        var testOrderTime = ext(r, 'testOrderTime');
+        var collectTime   = ext(r, 'collectTime');
+        var manualShip    = isManual(r, 'shipDuration');
+        var shipDur       = manualShip ? manualGet(rowKey, 'shipDuration')
+                                       : (ext(r, 'shipDuration') || calcShipDuration(testOrderTime, collectTime));
+        var shippingVal   = ext(r, 'shipping') !== '' ? ext(r, 'shipping') : ext(r, 'shippingFee');
+        var manualSale    = isManual(r, 'salePrice');
+        var saleAuto      = calcSalePrice(r);
+        var editable = [
+          ['salePrice',      manualSale ? manualGet(saleKey, 'salePrice') : saleAuto],
+          ['cost',           ext(r, 'cost')],
+          ['shipping',       shippingVal],
+          ['supplier',       ext(r, 'supplier')],
+          ['onlinePurchase', ext(r, 'onlinePurchase')],
+          ['addressMgmt',    ext(r, 'addressMgmt')],
+          ['testOrderTime',  testOrderTime],
+          ['collectTime',    collectTime],
+          ['shipDuration',   shipDur]
+        ];
+        editable.forEach(function (pair) {
+          var field = pair[0];
+          var td = document.createElement('td');
+          td.className = 'cell-edit';
+          td.setAttribute('contenteditable', 'true');
+          td.setAttribute('spellcheck', 'false');
+          td.setAttribute('data-key', keyFor(r, field));
+          td.setAttribute('data-field', field);
+          /* ★ data-orig = 渲染时这一格**本来显示的值**（手填的或自动的）。
+             提交时用它判断「用户到底改了没有」——见 onCellCommit 的说明。 */
+          td.setAttribute('data-orig', pair[1] == null ? '' : String(pair[1]));
+          var manualOwn = isManual(r, field);
+          if (field === 'shipDuration' && !manualShip) {
+            td.classList.add('cell-auto');   // 自动算出来的：淡色斜体，提示不是手填的
+            td.title = '留空时按「测试下单时间 → 订单揽收时间」自动计算；直接输入可覆盖';
+          } else if (isSkuLevel(field)) {
+            /* SKU 级字段（售价 / 成本 / 运费）：清空本行手填值后回落到各自的默认值。
+               2026-09-16：原先把「成本」的说明硬编码在 else 分支里，
+               运费改成 SKU 级后会误显示成「成本按 SKU 单独记录」→ 改成按字段名生成。 */
+            var autoVal = (field === 'salePrice') ? saleAuto : String(extFallback(r, field) || '');
+            /* 运费的原始值在 SKU 记录里叫 shippingFee，跟渲染时的兜底保持一致，
+               否则清空手填后格子会变空（而重新渲染时又显示 shippingFee）。 */
+            if (field === 'shipping' && !autoVal) autoVal = String(extFallback(r, 'shippingFee') || '');
+            var fLabel = SKU_FIELD_LABEL[field] || '该字段';
+            td.setAttribute('data-auto', autoVal);   // 清空时据此还原（不同 SKU 的默认值可能不同）
+            if (!manualOwn) {
+              td.classList.add('cell-auto');
+              td.title = (field === 'salePrice')
+                ? '按「价格 × 5 折」自动计算；直接输入可覆盖，清空则恢复自动值'
+                : (fLabel + '按 SKU 单独记录' + (autoVal ? '。当前显示：' + autoVal : '（未填）')
+                   + '；直接输入即为本 SKU 单独设置，不会改到同商品其它规格');
+            } else {
+              td.title = '本 SKU 单独填写的' + fLabel + '（只影响这一行，不会改到同商品的其它 SKU）';
+            }
+          } else if (field === 'testOrderTime' || field === 'collectTime') {
+            td.title = '格式如 2026-09-14';
+          }
+          if (manualOwn) td.classList.add('has-manual');
+          td.textContent = pair[1] == null ? '' : String(pair[1]);
+          tr.appendChild(td);
+        });
+        // 合计：1(商品主图) + 1(商品标题) + 5(ID/编码/描述/SKUID/状态标签) + 1(SKU搜索主图)
+        //       + 4(搜索标题/价格/库存/属性) + 9(可填) = 21 个 td ✔
+        tbody.appendChild(tr);
+      });
+    }
+
+    $('pageInfo').textContent = '共 ' + total + ' 条';
+    $('pageLabel').textContent = '第 ' + page + ' / ' + totalPages + ' 页';
+    $('btnPrev').disabled = page <= 1;
+    $('btnNext').disabled = page >= totalPages;
+  }
+
+  function renderStats() {
+    // 统计跟随当前筛选条件（切换店铺 / 搜索关键词时一起变），不是全量统计
+    var src = filtered || [];
+    $('statTotal').textContent = src.length;
+    $('statItem').textContent = uniq(src.map(function (r) { return r.itemId; })).length;
+    $('statStore').textContent = uniq(src.map(function (r) { return r.store || '默认店铺'; })).length;
+    // 「有供应商 / 测试下单」= 手填值 或 店铺 items 里有 supplier / testOrderTime 的去重商品数
+    var seen = {};
+    src.forEach(function (r) {
+      var k = keyOf(r);
+      if (!k || k === '||') return;
+      if (manualGet(k, 'supplier').trim() || manualGet(k, 'testOrderTime').trim()) { seen[k] = 1; return; }
+      var m = itemMetaByKey[k];
+      if (!m) return;
+      if ((m.supplier && String(m.supplier).trim()) || (m.testOrderTime && String(m.testOrderTime).trim())) seen[k] = 1;
+    });
+    $('statOps').textContent = Object.keys(seen).length;
+  }
+
+  function loadItemMeta() {
+    // 从 /api/store 拉店铺 items，按 store + productId 索引（SKU 的 itemId 与店铺 items 的 productId 对应）
+    // 失败/无店铺数据时静默忽略，6 列直接显示空（不阻塞主表加载）
+    return fetch('/api/store').then(function (r) { return r.json(); }).then(function (j) {
+      itemMetaByKey = {};
+      if (!j || !j.ok || !Array.isArray(j.stores)) return;
+      j.stores.forEach(function (s) {
+        var storeName = s && (s.name || s.store) || '';
+        var items = (s && Array.isArray(s.items)) ? s.items : [];
+        items.forEach(function (it) {
+          var k = storeName + '||' + (it && (it.productId || it.itemId) || '');
+          if (k === '||') return;
+          itemMetaByKey[k] = it;
+        });
+      });
+    }).catch(function () { /* 后端未启动/接口缺失时静默 */ });
+  }
+
+  function loadData() {
+    $('banner').classList.remove('show');
+    $('tbody').innerHTML = '<tr><td colspan="21" class="empty">正在加载数据…</td></tr>';
+    // 若还有未落盘的编辑，先写回再读，否则会被服务端的旧值覆盖
+    flushManual().then(function () {
+      return Promise.all([
+        fetch('/api/qianniu-sku').then(function (r) { return r.json(); }),
+        loadItemMeta(),
+        loadManual()
+      ]);
+    }).then(function (results) {
+      var j = results[0];
+      if (j && j.ok) {
+        allRecords = Array.isArray(j.records) ? j.records : [];
+        /* 成本 / 运费改 SKU 级后，先把历史商品级的值平铺下去（幂等，只需跑一次） */
+        migrateToSkuLevel();
+        buildSelects();
+        applyUrlFilter();   // ★ 必须在 buildSelects() 之后（下拉框的 option 得先建出来）
+        applyFilters();
+      } else {
+        showError((j && j.error) || '数据读取失败');
+      }
+    }).catch(function () {
+      if (location.protocol === 'file:') {
+        showError('当前是通过本地文件方式打开的，无法读取数据。请在浏览器地址栏输入并访问：http://127.0.0.1:8787/千牛SKU.html');
+      } else {
+        showError('无法连接运营工作台服务，请先双击「启动工作台.bat」启动本地服务。');
+      }
+    });
+  }
+
+  function showError(msg) {
+    $('banner').textContent = msg;
+    $('banner').classList.add('show');
+    allRecords = [];
+    filtered = [];
+    renderStats();
+    applyFilters();
+  }
+
+  function downloadBlob(blob, name) {
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = name;
+    document.body.appendChild(a); a.click();
+    setTimeout(function () { URL.revokeObjectURL(url); a.remove(); }, 100);
+  }
+
+  function buildCsv(records) {
+    /* 列序与页面表格严格一致，且**前 12 列与插件 SKU 导出的 SKU_HEADERS 同序同名**：
+     商品主图 | 商品标题 | 商品ID | 商家编码 | SKU描述 | SKUID | 状态标签 | SKU搜索主图 |
+     搜索标题 | 价格 | 库存 | 属性 | 售价 | 成本 | 运费 | 供应商 | 在线采购 | 地址管理 |
+     测试下单时间 | 订单揽收时间 | 发货时长
+     ⚠️ 改列序时 headers 和下面 row 的取值顺序要一起改，否则**静默错位**。 */
+    var headers = ['商品主图','商品标题','商品ID','商家编码','SKU描述','SKUID','状态标签','SKU搜索主图','搜索标题',
+                   '价格','库存','属性',
+                   '售价','成本','运费',
+                   '供应商','在线采购','地址管理','测试下单时间','订单揽收时间','发货时长'];
+    var lines = [headers.join(',')];
+    records.forEach(function (r) {
+      var testOrderTime = ext(r, 'testOrderTime');
+      var collectTime   = ext(r, 'collectTime');
+      var shipDur       = ext(r, 'shipDuration') || calcShipDuration(testOrderTime, collectTime);
+      var cost          = ext(r, 'cost');
+      var shipping      = ext(r, 'shipping') !== '' ? ext(r, 'shipping') : ext(r, 'shippingFee');
+      var salePrice     = String(ext(r, 'salePrice') || '').trim() || calcSalePrice(r);
+      var row = [
+        normalizeImgUrl(r.productImg), r.title, r.itemId, codeOf(r), r.skuDesc, r.skuId, r.status,
+        normalizeImgUrl(r.imgUrl), r.searchTitle,
+        r.price, r.stock, r.attrs,
+        salePrice, cost, shipping,
+        ext(r, 'supplier'), ext(r, 'onlinePurchase'), ext(r, 'addressMgmt'),
+        testOrderTime, collectTime, shipDur
+      ].map(function (v) {
+          var s = String(v == null ? '' : v).replace(/\r\n/g, '\n').replace(/\r/g, '\n').replace(/\n+/g, ' ').trim();
+          return /[",]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+        });
+      lines.push(row.join(','));
+    });
+    return '\ufeff' + lines.join('\r\n');
+  }
+
+  function pad(n) { return String(n).padStart(2, '0'); }
+  function stamp() { var d = new Date(); return d.getFullYear() + pad(d.getMonth()+1) + pad(d.getDate()) + '_' + pad(d.getHours()) + pad(d.getMinutes()); }
+
+  function exportCsv() {
+    if (!filtered.length) { alert('没有可导出的记录'); return; }
+    downloadBlob(new Blob([buildCsv(filtered)], { type: 'text/csv;charset=utf-8;' }), 'SKU管理_' + stamp() + '.csv');
+  }
+
+  function exportJson() {
+    if (!filtered.length) { alert('没有可导出的记录'); return; }
+    downloadBlob(new Blob(['\ufeff' + JSON.stringify(filtered, null, 2)], { type: 'application/json;charset=utf-8;' }), 'SKU管理_' + stamp() + '.json');
+  }
+
+  function bind() {
+    $('btnRefresh').addEventListener('click', loadData);
+
+    /* 9 列手动填写：单元格每次 render 都会重建，所以用事件委托挂在 tbody 上 */
+    $('tbody').addEventListener('focusout', function (e) {
+      var td = e.target;
+      if (td && td.classList && td.classList.contains('cell-edit')) onCellCommit(td);
+    });
+    // 单元格内回车 = 结束编辑（不允许换行）；Esc 也退出
+    $('tbody').addEventListener('keydown', function (e) {
+      var td = e.target;
+      if (!td || !td.classList || !td.classList.contains('cell-edit')) return;
+      if (e.key === 'Enter' || e.key === 'Escape') { e.preventDefault(); td.blur(); }
+    });
+    // 粘贴时只取纯文本，避免把外部的 HTML 结构带进单元格
+    $('tbody').addEventListener('paste', function (e) {
+      var td = e.target;
+      if (!td || !td.classList || !td.classList.contains('cell-edit')) return;
+      e.preventDefault();
+      var text = ((e.clipboardData || window.clipboardData).getData('text') || '').replace(/\s+/g, ' ');
+      if (document.execCommand) document.execCommand('insertText', false, text);
+    });
+
+    var debounceTimer = null;
+    $('kw').addEventListener('input', function () {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(applyFilters, 250);
+    });
+    $('selStore').addEventListener('change', applyFilters);
+    $('selGap').addEventListener('change', function () {
+      /* 用户自己动了这个下拉框 → 提示 chip 就没意义了，收起来 */
+      var hint = $('filterHint'); if (hint) hint.style.display = 'none';
+      applyFilters();
+    });
+
+    $('btnClearFilter').addEventListener('click', function () {
+      $('kw').value = '';
+      $('selStore').value = '';
+      $('selGap').value = '';
+      var hint = $('filterHint'); if (hint) hint.style.display = 'none';
+      applyFilters();
+    });
+
+    $('btnDelStore').addEventListener('click', function () {
+      var store = $('selStore').value;
+      if (!store) { alert('请先在下拉框里选择要删除的店铺（不能删「全部店铺」）'); return; }
+      if (!confirm('确定删除店铺「' + store + '」的全部数据吗？此操作不可恢复。')) return;
+      fetch('/api/qianniu-sku/remove-store', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ store: store })
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+          if (j && j.ok) { alert('已删除「' + store + '」数据：' + (j.removed || 0) + ' 条'); loadData(); }
+          else { alert('删除失败：' + ((j && j.error) || '未知错误')); }
+        })
+        .catch(function (e) { alert('删除失败：' + e.message); });
+    });
+
+    $('btnPrev').addEventListener('click', function () { if (page > 1) { page--; render(); } });
+    $('btnNext').addEventListener('click', function () {
+      var totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+      if (page < totalPages) { page++; render(); }
+    });
+    $('pageSize').addEventListener('change', function () {
+      pageSize = parseInt(this.value, 10) || 100;
+      page = 1;
+      render();
+    });
+
+    $('btnCsv').addEventListener('click', exportCsv);
+    $('btnJson').addEventListener('click', exportJson);
+  }
+
+  bind();
+  loadData();
+})();
+</script>
+</body>
+</html>

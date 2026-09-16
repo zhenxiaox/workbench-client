@@ -1,0 +1,2254 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<script>
+(function(){
+  var WP='wb_theme', WS='wb_theme_auto_start', WE='wb_theme_auto_end';
+  function mins(t){ var p=String(t||'00:00').split(':'); return (parseInt(p[0],10)||0)*60+(parseInt(p[1],10)||0); }
+  function resolve(mode){
+    if(mode==='light'||mode==='dark'||mode==='eye') return mode;
+    if(mode!=='auto') return 'light';
+    var d=new Date(), m=d.getHours()*60+d.getMinutes(), s=1080, e=360;
+    try{ s=mins(localStorage.getItem(WS)||'18:00'); e=mins(localStorage.getItem(WE)||'06:00'); }catch(x){}
+    var dark=(s<e)?(m>=s&&m<e):(m>=s||m<e);
+    return dark?'dark':'light';
+  }
+  window.__wbResolveTheme = resolve;
+  function apply(){
+    var mode='light'; try{ mode=localStorage.getItem(WP)||'light'; }catch(e){}
+    document.documentElement.setAttribute('data-theme', resolve(mode));
+  }
+  apply();
+  window.addEventListener('message', function(e){
+    if(e.data && e.data.type==='wb-theme'){
+      var t=e.data.theme||e.data.mode;
+      if(t) document.documentElement.setAttribute('data-theme', resolve(t));
+      else apply();
+    }
+  });
+  try{ window.addEventListener('storage', function(e){ if(!e.key||e.key===WP||e.key===WS||e.key===WE) apply(); }); }catch(e){}
+})();
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="mobile-ui.css">
+<script src="mobile-adapter.js"></script>
+<title>沟通分析报告 · 运营工作台</title>
+<style>
+
+/* ============ Design System (single source of truth) ============
+   Chapter 4 content is rendered by scripts/render_report.py:
+   general quality taxonomy + model-annotated named accessories.
+   ============ */
+:root {
+  /* Typography scale */
+  --fs-h1: 34px;
+  --fs-h2: 24px;   /* section titles */
+  --fs-h3: 17px;   /* sub-section titles (聚类标题) */
+  --fs-h4: 15px;   /* card sub-headers */
+  --fs-body: 15px;
+  --fs-sm: 14px;
+  --fs-xs: 12px;
+  --fs-mono: 12.5px;
+  --lh-body: 1.7;
+  --lh-tight: 1.5;
+
+  /* Neutrals */
+  --c-bg: #f9fafb;
+  --c-surface: #ffffff;
+  --c-surface-soft: #f8fafc;
+  --c-border: #e2e8f0;
+  --c-border-strong: #cbd5e1;
+  --c-text: #0f172a;
+  --c-text-2: #1f2937;
+  --c-text-3: #64748b;
+  --c-text-4: #94a3b8;
+
+  /* Accent */
+  --c-brand: #6366f1;
+  --c-brand-2: #8b5cf6;
+  --c-navy: #1e1b4b;
+  --c-brand-soft: #eef2ff;
+  --c-brand-border: #c7d2fe;
+
+  /* Semantic */
+  --c-danger: #ef4444;
+  --c-danger-soft: #fef2f2;
+  --c-danger-border: #fca5a5;
+  --c-warn: #f59e0b;
+  --c-warn-soft: #fef3c7;
+  --c-warn-border: #fde68a;
+  --c-ok: #10b981;
+  --c-info: #2563eb;
+
+  /* Layout tokens */
+  --gap-1: 4px;
+  --gap-2: 8px;
+  --gap-3: 12px;
+  --gap-4: 16px;
+  --gap-5: 20px;
+  --gap-6: 24px;
+  --gap-8: 32px;
+
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 16px;
+
+  --shadow-1: 0 1px 2px rgba(15,23,42,0.04);
+  --shadow-2: 0 4px 12px rgba(15,23,42,0.06);
+}
+
+/* ============ Reset & base ============ */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', 'Helvetica Neue', sans-serif;
+  background: var(--c-bg);
+  color: #1f2937;
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+a { color: var(--c-brand); text-decoration: none; transition: color 0.15s; }
+a:hover { color: #4f46e5; text-decoration: underline; }
+p { margin: 0; }
+p + p { margin-top: var(--gap-2); }
+strong { font-weight: 700; color: var(--c-text); }
+code { font-family: 'SF Mono', 'Menlo', 'Consolas', monospace; font-size: var(--fs-mono); }
+
+/* ============ Hero ============ */
+.hero {
+  background: transparent;
+  color: #fff;
+  padding: 32px 20px 0;
+}
+.hero-inner {
+  max-width: 1040px;
+  margin: 0 auto;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  border-radius: 20px;
+  padding: 48px 48px 40px;
+}
+.hero-eyebrow { font-size: 12px; letter-spacing: 3px; opacity: 0.7; margin-bottom: 10px; }
+.hero h1 { font-size: var(--fs-h1); font-weight: 800; letter-spacing: 0.5px; }
+.hero-sub { font-size: 15px; opacity: 0.85; margin: 8px 0 12px; line-height: 1.7; }
+.report-periods { display:flex; flex-wrap:wrap; gap:8px; margin:0 0 28px; }
+.report-period-chip { display:inline-flex; align-items:center; padding:5px 10px; border-radius:999px; background:rgba(255,255,255,0.14); border:1px solid rgba(255,255,255,0.24); color:#fff; font-size:12.5px; line-height:1.4; }
+.report-period-chip--warn { background:rgba(255,176,32,0.22); border-color:rgba(255,176,32,0.55); color:#ffe4b0; font-weight:600; }
+.metric-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; }
+.metric-card {
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.22);
+  border-radius: 12px;
+  padding: 14px 16px;
+  min-width: 0;
+}
+.metric-num { font-size: 26px; font-weight: 700; line-height: 1.2; color: #fff; word-break: break-word; font-variant-numeric: tabular-nums; }
+.metric-label { font-size: 12px; color: rgba(255,255,255,0.8); margin-top: 2px; }
+
+/* ============ Page layout ============ */
+.page { max-width: 1080px; margin: 0 auto; padding: 32px 20px 80px; }
+.main-content { min-width: 0; display: flex; flex-direction: column; gap: var(--gap-8); }
+
+/* ============ Section card ============ */
+.section {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-lg);
+  padding: 40px;
+  box-shadow: var(--shadow-1);
+  scroll-margin-top: var(--gap-6);
+}
+.section > h2 {
+  font-size: var(--fs-h2);
+  font-weight: 700;
+  color: var(--c-text);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 24px;
+  padding: 0;
+  border-bottom: none;
+  line-height: 1.3;
+}
+.num-badge {
+  width: 32px; height: 32px; border-radius: 8px;
+  background: var(--c-brand); color: #fff;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 16px; font-weight: 700; flex-shrink: 0;
+}
+.section > h2 + *,
+.section > h3:first-child { margin-top: 0; }
+.section h3 { font-size: var(--fs-h3); font-weight: 700; color: var(--c-text); margin: 28px 0 10px; line-height: 1.4; }
+
+/* 章节导语（对齐参考报告 .section-intro） */
+.section-intro { color: var(--c-text-3); font-size: 14.5px; margin-bottom: 24px; line-height: 1.7; }
+
+/* ============ Overview pies（diagram 卡壳） ============ */
+.pie-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap-5); margin: 20px 0; }
+.pie-card { background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--r-lg); padding: 28px 20px 16px; box-shadow: var(--shadow-1); min-width: 0; }
+.pie-title { font-size: 15px; font-weight: 700; color: var(--c-text); margin-bottom: var(--gap-4); }
+.pie-body { display: flex; align-items: center; gap: var(--gap-5); flex-wrap: wrap; }
+.pie-card svg { width: 180px; height: 180px; flex-shrink: 0; }
+.pie-legend { flex: 1; min-width: 160px; display: flex; flex-direction: column; gap: 8px; }
+.pie-legend-row { display: flex; align-items: center; font-size: 13px; color: var(--c-text-2); gap: 8px; line-height: 1.4; }
+.pie-dot { display: inline-block; width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+.pie-legend-label { flex: 1; font-weight: 500; word-break: break-word; }
+.pie-legend-value { color: var(--c-text-3); font-variant-numeric: tabular-nums; font-size: 12.5px; }
+.pie-empty { color: var(--c-text-4); font-style: italic; font-size: 12.5px; }
+
+/* ============ Diagram（宽幅图表卡壳，对齐参考报告 .diagram） ============ */
+.diagram {
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-lg);
+  background: var(--c-surface);
+  padding: 28px 20px 16px;
+  margin: 20px 0;
+  box-shadow: var(--shadow-1);
+}
+.diagram svg { display: block; margin: 0 auto; width: 100%; max-width: 100%; height: auto; }
+
+/* ============ 抱怨主题频次榜 ============ */
+.rank-card {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-lg);
+  padding: 28px 20px 16px;
+  box-shadow: var(--shadow-1);
+  margin: 20px 0;
+}
+.rank-title { font-size: 15px; font-weight: 700; color: var(--c-text); }
+.rank-table { margin: 12px 0 0; background: var(--c-surface); }
+.rank-table th:nth-child(1) { width: 190px; }
+.rank-table th:nth-child(2) { width: 88px; }
+.rank-table th:nth-child(3) { width: 190px; }
+.rank-table td { vertical-align: middle; }
+.rk-dim { font-weight: 700; color: var(--c-text); white-space: nowrap; }
+.rk-no {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 19px; height: 19px; margin-right: 7px;
+  border-radius: 4px; background: var(--c-brand-soft); border: 1px solid var(--c-brand-border);
+  font-size: 11.5px; font-weight: 700; color: #4338ca;
+}
+.rk-freq { font-weight: 700; font-size: 17px; color: var(--c-text); font-variant-numeric: tabular-nums; }
+.rk-share { display: flex; align-items: center; gap: 8px; }
+.rk-track { flex: 1; min-width: 60px; height: 8px; border-radius: 999px; background: #eef2f7; overflow: hidden; }
+.rk-fill { display: block; height: 100%; border-radius: 999px; background: var(--c-brand); }
+.rk-pct { font-size: 13px; font-weight: 700; color: var(--c-brand); font-variant-numeric: tabular-nums; flex-shrink: 0; }
+.rk-voices { display: flex; flex-wrap: wrap; gap: 6px; }
+.alert-box { border: 1px solid #fecaca; border-left: 4px solid var(--c-danger); border-radius: 10px; background: #fef2f2; padding: 18px 20px 14px; margin: 16px 0 8px; }
+.alert-lead { color: #991b1b; font-weight: 700; font-size: var(--fs-body); line-height: 1.6; margin-bottom: 12px; }
+.alert-box .rank-note { color: #b91c1c; }
+.alert-box th { background: #991b1b; }
+.alert-box tr:nth-child(even) td { background: #fff1f2; }
+.alert-box table { background: #fff; }
+.rank-note { margin: 12px 0 0; font-size: 12.5px; color: var(--c-text-4); line-height: 1.6; }
+/* 质量/问题部位证据口径：强调主体、置信度与去重口径，不作为告警卡。 */
+.evidence-scope-note {
+  margin: 12px 0 0; padding: 10px 12px; border-left: 3px solid var(--c-brand-border);
+  background: var(--c-surface-soft); color: var(--c-text-3); font-size: 12.5px; line-height: 1.65;
+}
+
+/* ============ 响应与断档 ============ */
+.callout {
+  background: var(--c-warn-soft); border: none; border-left: 4px solid var(--c-warn);
+  border-radius: var(--r-md); padding: 16px 20px; margin: 16px 0;
+}
+.callout-title { font-size: 17px; font-weight: 700; color: #92400e; margin-bottom: 8px; }
+.callout p { font-size: 14px; color: #92400e; line-height: 1.8; margin: 4px 0; }
+.stat-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; margin: 18px 0; }
+.stat-card { background: var(--c-surface-soft); border: 1px solid var(--c-border); border-radius: var(--r-md); padding: 14px 16px; min-width: 0; text-align: center; }
+.stat-num { font-size: 22px; font-weight: 700; color: var(--c-text); line-height: 1.2; font-variant-numeric: tabular-nums; }
+.stat-num.is-bad { color: var(--c-danger); }
+.stat-num.is-ok { color: var(--c-ok); }
+.stat-unit { font-size: 12px; font-weight: 600; color: var(--c-text-4); margin-left: 3px; }
+.stat-label { font-size: 12px; color: var(--c-text-3); margin-top: 2px; line-height: 1.5; }
+.section > h3 { font-size: var(--fs-h3); font-weight: 700; color: var(--c-text); margin: 28px 0 10px; }
+.wait-cell { font-weight: 700; color: var(--c-danger); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* ============ 客户原声墙（严格对齐参考报告 .issue-card：加粗深红标题 + 14px 正文） ============ */
+.voice-wall { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--gap-4); }
+.voice-card {
+  border: 1px solid #fecaca;
+  border-left: 4px solid var(--c-danger);
+  border-radius: 10px;
+  padding: 16px 20px;
+  background: #fff;
+  min-width: 0;
+}
+.voice-text {
+  display: block;
+  color: #991b1b;
+  font-weight: 700;
+  font-size: var(--fs-body);
+  line-height: 1.6;
+  margin-bottom: 4px;
+  word-break: break-word;
+}
+.voice-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; color: #7f1d1d; font-size: 14px; }
+.voice-dim {
+  display: inline-block; padding: 2px 10px; border-radius: 999px;
+  font-size: 12px; font-weight: 600; white-space: nowrap;
+  background: #fee2e2; color: #991b1b;
+}
+
+/* ============ Number cell（表格数字列对齐） ============ */
+td.num-cell { font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* ============ Ticket table（待回访工单） ============ */
+.tk-kind {
+  display: inline-block; padding: 2px 10px; border-radius: 999px;
+  font-size: 12.5px; font-weight: 600; white-space: nowrap;
+  color: var(--c-text-2); background: #f1f5f9; border: none;
+}
+.tk-kind.is-bad { color: #991b1b; background: #fee2e2; }
+.tk-kind.is-warn { color: #92400e; background: var(--c-warn-soft); }
+.tk-act { color: var(--c-text-2); line-height: 1.7; }
+
+/* ============ Badges (pill tags) ============ */
+.badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  background: #f1f5f9;
+  color: var(--c-text-2);
+  line-height: 1.6;
+  white-space: nowrap;
+}
+.badge-emotion { background: #fee2e2; color: #991b1b; }
+
+/* ============ Optimization plan cards ============ */
+.plan-card {
+  background: var(--c-surface);
+  border: 1px solid var(--c-brand-border);
+  border-left: 4px solid var(--c-brand);
+  border-radius: var(--r-md);
+  padding: 20px 24px;
+  margin: 16px 0;
+  box-shadow: none;
+}
+.plan-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #f1f5f9;
+}
+.plan-priority {
+  display: inline-block;
+  padding: 3px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  line-height: 1.6;
+}
+.plan-title { flex: 1; font-size: var(--fs-h3); font-weight: 700; color: #312e81; line-height: 1.4; min-width: 200px; }
+.plan-title a { color: #312e81; text-decoration: none; border-bottom: 1px dashed var(--c-brand-border); }
+.plan-title a:hover { color: var(--c-brand); border-bottom-color: var(--c-brand); text-decoration: none; }
+.plan-row { display: grid; grid-template-columns: 92px 1fr; gap: var(--gap-3); margin: 10px 0; align-items: flex-start; }
+.plan-row-label { font-size: var(--fs-sm); font-weight: 700; color: var(--c-text-2); padding-top: 2px; }
+.plan-row-body { font-size: 14px; color: var(--c-text-2); line-height: 1.7; }
+.plan-row-body strong { color: var(--c-text); }
+.plan-actions { margin: 0; padding-left: 18px; }
+.plan-actions li { margin: 4px 0; line-height: 1.7; font-size: 14px; }
+/* 典型原声：买家原话小标签 */
+.plan-voices { display: flex; flex-wrap: wrap; gap: 6px; }
+.plan-voice {
+  background: #f1f5f9;
+  color: #475569;
+  padding: 4px 12px;
+  border-radius: var(--r-sm);
+  font-size: 13.5px;
+  line-height: 1.6;
+  word-break: break-word;
+}
+/* 建议话术：可直接复制的草稿框 */
+.plan-script {
+  background: #dbeafe;
+  border: none;
+  border-left: 4px solid #3b82f6;
+  border-radius: var(--r-md);
+  padding: 14px 18px;
+  color: #1e40af;
+  font-weight: 600;
+  line-height: 1.8;
+}
+
+/* ============ Appendix / files / tables ============ */
+.table-wrap { width: 100%; overflow-x: auto; }
+/* 列多的表在窄屏下横向滚动，不要把末列压成竖排单字 */
+.table-wrap > table { min-width: 760px; }
+table { width: 100%; border-collapse: collapse; border-spacing: 0; font-size: 14.5px; margin: 16px 0; border: none; border-radius: 0; overflow: visible; }
+th, td { padding: 10px 12px; text-align: left; vertical-align: middle; line-height: 1.7; }
+th { background: var(--c-navy); font-weight: 600; color: #fff; font-size: 14.5px; border-bottom: none; white-space: nowrap; }
+td { border-bottom: 1px solid #f1f5f9; }
+td:first-child { font-weight: 600; color: var(--c-text); }
+tr:nth-child(even) td { background: var(--c-surface-soft); }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: var(--c-brand-soft); }
+.not-supported { color: var(--c-text-4); font-style: italic; }
+
+
+/* ============ Footer ============ */
+.page-footer { max-width: 1080px; margin: 0 auto; padding: 0 20px 40px; text-align: center; color: var(--c-text-4); font-size: 12px; }
+
+
+/* ============ Platform tabs (multi-platform aggregated report) ============ */
+.platform-tabs {
+  display: flex; gap: 0; margin: 18px 0 0;
+  border-bottom: 2px solid var(--c-border);
+}
+.platform-tab {
+  padding: 10px 18px; font-size: 14px; font-weight: 600;
+  color: var(--c-text-3); cursor: pointer;
+  border-bottom: 2px solid transparent; margin-bottom: -2px;
+  transition: all 0.2s;
+}
+.platform-tab.active { color: var(--c-brand); border-bottom-color: var(--c-brand); }
+.platform-tab:hover { color: var(--c-brand); background: var(--c-brand-soft); border-radius: 8px 8px 0 0; }
+.platform-content { display: none; padding: 18px 0; }
+.platform-content.active { display: block; }
+
+/* ============ Platform badges (neutral: 店铺不用平台品牌色) ============ */
+.platform-badge {
+  font-size: 12.5px; font-weight: 600; padding: 2px 10px;
+  border-radius: 999px; display: inline-block; white-space: nowrap;
+  background: #f1f5f9; color: var(--c-text); border: none;
+}
+.badge-taobao, .badge-tmall, .badge-p1688, .badge-jd, .badge-pdd, .badge-doudian {
+  background: #f1f5f9; color: var(--c-text); border: none;
+}
+
+/* ============ Platform summary strip ============ */
+.platform-strip {
+  display: grid; gap: 12px; margin: 0 0 var(--gap-5);
+}
+.platform-strip-card {
+  background: var(--c-surface-soft); border: 1px solid var(--c-border);
+  border-radius: var(--r-md); padding: 14px 18px;
+  display: flex; flex-direction: column; align-items: stretch; gap: 12px;
+}
+.psc-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.psc-total { font-size: var(--fs-xs); color: var(--c-text-3); }
+/* 一行平铺：健康数 · 健康率（卡点数与抱怨主题看下方图表）。固定两列，不靠自由换行 */
+.psc-stats { display: grid; grid-template-columns: auto auto; align-items: center; justify-content: start; column-gap: 10px; }
+.psc-main { display: flex; align-items: baseline; gap: 5px; flex-wrap: nowrap; white-space: nowrap; }
+.psc-num { font-size: 26px; font-weight: 700; color: var(--c-text); line-height: 1.2; }
+.psc-of { font-size: 14px; font-weight: 600; color: var(--c-text-4); }
+.psc-label { font-size: var(--fs-sm); color: var(--c-text-3); white-space: nowrap; }
+.psc-rate {
+  display: inline-block; padding: 2px 10px; border-radius: 999px;
+  font-size: 12px; font-weight: 600; white-space: nowrap;
+  color: #065f46; background: #d1fae5; border: none;
+}
+.psc-media { display:flex; flex-wrap:wrap; gap:6px; padding-top:8px; border-top:1px dashed var(--c-border); color:var(--c-text-3); font-size:var(--fs-xs); }
+.psc-media > span { padding:2px 7px; border-radius:6px; background:#fff; border:1px solid var(--c-border); }
+.psc-media .psc-media-note { flex-basis:100%; border:0; padding:0; background:transparent; color:var(--c-text-4); }
+/* 健康率分档：≥90% 绿，80%~90% 黄，<80% 红 */
+.psc-stats.lv-good .psc-rate { color: #065f46; background: #d1fae5; }
+.psc-stats.lv-warn .psc-rate { color: #92400e; background: var(--c-warn-soft); }
+.psc-stats.lv-bad .psc-rate  { color: #991b1b; background: #fee2e2; }
+.platform-strip-card.taobao,
+.platform-strip-card.p1688,
+.platform-strip-card.jd,
+.platform-strip-card.pdd,
+.platform-strip-card.doudian,
+.platform-strip-card.tmall   { border-left: 4px solid var(--c-text); }
+
+/* ============ Data completeness states (shared with review-analysis template) ============ */
+.data-state { display:inline-flex; align-items:center; padding:3px 9px; border-radius:999px; font-size:var(--fs-xs); font-weight:700; border:1px solid var(--c-border); }
+.data-state.complete { color:#065f46; background:#ecfdf5; border-color:#a7f3d0; }
+.data-state.partial, .data-state.pending { color:#92400e; background:var(--c-warn-soft); border-color:var(--c-warn-border); }
+.data-state.muted { color:var(--c-text-3); background:#f3f4f6; }
+.pagination-evidence { display:flex; flex-wrap:wrap; align-items:center; gap:6px; width:100%; padding:9px 10px; border:1px solid #bae6fd; border-radius:8px; background:#f0f9ff; }
+.pagination-evidence-title { color:#075985; font-size:var(--fs-xs); font-weight:800; margin-right:2px; }
+.pagination-chip { display:inline-flex; gap:4px; padding:3px 8px; border-radius:6px; border:1px solid #bae6fd; background:#fff; color:#0c4a6e; font-size:var(--fs-xs); }
+.pagination-selector { width:100%; color:var(--c-text-3); font-size:var(--fs-xs); word-break:break-all; }
+.group-totals { display:flex; flex-wrap:wrap; gap:6px; width:100%; padding-top:8px; border-top:1px dashed var(--c-border); }
+.group-chip { display:inline-flex; gap:4px; padding:3px 8px; border-radius:6px; background:#fff; border:1px solid var(--c-border); font-size:var(--fs-xs); color:var(--c-text-2); }
+.scope-chip.time { color:#1d4ed8; background:#eff6ff; border-color:#bfdbfe; }
+.scope-chip.reply { color:#7c3aed; background:#f5f3ff; border-color:#ddd6fe; }
+.scope-chip.sentiment { color:#be123c; background:#fff1f2; border-color:#fecdd3; }
+
+/* ============ Responsive ============ */
+/* 卡片变窄时改为纵向堆叠（三张卡同时切换，不会只有某一张错行） */
+@media (max-width: 1180px) {
+  .psc-stats { grid-template-columns: minmax(0, 1fr); row-gap: 8px; justify-items: start; }
+}
+@media (max-width: 980px) {
+  .metric-row { grid-template-columns: repeat(2, 1fr); }
+  .stat-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .voice-wall { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pie-grid { grid-template-columns: 1fr; }
+  .platform-strip { grid-template-columns: minmax(0, 1fr) !important; }
+}
+@media (max-width: 640px) {
+  .hero { padding: 20px 14px 0; }
+  .hero-inner { padding: 32px 24px; border-radius: 16px; }
+  .hero h1 { font-size: 26px; }
+  .metric-row { grid-template-columns: 1fr; }
+  .stat-row { grid-template-columns: minmax(0, 1fr); }
+  .voice-wall { grid-template-columns: minmax(0, 1fr); }
+  .section { padding: 24px; }
+  .plan-card { padding: 16px; }
+  .plan-script { padding: 12px 14px; }
+  .plan-row { grid-template-columns: 1fr; gap: 4px; }
+  .plan-row-label { padding-top: 0; }
+  .pie-body { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .pie-card svg { width: 100%; max-width: 220px; height: auto; }
+}
+
+/* ============ Print / PDF export ============ */
+@media print {
+  body { background: #fff; }
+  .page-footer { display: none; }
+  .page { padding: 0; max-width: 100%; }
+  .main-content { gap: 12px; }
+  .hero { padding: 24px 20px 18px; break-after: avoid; }
+  .section, .plan-card { break-inside: avoid; box-shadow: none; page-break-inside: avoid; }
+  .plan-row { page-break-inside: avoid; }
+  a { color: inherit; text-decoration: none; }
+}
+
+/* ============ 会话还原（可折叠 timeline） ============ */
+.plan-replay {
+  background: var(--c-surface-soft);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-md);
+  padding: 12px 14px;
+  margin: 14px 0 0;
+}
+.case-item-head {
+  display: flex;
+  width: 100%;
+  appearance: none;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 10px;
+  padding: 0 0 10px;
+  border-bottom: 1px dashed var(--c-border);
+  cursor: pointer;
+  user-select: none;
+}
+.case-idx { font-weight: 700; color: var(--c-brand); font-size: var(--fs-body); font-family: 'SF Mono', 'Menlo', monospace; letter-spacing: 0.3px; }
+.case-counterpart { font-weight: 600; color: var(--c-text-2); font-size: var(--fs-body); }
+.case-toggle {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  font-size: var(--fs-xs);
+  color: var(--c-text-3);
+}
+.case-toggle::after { content: '\25BE'; font-size: 10px; line-height: 1; }
+.plan-replay.is-collapsed { padding: 10px 14px; }
+.plan-replay.is-collapsed .case-item-head { margin: 0; padding: 0; border-bottom: 0; }
+.plan-replay.is-collapsed .case-toggle::after { content: '\25B8'; }
+.plan-replay.is-collapsed .case-body { display: none; }
+.case-item-head:focus-visible { outline: 2px solid var(--c-brand); outline-offset: 4px; border-radius: var(--r-sm); }
+.case-analysis {
+  font-size: var(--fs-sm);
+  color: var(--c-text-2);
+  margin: 8px 0 12px;
+  padding: 10px 12px;
+  background: #fff;
+  border-left: 3px solid #94a3b8;
+  border-radius: var(--r-sm);
+  line-height: 1.7;
+}
+.case-analysis strong { color: #334155; }
+
+/* 时间线（聊天回放） */
+.timeline { position: relative; padding-left: 26px; margin: 0; }
+.timeline::before { content: ""; position: absolute; left: 9px; top: 8px; bottom: 8px; width: 2px; background: linear-gradient(180deg, #cbd5e1, #e2e8f0); border-radius: 1px; }
+.tl-step { position: relative; margin-bottom: 14px; }
+.tl-step:last-child { margin-bottom: 0; }
+.tl-dot {
+  position: absolute;
+  left: -26px;
+  top: 6px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 3px solid var(--c-surface-soft);
+  box-shadow: 0 0 0 1.5px var(--c-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: #fff;
+}
+.tl-time {
+  display: block;
+  font-family: 'SF Mono', 'Menlo', 'Consolas', monospace;
+  font-size: var(--fs-xs);
+  color: var(--c-text-3);
+  margin-bottom: 6px;
+  letter-spacing: 0.2px;
+}
+/* 相对间隔：≥30 分钟 黄，≥2 小时 红 */
+.tl-gap {
+  display: inline-flex; align-items: center; margin-left: 6px; padding: 0 6px;
+  height: 16px; border-radius: 999px; font-size: 10.5px; font-weight: 600;
+  color: var(--c-text-4); background: #f1f3f5; white-space: nowrap; font-variant-numeric: tabular-nums;
+}
+.tl-gap.is-warn { color: #b45309; background: var(--c-warn-soft); }
+.tl-gap.is-bad { color: #b91c1c; background: var(--c-danger-soft); }
+.tl-bubble {
+  display: block;
+  padding: 12px 14px;
+  border-radius: var(--r-md);
+  border: 1px solid;
+  font-size: var(--fs-body);
+  line-height: 1.7;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+.tl-bubble .b-label {
+  display: inline-flex;
+  align-items: center;
+  font-weight: 700;
+  font-size: 11px;
+  padding: 3px 9px;
+  border-radius: var(--r-sm);
+  margin-right: 8px;
+  margin-bottom: 6px;
+  letter-spacing: 0.3px;
+  line-height: 1.3;
+  color: #fff;
+}
+.tl-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: var(--r-sm);
+  font-size: 11px;
+  font-weight: 700;
+  margin-right: 8px;
+  margin-bottom: 6px;
+  letter-spacing: 0.3px;
+  line-height: 1.3;
+  color: #fff;
+}
+.tl-tag.tag-evidence { background: #ef4444; }
+.tl-tag.tag-emotion { background: var(--c-danger); }
+.tl-text {
+  display: block;
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px dashed rgba(0,0,0,0.06);
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  font-size: var(--fs-body);
+  line-height: 1.7;
+}
+/* 角色变体 */
+.tl-user .tl-dot { background: #0ea5e9; }
+.tl-user .tl-bubble { background: #f0f9ff; border-color: #bae6fd; color: #075985; }
+.tl-user .b-label { background: #0ea5e9; }
+.tl-agent .tl-dot { background: var(--c-brand); }
+.tl-agent .tl-bubble { background: var(--c-brand-soft); border-color: var(--c-brand-border); color: #3730a3; }
+.tl-agent .b-label { background: var(--c-brand); }
+.tl-note .tl-dot { background: #92400e; }
+.tl-note .tl-bubble { background: #fffbeb; border-color: #fde68a; color: #78350f; }
+.tl-note .b-label { background: #92400e; }
+/* 证据 / 卡点信号覆盖 */
+.tl-step.tl-evidence .tl-bubble { background: var(--c-danger-soft); border-color: var(--c-danger-border); color: #991b1b; }
+.tl-step.tl-evidence .tl-dot { background: #ef4444; }
+.tl-step.tl-evidence .b-label { background: #ef4444; }
+.tl-step.tl-evidence .tl-text { color: #991b1b; border-top-color: rgba(220,38,38,0.15); }
+.tl-step.tl-emotion .tl-bubble { background: #fee2e2; border-color: #f87171; color: #7f1d1d; }
+.tl-step.tl-emotion .tl-dot { background: var(--c-danger); }
+.tl-step.tl-emotion .b-label { background: var(--c-danger); }
+.tl-step.tl-emotion .tl-text { color: #7f1d1d; font-weight: 500; border-top-color: rgba(220,38,38,0.25); }
+
+</style>
+<style>
+/* ==========================================================================
+   沟通分析报告 · 主题适配层
+   在不改动报告原有结构与样式的前提下，把配色映射到运营工作台的暖橙体系，
+   并支持 亮色 / 暗色 / 护眼 三种主题（与工作台 localStorage 的 wb_theme 同步）。
+   ========================================================================== */
+
+/* ---------- 亮色（工作台默认） ---------- */
+:root,
+:root[data-theme="light"] {
+  --rp-bg: #FFFFFF;
+  --rp-bg-grad-start: #FFF1E4;
+  --rp-bg-grad-mid: #FFF9F5;
+  --rp-surface: #FFFFFF;
+  --rp-surface-soft: #FAF6F3;
+  --rp-border: #EFE6DE;
+  --rp-border-strong: #DCD2C9;
+  --rp-ink: #221813;
+  --rp-ink-2: #3A2C24;
+  --rp-muted: #7B6A61;
+  --rp-muted-2: #A99A90;
+
+  --rp-accent: #F97316;
+  --rp-accent-d: #EA580C;
+  --rp-accent-soft: rgba(249, 115, 10, 0.10);
+  --rp-accent-border: rgba(249, 115, 10, 0.34);
+
+  --rp-danger: #EF4444;
+  --rp-danger-soft: #FEF2F2;
+  --rp-danger-border: #FCA5A5;
+  --rp-danger-ink: #991B1B;
+  --rp-warn: #D97706;
+  --rp-warn-soft: #FEF3C7;
+  --rp-warn-border: #FDE68A;
+  --rp-warn-ink: #92400E;
+  --rp-ok: #10B981;
+  --rp-info: #3B82F6;
+}
+
+/* ---------- 护眼（暖米黄底 + 深棕字） ---------- */
+:root[data-theme="eye"] {
+  --rp-bg: #F5F1E8;
+  --rp-bg-grad-start: #F7F0DF;
+  --rp-bg-grad-mid: #FBF7EE;
+  --rp-surface: #FBF8F1;
+  --rp-surface-soft: #F0EADC;
+  --rp-border: #E5DCCB;
+  --rp-border-strong: #D5C9B4;
+  --rp-ink: #3C3229;
+  --rp-ink-2: #4A3D31;
+  --rp-muted: #7A6E5F;
+  --rp-muted-2: #A2957F;
+
+  --rp-accent: #F97316;
+  --rp-accent-d: #EA580C;
+  --rp-accent-soft: rgba(249, 115, 10, 0.13);
+  --rp-accent-border: rgba(249, 115, 10, 0.40);
+
+  --rp-danger: #DC2626;
+  --rp-danger-soft: #FBEDE9;
+  --rp-danger-border: #E8B4A8;
+  --rp-danger-ink: #8C2F1E;
+  --rp-warn: #B45309;
+  --rp-warn-soft: #F7EBD4;
+  --rp-warn-border: #E4CEA6;
+  --rp-warn-ink: #7C4410;
+  --rp-ok: #059669;
+  --rp-info: #2563EB;
+}
+
+/* ---------- 暗色 ---------- */
+:root[data-theme="dark"] {
+  --rp-bg: #100E0C;
+  --rp-bg-grad-start: #2B1A0C;
+  --rp-bg-grad-mid: #191411;
+  --rp-surface: #171412;
+  --rp-surface-soft: #221C18;
+  --rp-border: #2A231E;
+  --rp-border-strong: #3D332C;
+  --rp-ink: #F5EFEA;
+  --rp-ink-2: #E4DAD2;
+  --rp-muted: #B4A49A;
+  --rp-muted-2: #8A7A70;
+
+  --rp-accent: #FB923C;
+  --rp-accent-d: #F97316;
+  --rp-accent-soft: rgba(251, 146, 60, 0.14);
+  --rp-accent-border: rgba(251, 146, 60, 0.38);
+
+  --rp-danger: #F87171;
+  --rp-danger-soft: rgba(248, 113, 113, 0.13);
+  --rp-danger-border: rgba(248, 113, 113, 0.38);
+  --rp-danger-ink: #FCA5A5;
+  --rp-warn: #FBBF24;
+  --rp-warn-soft: rgba(251, 191, 36, 0.14);
+  --rp-warn-border: rgba(251, 191, 36, 0.34);
+  --rp-warn-ink: #FCD34D;
+  --rp-ok: #34D399;
+  --rp-info: #60A5FA;
+}
+
+/* ==========================================================================
+   1) 把报告原来的设计变量整体重定向到工作台配色
+   ========================================================================== */
+:root {
+  --c-bg: var(--rp-bg);
+  --c-surface: var(--rp-surface);
+  --c-surface-soft: var(--rp-surface-soft);
+  --c-border: var(--rp-border);
+  --c-border-strong: var(--rp-border-strong);
+  --c-text: var(--rp-ink);
+  --c-text-2: var(--rp-ink-2);
+  --c-text-3: var(--rp-muted);
+  --c-text-4: var(--rp-muted-2);
+
+  --c-brand: var(--rp-accent);
+  --c-brand-2: var(--rp-accent-d);
+  --c-navy: #43312A;
+  --c-brand-soft: var(--rp-accent-soft);
+  --c-brand-border: var(--rp-accent-border);
+
+  --c-danger: var(--rp-danger);
+  --c-danger-soft: var(--rp-danger-soft);
+  --c-danger-border: var(--rp-danger-border);
+  --c-warn: var(--rp-warn);
+  --c-warn-soft: var(--rp-warn-soft);
+  --c-warn-border: var(--rp-warn-border);
+  --c-ok: var(--rp-ok);
+  --c-info: var(--rp-info);
+}
+:root[data-theme="dark"] { --c-navy: #1F1A16; }
+
+/* ==========================================================================
+   2) 页面骨架：顶部标题条 + 内容容器
+   ========================================================================== */
+html, body { height: auto; }
+body {
+  background:
+    linear-gradient(180deg, var(--rp-bg-grad-start) 0%, var(--rp-bg-grad-mid) 260px, var(--rp-bg) 520px);
+  background-attachment: fixed;
+  color: var(--rp-ink);
+}
+
+.rp-topbar {
+  position: sticky; top: 0; z-index: 30;
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding: 12px 22px;
+  background: var(--rp-surface);
+  border-bottom: 1px solid var(--rp-border);
+  backdrop-filter: saturate(140%) blur(8px);
+}
+.rp-topbar h1 {
+  display: flex; align-items: center; gap: 9px;
+  font-size: 16px; font-weight: 700; color: var(--rp-ink);
+  margin: 0; letter-spacing: 0.2px;
+}
+.rp-topbar .rp-dot {
+  width: 9px; height: 9px; border-radius: 50%;
+  background: var(--rp-accent);
+  box-shadow: 0 0 0 4px var(--rp-accent-soft);
+  flex-shrink: 0;
+}
+.rp-topbar .rp-sub { font-size: 12.5px; color: var(--rp-muted); }
+.rp-topbar .rp-spacer { flex: 1; }
+.rp-period {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 11px; border-radius: 999px;
+  background: var(--rp-accent-soft); border: 1px solid var(--rp-accent-border);
+  color: var(--rp-accent-d); font-size: 12px; font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.rp-print {
+  appearance: none; border: 1px solid var(--rp-border-strong);
+  background: var(--rp-surface); color: var(--rp-ink-2);
+  padding: 7px 14px; border-radius: 10px; font-size: 12.5px; font-weight: 600;
+  cursor: pointer; transition: all 0.16s;
+  font-family: inherit;
+}
+.rp-print:hover { border-color: var(--rp-accent); color: var(--rp-accent-d); background: var(--rp-accent-soft); }
+
+/* ==========================================================================
+   3) Hero（原有渐变卡：换成工作台橙金渐变，文字固定白）
+   ========================================================================== */
+.hero { padding: 24px 20px 0; }
+.hero-inner {
+  background: linear-gradient(135deg, #FB923C 0%, #F97316 52%, #EA580C 100%);
+  box-shadow: 0 10px 30px rgba(249, 115, 10, 0.22);
+}
+.hero-eyebrow, .hero h1, .hero-sub, .metric-num { color: #fff; }
+.hero-eyebrow { opacity: 0.82; }
+.report-period-chip {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.30);
+  color: #fff;
+}
+.report-period-chip--warn { background: rgba(255, 255, 255, 0.26); color: #fff; }
+.metric-card {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.26);
+}
+.metric-label { color: rgba(255, 255, 255, 0.86); }
+
+/* ==========================================================================
+   4) 章节卡片与标题
+   ========================================================================== */
+.page { max-width: 1080px; }
+.section {
+  background: var(--rp-surface);
+  border-color: var(--rp-border);
+}
+.section > h2 { color: var(--rp-ink); }
+.section h3, .section > h3 { color: var(--rp-ink-2); }
+.section-intro { color: var(--rp-muted); }
+.num-badge { background: var(--rp-accent); color: #fff; }
+strong { color: var(--rp-ink); }
+
+/* ==========================================================================
+   5) 结论条 / 告警框 / 证据口径说明
+   ========================================================================== */
+.callout {
+  background: var(--rp-warn-soft);
+  border-left-color: var(--rp-warn);
+}
+.callout-title, .callout p { color: var(--rp-warn-ink); }
+
+.alert-box {
+  background: var(--rp-danger-soft);
+  border-color: var(--rp-danger-border);
+  border-left-color: var(--rp-danger);
+}
+.alert-lead { color: var(--rp-danger-ink); }
+.alert-box .rank-note { color: var(--rp-danger-ink); opacity: 0.86; }
+.alert-box th { background: var(--rp-danger-ink); color: #fff; }
+.alert-box table { background: var(--rp-surface); }
+.alert-box tr:nth-child(even) td { background: var(--rp-danger-soft); }
+:root[data-theme="dark"] .alert-box tr:nth-child(even) td { background: rgba(248,113,113,0.10); }
+
+.evidence-scope-note {
+  background: var(--rp-surface-soft);
+  border-left-color: var(--rp-accent-border);
+  color: var(--rp-muted);
+}
+
+/* ==========================================================================
+   6) 图表卡（环形图 / 宽幅图 / 榜表卡）
+   ========================================================================== */
+.pie-card, .diagram, .rank-card {
+  background: var(--rp-surface);
+  border-color: var(--rp-border);
+}
+.pie-title, .rank-title { color: var(--rp-ink); }
+.pie-legend-row { color: var(--rp-ink-2); }
+.pie-legend-value { color: var(--rp-muted); }
+.pie-empty { color: var(--rp-muted-2); }
+.pie-card svg circle[fill="#fff"] { fill: var(--rp-surface); }
+
+/* ==========================================================================
+   7) 表格
+   ========================================================================== */
+th { background: var(--c-navy); color: #fff; }
+td { border-bottom-color: var(--rp-border); color: var(--rp-ink-2); }
+td:first-child { color: var(--rp-ink); }
+tr:nth-child(even) td { background: var(--rp-surface-soft); }
+tr:hover td { background: var(--rp-accent-soft); }
+tr:last-child td { border-bottom: none; }
+.not-supported { color: var(--rp-muted-2); }
+
+.rk-no {
+  background: var(--rp-accent-soft);
+  border-color: var(--rp-accent-border);
+  color: var(--rp-accent-d);
+}
+.rk-dim, .rk-freq { color: var(--rp-ink); }
+.rk-track { background: var(--rp-border); }
+.rk-fill { background: var(--rp-accent); }
+.rk-pct { color: var(--rp-accent-d); }
+.rank-note { color: var(--rp-muted-2); }
+.wait-cell { color: var(--rp-danger); }
+
+/* ==========================================================================
+   8) 标签 / 徽章
+   ========================================================================== */
+.badge { background: var(--rp-surface-soft); color: var(--rp-ink-2); border: 1px solid var(--rp-border); }
+.badge-emotion { background: var(--rp-danger-soft); color: var(--rp-danger-ink); border-color: var(--rp-danger-border); }
+.platform-badge { background: var(--rp-surface-soft); color: var(--rp-ink-2); border: 1px solid var(--rp-border); }
+.tk-kind { background: var(--rp-surface-soft); color: var(--rp-ink-2); border: 1px solid var(--rp-border); }
+.tk-kind.is-bad { background: var(--rp-danger-soft); color: var(--rp-danger-ink); border-color: var(--rp-danger-border); }
+.tk-kind.is-warn { background: var(--rp-warn-soft); color: var(--rp-warn-ink); border-color: var(--rp-warn-border); }
+.tk-act { color: var(--rp-ink-2); }
+
+/* ==========================================================================
+   9) 健康率 / 平台汇总条
+   ========================================================================== */
+.platform-strip-card { background: var(--rp-surface-soft); border-color: var(--rp-border); }
+.psc-num { color: var(--rp-ink); }
+.psc-of, .psc-label { color: var(--rp-muted); }
+.psc-total { color: var(--rp-muted); }
+.psc-main .psc-label { color: var(--rp-muted); }
+.psc-rate { }
+
+/* 分档：≥90% 绿 / 80~90% 黄 / <80% 红（沿用报告原逻辑，颜色对齐工作台） */
+.psc-stats.lv-good .psc-rate { color: #065F46; background: #D1FAE5; }
+.psc-stats.lv-warn .psc-rate { color: var(--rp-warn-ink); background: var(--rp-warn-soft); }
+.psc-stats.lv-bad  .psc-rate { color: var(--rp-danger-ink); background: var(--rp-danger-soft); }
+:root[data-theme="dark"] .psc-stats.lv-good .psc-rate { color: #6EE7B7; background: rgba(16,185,129,0.16); }
+
+/* ==========================================================================
+   10) 原声墙 / 原声小标签
+   ========================================================================== */
+.voice-card {
+  background: var(--rp-surface);
+  border-color: var(--rp-danger-border);
+  border-left-color: var(--rp-danger);
+}
+.voice-text { color: var(--rp-danger-ink); }
+.voice-meta { color: var(--rp-muted); }
+.voice-dim { background: var(--rp-danger-soft); color: var(--rp-danger-ink); border: 1px solid var(--rp-danger-border); }
+
+.plan-voice { background: var(--rp-surface-soft); color: var(--rp-ink-2); border: 1px solid var(--rp-border); }
+
+/* ==========================================================================
+   11) 挽留方案卡
+   ========================================================================== */
+.plan-card {
+  background: var(--rp-surface);
+  border-color: var(--rp-accent-border);
+  border-left-color: var(--rp-accent);
+}
+.plan-head { border-bottom-color: var(--rp-border); }
+.plan-title, .plan-title a { color: var(--rp-accent-d); }
+.plan-title a { border-bottom-color: var(--rp-accent-border); }
+.plan-row-label { color: var(--rp-ink-2); }
+.plan-row-body { color: var(--rp-ink-2); }
+.plan-row-body strong { color: var(--rp-ink); }
+.plan-actions li { color: var(--rp-ink-2); }
+.plan-script {
+  background: var(--rp-accent-soft);
+  border-left-color: var(--rp-accent);
+  color: var(--rp-ink-2);
+}
+:root[data-theme="dark"] .plan-script { color: var(--rp-ink); }
+
+/* ==========================================================================
+   12) 会话还原（可折叠时间线）
+   ========================================================================== */
+.plan-replay { background: var(--rp-surface-soft); border-color: var(--rp-border); }
+.case-item-head { border-bottom-color: var(--rp-border); }
+.case-idx { color: var(--rp-accent-d); }
+.case-counterpart { color: var(--rp-ink-2); }
+.case-toggle { color: var(--rp-muted); }
+.case-analysis { background: var(--rp-surface); color: var(--rp-ink-2); border-left-color: var(--rp-muted-2); }
+.case-analysis strong { color: var(--rp-ink); }
+
+.timeline::before { background: linear-gradient(180deg, var(--rp-border-strong), var(--rp-border)); }
+.tl-dot { border-color: var(--rp-surface-soft); box-shadow: 0 0 0 1.5px var(--rp-border); }
+.tl-time { color: var(--rp-muted); }
+.tl-gap { color: var(--rp-muted-2); background: var(--rp-surface-soft); border: 1px solid var(--rp-border); }
+.tl-gap.is-warn { color: var(--rp-warn-ink); background: var(--rp-warn-soft); }
+.tl-gap.is-bad { color: var(--rp-danger-ink); background: var(--rp-danger-soft); }
+.tl-text { border-top-color: var(--rp-border); }
+
+/* 角色气泡：买家=蓝灰、客服=橙、系统小注=琥珀 */
+.tl-user .tl-dot { background: #0EA5E9; }
+.tl-user .tl-bubble { background: var(--rp-surface-soft); border-color: var(--rp-border); color: var(--rp-ink-2); }
+.tl-user .b-label { background: #0EA5E9; color: #fff; }
+
+.tl-agent .tl-dot { background: var(--rp-accent); }
+.tl-agent .tl-bubble { background: var(--rp-accent-soft); border-color: var(--rp-accent-border); color: var(--rp-ink-2); }
+.tl-agent .b-label { background: var(--rp-accent); color: #fff; }
+
+.tl-note .tl-dot { background: var(--rp-warn); }
+.tl-note .tl-bubble { background: var(--rp-warn-soft); border-color: var(--rp-warn-border); color: var(--rp-warn-ink); }
+.tl-note .b-label { background: var(--rp-warn); color: #fff; }
+
+.tl-step.tl-evidence .tl-bubble { background: var(--rp-danger-soft); border-color: var(--rp-danger-border); color: var(--rp-danger-ink); }
+.tl-step.tl-evidence .tl-dot { background: var(--rp-danger); }
+.tl-step.tl-evidence .b-label { background: var(--rp-danger); color: #fff; }
+.tl-step.tl-evidence .tl-text { color: var(--rp-danger-ink); border-top-color: var(--rp-danger-border); }
+
+.tl-step.tl-emotion .tl-bubble { background: var(--rp-danger-soft); border-color: var(--rp-danger); color: var(--rp-danger-ink); }
+.tl-step.tl-emotion .tl-dot { background: var(--rp-danger); }
+.tl-step.tl-emotion .b-label { background: var(--rp-danger); color: #fff; }
+.tl-step.tl-emotion .tl-text { color: var(--rp-danger-ink); font-weight: 500; border-top-color: var(--rp-danger-border); }
+
+/* ==========================================================================
+   13) 数据完整度 / 分页证据 / 范围标签
+   ========================================================================== */
+.data-state { border-color: var(--rp-border); }
+.data-state.complete { color: #065F46; background: #ECFDF5; border-color: #A7F3D0; }
+.data-state.partial, .data-state.pending { color: var(--rp-warn-ink); background: var(--rp-warn-soft); border-color: var(--rp-warn-border); }
+.data-state.muted { color: var(--rp-muted); background: var(--rp-surface-soft); }
+.pagination-evidence, .pagination-chip { background: var(--rp-surface); border-color: var(--rp-accent-border); color: var(--rp-accent-d); }
+.pagination-evidence-title { color: var(--rp-accent-d); }
+.pagination-selector { color: var(--rp-muted); }
+.group-totals { border-top-color: var(--rp-border); }
+.group-chip { background: var(--rp-surface); border-color: var(--rp-border); color: var(--rp-ink-2); }
+.scope-chip.time { color: #1D4ED8; background: #EFF6FF; border-color: #BFDBFE; }
+.scope-chip.reply { color: #7C3AED; background: #F5F3FF; border-color: #DDD6FE; }
+.scope-chip.sentiment { color: #BE123C; background: #FFF1F2; border-color: #FECDD3; }
+
+:root[data-theme="dark"] .scope-chip.time { color: #93C5FD; background: rgba(59,130,246,0.14); border-color: rgba(59,130,246,0.32); }
+:root[data-theme="dark"] .scope-chip.reply { color: #C4B5FD; background: rgba(139,92,246,0.14); border-color: rgba(139,92,246,0.32); }
+:root[data-theme="dark"] .scope-chip.sentiment { color: #FDA4AF; background: rgba(244,63,94,0.14); border-color: rgba(244,63,94,0.32); }
+:root[data-theme="dark"] .data-state.complete { color: #6EE7B7; background: rgba(16,185,129,0.14); border-color: rgba(16,185,129,0.32); }
+
+/* ==========================================================================
+   14) 页脚
+   ========================================================================== */
+.page-footer { color: var(--rp-muted-2); }
+.page-footer strong { color: var(--rp-muted); }
+
+/* ==========================================================================
+   15) 暗色下 SVG 内联硬编码颜色的兜底修正
+   —— 报告里 SVG 的轴/网格/文字用的是浅灰，暗色下需要压暗或提亮
+   ========================================================================== */
+:root[data-theme="dark"] .diagram svg text[fill="#64748b"],
+:root[data-theme="dark"] .diagram svg text[fill="#94a3b8"] { fill: var(--rp-muted); }
+:root[data-theme="dark"] .diagram svg line[stroke="#eef2f7"],
+:root[data-theme="dark"] .diagram svg line[stroke="#cbd5e1"] { stroke: var(--rp-border); }
+:root[data-theme="dark"] .diagram svg rect[fill="#f1f5f9"],
+:root[data-theme="dark"] .diagram svg rect[fill="#f8fafc"] { fill: var(--rp-surface-soft); }
+:root[data-theme="dark"] .diagram svg rect[fill="#f8fafc"][stroke="#fff"] { stroke: var(--rp-border); }
+:root[data-theme="dark"] .pie-card svg text[fill="#0f172a"] { fill: var(--rp-ink); }
+:root[data-theme="dark"] .pie-card svg text[fill="#64748b"] { fill: var(--rp-muted); }
+
+/* ==========================================================================
+   16) 响应式微调（窄屏下顶部条与 Hero 内边距）
+   ========================================================================== */
+@media (max-width: 640px) {
+  .rp-topbar { padding: 10px 14px; gap: 8px; }
+  .rp-topbar h1 { font-size: 14.5px; }
+  .rp-topbar .rp-sub { display: none; }
+  .hero { padding: 16px 12px 0; }
+}
+
+/* ==========================================================================
+   17) 打印 / 导出 PDF
+   ========================================================================== */
+@media print {
+  body { background: #fff !important; }
+  .rp-topbar { display: none !important; }
+  .page-footer { display: none; }
+}
+
+
+/* ============ 报告筛选器（动态生成） ============ */
+.rp-filter {
+  position: sticky; top: 46px; z-index: 25;
+  background: var(--rp-surface);
+  border-bottom: 1px solid var(--rp-border);
+  padding: 10px 22px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.rp-filter-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.rp-f-label { font-size: 12px; font-weight: 600; color: var(--rp-muted); flex: 0 0 auto; }
+.rp-filter select,
+.rp-filter input[type="date"] {
+  appearance: none; -webkit-appearance: none;
+  border: 1px solid var(--rp-border-strong);
+  background: var(--rp-surface); color: var(--rp-ink);
+  padding: 0 10px; border-radius: 9px;
+  font-size: 12.5px; font-family: inherit; cursor: pointer; height: 32px;
+}
+.rp-filter select { min-width: 130px; }
+.rp-filter select:focus,
+.rp-filter input[type="date"]:focus { outline: none; border-color: var(--rp-accent); }
+.date-quick { display: flex; gap: 6px; flex-wrap: wrap; }
+.date-quick button {
+  appearance: none; border: 1px solid var(--rp-border-strong);
+  background: var(--rp-surface); color: var(--rp-ink-2);
+  padding: 0 11px; border-radius: 9px;
+  font-size: 12.5px; font-weight: 600; cursor: pointer; font-family: inherit; height: 32px;
+}
+.date-quick button:hover { border-color: var(--rp-accent); color: var(--rp-accent-d); }
+.date-quick button.active { background: var(--rp-accent); border-color: var(--rp-accent); color: #fff; }
+.date-exact { display: flex; align-items: center; gap: 6px; }
+.date-exact input[type="date"] { width: 132px; min-width: 132px; cursor: pointer; }
+.date-exact .dash { color: var(--rp-muted-2); font-size: 12px; }
+.rp-gen {
+  appearance: none; border: 1px solid transparent;
+  background: var(--rp-accent); color: #fff;
+  padding: 0 18px; border-radius: 10px;
+  font-size: 12.5px; font-weight: 700; cursor: pointer; font-family: inherit; height: 32px;
+}
+.rp-gen:hover { background: var(--rp-accent-d); }
+.rp-gen[disabled] { opacity: .55; cursor: default; }
+.rp-link {
+  appearance: none; border: none; background: none;
+  color: var(--rp-muted); font-size: 12.5px; cursor: pointer;
+  font-family: inherit; text-decoration: underline; padding: 0 4px;
+}
+.rp-link:hover { color: var(--rp-accent-d); }
+.rp-hint { font-size: 12px; color: var(--rp-muted); }
+
+/* ============ 报告空态 / 加载态 / 错误态 ============ */
+.rp-empty {
+  border: 1px dashed var(--rp-border-strong); border-radius: 14px;
+  padding: 52px 24px; text-align: center; background: var(--rp-surface);
+}
+.rp-empty h3 { font-size: 17px; font-weight: 700; color: var(--rp-ink); margin: 0 0 8px; }
+.rp-empty p { font-size: 13.5px; color: var(--rp-muted); line-height: 1.8; }
+.rp-error {
+  border: 1px solid var(--rp-danger-border); border-left: 4px solid var(--rp-danger);
+  border-radius: 12px; padding: 18px 20px; background: var(--rp-danger-soft);
+  color: var(--rp-danger-ink); font-size: 14px; line-height: 1.7;
+}
+.rp-est {
+  display: inline-block; padding: 1px 8px; border-radius: 999px;
+  font-size: 11.5px; font-weight: 700; vertical-align: middle;
+  background: var(--rp-warn-soft); color: var(--rp-warn-ink); border: 1px solid var(--rp-warn-border);
+}
+.rp-scope {
+  margin: 12px 0 0; padding: 10px 12px; border-left: 3px solid var(--rp-accent-border);
+  background: var(--rp-surface-soft); color: var(--rp-muted);
+  font-size: 12.5px; line-height: 1.65;
+}
+@media (max-width: 900px) {
+  .rp-filter { position: static; padding: 10px 14px; }
+}
+</style>
+<link rel="stylesheet" href="scrollbar.css?v=1">
+</head>
+<body>
+<header class="rp-topbar">
+  <h1><span class="rp-dot"></span>沟通分析报告</h1>
+  <span class="rp-sub">跨平台客户沟通卡点诊断 · 按筛选条件动态生成</span>
+  <span class="rp-spacer"></span>
+  <span class="rp-period" id="rpPeriod">加载中…</span>
+  <button class="rp-print" id="rpPrint">⤓ 导出 PDF</button>
+</header>
+
+<div class="rp-filter">
+  <div class="rp-filter-row">
+    <span class="rp-f-label">时间范围</span>
+    <div class="date-quick" id="dateQuick">
+      <button type="button" data-range="today">今天</button>
+      <button type="button" data-range="yesterday">昨天</button>
+      <button type="button" data-range="7d">近 7 天</button>
+      <button type="button" data-range="30d">近 30 天</button>
+      <button type="button" data-range="month">本月</button>
+      <button type="button" data-range="all">全部</button>
+    </div>
+    <div class="date-exact">
+      <input type="date" id="dateStart" aria-label="开始日期">
+      <span class="dash">→</span>
+      <input type="date" id="dateEnd" aria-label="结束日期">
+    </div>
+  </div>
+  <div class="rp-filter-row">
+    <span class="rp-f-label">店铺</span><select id="selStore"></select>
+    <span class="rp-f-label">客服</span><select id="selAgent"></select>
+    <button type="button" class="rp-gen" id="btnGen">生成报告</button>
+    <button type="button" class="rp-link" id="btnClearFilter">清空条件</button>
+    <span class="rp-hint" id="filterHint"></span>
+  </div>
+</div>
+
+<div class="page">
+  <main class="main-content" id="reportBody">
+    <div class="rp-empty" id="rpEmpty">
+      <h3>正在读取聊天数据…</h3>
+      <p>首次进入会按「全部时间」自动生成一次报告；<br>调整上方时间范围 / 店铺 / 客服后点「生成报告」即可重新分析。</p>
+    </div>
+  </main>
+</div>
+<div class="page-footer">报告基于本地只读采集的聊天记录实时计算，结论需商家人工复核。第 4 章「产品线质量」与第 1/6 章的「抱怨主题」为关键词近似估算，其余指标为确定性统计。未执行任何生产写操作（不发消息 / 不发优惠券 / 不改订单），话术均为人工审核草稿。</div>
+
+<script>
+function switchTab(el, targetId) {
+  var tabGroup = el.closest('.platform-tabs');
+  var section = el.closest('.section');
+  if (!tabGroup || !section) return;
+  tabGroup.querySelectorAll('.platform-tab').forEach(function (t) { t.classList.remove('active'); });
+  el.classList.add('active');
+  section.querySelectorAll('.platform-content').forEach(function (c) { c.classList.remove('active'); });
+  var target = section.querySelector('#' + targetId);
+  if (target) target.classList.add('active');
+}
+function toggleCaseReplay(button) {
+  var replay = button.closest('.plan-replay');
+  if (!replay) return;
+  var body = replay.querySelector('.case-body');
+  var willExpand = replay.classList.contains('is-collapsed');
+  replay.classList.toggle('is-collapsed', !willExpand);
+  button.setAttribute('aria-expanded', String(willExpand));
+  if (body) body.hidden = !willExpand;
+  var label = button.querySelector('.case-toggle-text');
+  if (label) label.textContent = willExpand ? '收起' : '展开';
+}
+document.addEventListener('click', function (event) {
+  var button = event.target.closest('.case-item-head');
+  if (button) toggleCaseReplay(button);
+});
+document.getElementById('rpPrint').addEventListener('click', function () { window.print(); });
+</script>
+
+<script>
+(function () {
+  'use strict';
+
+  var $ = function (id) { return document.getElementById(id); };
+  var bodyEl = $('reportBody');
+
+  var allRecords = [];
+  var filters = { start: '', end: '', preset: 'all', store: '', agent: '' };
+  var dataMin = '', dataMax = '';
+
+  var SLOW_SEC = 30 * 60;      // 超 30 分钟算超时响应
+  var GAP2H = 2 * 3600;        // 会话内断档超过 2 小时
+  var MAX_GAP_SEC = 86400;     // 跨天以上间隔视为新会话，不计入响应
+  /* 同一客户跨多天的往返会被切分成多个「会话」：
+     相邻两条消息间隔超过 12 小时即视为新会话，否则「9 天只聊过两次」
+     会被算成一次 8 天的超长断档，把断档指标彻底带偏。 */
+  var SESSION_SPLIT_SEC = 12 * 3600;
+
+  var PH = '请在客户端查看原始聊天记录';
+
+  /* ================= 基础工具 ================= */
+  function esc(s) {
+    return s == null ? '' : String(s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function pad2(n) { return String(n).length < 2 ? '0' + n : String(n); }
+  function tsOf(r) {
+    var p = String(r.date || '').split('/');
+    if (p.length < 3) return null;
+    var t = String(r.time || '00:00:00').split(':');
+    var d = new Date(+p[0], (+p[1]) - 1, +p[2], +(t[0] || 0), +(t[1] || 0), +(t[2] || 0));
+    return isNaN(d.getTime()) ? null : d.getTime();
+  }
+  function dsOf(r) {
+    var p = String(r.date || '').split('/');
+    if (p.length < 3) return '';
+    return p[0] + '-' + pad2(+p[1]) + '-' + pad2(+p[2]);
+  }
+  function toDS(d) { return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); }
+  function median(a) {
+    if (!a.length) return null;
+    var s = a.slice().sort(function (x, y) { return x - y; });
+    var m = s.length >> 1;
+    return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
+  }
+  function avg(a) { return a.length ? a.reduce(function (x, y) { return x + y; }, 0) / a.length : null; }
+  function pct(a, p) {
+    if (!a.length) return null;
+    var s = a.slice().sort(function (x, y) { return x - y; });
+    var i = Math.min(s.length - 1, Math.floor(s.length * p));
+    return s[i];
+  }
+  function fmtSec(s) {
+    if (s == null) return '—';
+    if (s < 60) return Math.round(s) + ' 秒';
+    if (s < 3600) return (s / 60).toFixed(1) + ' 分钟';
+    return (s / 3600).toFixed(1) + ' 小时';
+  }
+  function fmtMin(s) { return s == null ? '—' : (s / 60).toFixed(1); }
+  function pctStr(n, d) { return d ? (n / d * 100).toFixed(1) + '%' : '0.0%'; }
+  /* 千牛导出里约 20% 是占位文本，文本分析与响应统计都要先剔除 */
+  function isRealMsg(r) {
+    var c = (r.content || '').trim();
+    return !!c && c.indexOf(PH) < 0 && !/^https?:\/\//i.test(c) && !/^订单号[:：]/.test(c) && c.length >= 2;
+  }
+  function isAgentRole(r) { return r.role === '客服'; }
+  function isBuyerRole(r) { return r.role === '买家'; }
+
+  /* ================= 关键词词典（近似估算） ================= */
+  var NEG_RE = /(不要了|不想要|不买了|算了|取消|退货|退款|换货|差评|投诉|维权|太贵|贵了|骗子|垃圾|质量差|失望|生气|无语|太慢|迟迟|还没|没人|不回|不理|错了|发错|少发|漏发|坏了|破损|卡住|不动|装不上|不合适|白等|麻烦|问题)/;
+
+  var THEMES = [
+    { key: 'price', name: '价格/优惠/权益', color: '#e11d48', link: '定价、活动与权益配置',
+      re: /(优惠|折扣|便宜|贵|价格|价钱|包邮|运费|邮费|券|降价|差价|补偿|赔偿|返现|预算)/ },
+    { key: 'product', name: '商品功能/质量/规格', color: '#0ea5e9', link: '核心功能与关键组件',
+      re: /(质量|坏|不动|卡住|失灵|破损|瑕疵|裂缝|缝隙|尺寸|规格|少发|漏发|发错|错发|不能用|装不上|不合适|压痕|划痕|变形|松动)/ },
+    { key: 'trust', name: '信任/售后/风险', color: '#9333ea', link: '售后规则与承诺兑现',
+      re: /(退货|退款|换货|售后|投诉|差评|维权|骗|不负责|没人管|运费险)/ },
+    { key: 'fit', name: '需求与商品匹配', color: '#f59e0b', link: '选型引导与适配说明',
+      re: /(太挤|装不下|放不下|不搭|能不能装|适配|太大|太小|空间|格局)/ },
+    { key: 'logi', name: '库存/物流/时效', color: '#10b981', link: '发货时效与物流跟进',
+      re: /(发货|快递|物流|几天|多久|什么时候到|还没发|库存|现货|迟迟|到货|揽收|单号|补发)/ },
+    { key: 'service', name: '客服话术/沟通', color: '#6366f1', link: '接待话术与响应机制',
+      re: /(态度差|态度不好|没人回|没人理|不回|不理|回复太慢|回复慢|一直没|转人工|人工客服|没人管|怎么调)/ }
+  ];
+
+  var QUALITY_TYPES = [
+    { name: '功能失效', link: '核心功能与关键组件', re: /(不动|卡住|失灵|不能用|开不了|关不上|坏了|失效|不通电|不工作)/ },
+    { name: '配件缺失或数量不足', link: '装箱清单与出货复核', re: /(少发|漏发|少了|只发了|缺|没配|不够数|数量不对)/ },
+    { name: '错发、规格或结构适配问题', link: 'SKU、尺寸、结构与安装适配性', re: /(发错|错发|尺寸不对|规格不对|装不上|不合适|适配|有问题.*门|门.*有问题|不匹配)/ },
+    { name: '外观瑕疵与运输破损', link: '包装防护与出厂检验', re: /(瑕疵|划痕|压痕|磕|破损|摔|裂|变形|掉漆|毛刺)/ },
+    { name: '异响与晃动', link: '结构紧固与安装说明', re: /(异响|响声|噪音|吱|晃|松|不稳)/ },
+    { name: '安装与说明不清', link: '说明书与安装指引', re: /(不会装|怎么装|装不上|安装|说明书|图纸|孔位|螺丝)/ }
+  ];
+
+  /* 问题部位：从命中质量的买家原话里抽取已知部件名 */
+  var PARTS = ['猫爬架', '猫柜', '中间的门', '左边的门', '右边的门', '门', '踏板', '小踏板', '层板', '背板', '侧板', '顶板', '底板',
+    '隔板', '面板', '柱子', '圆柱', '楼梯', '跳板', '猫抓板', '窝', '垫', '螺丝', '钉子', '洞洞板', '纸箱', '包装'];
+
+  var LOSS_SIGNALS = [
+    { key: 'refund', label: '已申请退货', re: /(退货|退款|退了|退回去|退回来)/, cls: 'badge-emotion' },
+    { key: 'cancel', label: '已要求取消', re: /(不要了|不想要|不买了|取消|算了)/, cls: 'badge-emotion' },
+    { key: 'price', label: '价格敏感流失', re: /(太贵|贵了|价格|优惠|包邮|运费)/, cls: 'badge' },
+    { key: 'quality', label: '质量问题抱怨', re: /(坏了|卡住|不动|少发|发错|瑕疵|破损|不合适)/, cls: 'badge' },
+    { key: 'logi', label: '时效不满', re: /(还没发|迟迟|快递|物流|什么时候到|几天)/, cls: 'badge' }
+  ];
+
+  /* ================= 会话构建与分析 ================= */
+  function buildSessions(rows) {
+    var map = {}, order = [];
+    rows.forEach(function (r) {
+      var k = (r.store || '?') + '||' + ((r.customerId || '').trim() || '?');
+      if (!map[k]) {
+        map[k] = { store: r.store || '未知店铺', cid: (r.customerId || '').trim() || '未知客户', raw: [] };
+        order.push(k);
+      }
+      map[k].raw.push(r);
+    });
+    var out = [];
+    order.forEach(function (k) {
+      var s = map[k];
+      var items = s.raw.map(function (r) { return { r: r, t: tsOf(r) }; })
+        .filter(function (x) { return x.t != null; })
+        .sort(function (a, b) { return a.t - b.t; });
+      if (!items.length) return;
+      /* 按 12 小时静默切分会话 */
+      var chunks = [], cur = [];
+      items.forEach(function (x) {
+        if (cur.length && (x.t - cur[cur.length - 1].t) / 1000 > SESSION_SPLIT_SEC) { chunks.push(cur); cur = []; }
+        cur.push(x);
+      });
+      if (cur.length) chunks.push(cur);
+      chunks.forEach(function (c, i) {
+        out.push({ store: s.store, cid: s.cid, items: c, key: k + '#' + i });
+      });
+    });
+    return out;
+  }
+
+  function analyzeSession(s) {
+    var items = s.items;
+    var real = items.filter(function (x) {
+      return isBuyerRole(x.r) ? isRealMsg(x.r) : true;
+    });
+
+    var maxGap = null;
+    var gapByHour = [];
+    for (var i = 1; i < real.length; i++) {
+      var g = (real[i].t - real[i - 1].t) / 1000;
+      if (g < 0 || g > MAX_GAP_SEC) continue;
+      if (maxGap == null || g > maxGap) maxGap = g;
+      if (g > SLOW_SEC) gapByHour.push(new Date(real[i - 1].t).getHours());
+    }
+
+    var buyerReal = items.filter(function (x) { return isBuyerRole(x.r) && isRealMsg(x.r); });
+    var agentMsgs = items.filter(function (x) { return isAgentRole(x.r); });
+
+    /* 配对「真实买家消息 → 客服回复」算响应时长 */
+    var firsts = [], alls = [], slow = 0, asked = 0, answered = 0;
+    var lastBuyer = null;
+    items.forEach(function (x) {
+      if (isBuyerRole(x.r)) {
+        if (isRealMsg(x.r)) { lastBuyer = x.t; asked++; }
+        return;
+      }
+      if (!isAgentRole(x.r)) return;           // 机器人自动回复不计入客服响应
+      if (lastBuyer == null) return;
+      var gap = (x.t - lastBuyer) / 1000;
+      lastBuyer = null;
+      if (gap < 0 || gap > MAX_GAP_SEC) return;
+      alls.push(gap);
+      if (firsts.length === 0) firsts.push(gap);
+      if (gap > SLOW_SEC) slow++;
+      answered++;
+    });
+
+    var lastItem = items[items.length - 1];
+    var unanswered = !!lastItem && isBuyerRole(lastItem.r) && isRealMsg(lastItem.r);
+
+    var neg = false, themes = {}, evidences = [];
+    buyerReal.forEach(function (x) {
+      var c = x.r.content || '';
+      var isNeg = NEG_RE.test(c);
+      if (isNeg) neg = true;
+      THEMES.forEach(function (t) {
+        if (!t.re.test(c)) return;
+        /* 只有带负面信号的原话才算「抱怨证据」，
+           否则「客服」「发货」这类中性词会把主题榜带偏。 */
+        if (!isNeg) return;
+        themes[t.key] = (themes[t.key] || 0) + 1;
+        evidences.push({ theme: t.key, text: c, t: x.t });
+      });
+    });
+
+    var gap2h = maxGap != null && maxGap > GAP2H;
+    s.m = {
+      msgs: items.length,
+      buyerReal: buyerReal.length,
+      agentMsgs: agentMsgs.length,
+      agentNames: uniq(agentMsgs.map(function (x) { return (x.r.agent || '').trim(); }).filter(Boolean)),
+      maxGap: maxGap, gapByHour: gapByHour,
+      firsts: firsts, alls: alls, slow: slow, asked: asked, answered: answered,
+      unanswered: unanswered, neg: neg, gap2h: gap2h,
+      themes: themes, evidences: evidences,
+      blocked: unanswered || neg || gap2h,
+      start: items[0].t, end: items[items.length - 1].t
+    };
+    return s;
+  }
+
+  function uniq(a) {
+    var seen = {}, out = [];
+    a.forEach(function (x) { if (!seen[x]) { seen[x] = 1; out.push(x); } });
+    return out;
+  }
+
+  function computeAll(sessions) {
+    var st = {
+      sessions: sessions, n: sessions.length,
+      msgs: 0, buyerReal: 0, agentMsgs: 0,
+      firsts: [], alls: [], slow: 0, maxGap: null,
+      gap2h: 0, unanswered: 0, neg: 0, blocked: 0,
+      byStore: {}, byAgent: {}, themes: {}, evidences: [],
+      msgByHour: new Array(24).fill(0), gapHour: new Array(24).fill(0)
+    };
+    sessions.forEach(function (s) {
+      var m = s.m;
+      st.msgs += m.msgs;
+      st.buyerReal += m.buyerReal;
+      st.agentMsgs += m.agentMsgs;
+      st.slow += m.slow;
+      m.firsts.forEach(function (x) { st.firsts.push(x); });
+      m.alls.forEach(function (x) { st.alls.push(x); });
+      if (m.maxGap != null && (st.maxGap == null || m.maxGap > st.maxGap)) st.maxGap = m.maxGap;
+      if (m.gap2h) st.gap2h++;
+      if (m.unanswered) st.unanswered++;
+      if (m.neg) st.neg++;
+      if (m.blocked) st.blocked++;
+
+      var bs = st.byStore[s.store] = st.byStore[s.store] || {
+        store: s.store, n: 0, blocked: 0, firsts: [], alls: [], slow: 0,
+        maxGap: null, unanswered: 0, gap2h: 0, msgs: 0, agentMsgs: 0, buyerReal: 0, agents: {}
+      };
+      bs.n++; bs.msgs += m.msgs; bs.agentMsgs += m.agentMsgs; bs.buyerReal += m.buyerReal;
+      bs.blocked += m.blocked ? 1 : 0;
+      bs.unanswered += m.unanswered ? 1 : 0;
+      bs.gap2h += m.gap2h ? 1 : 0;
+      bs.slow += m.slow;
+      m.firsts.forEach(function (x) { bs.firsts.push(x); });
+      m.alls.forEach(function (x) { bs.alls.push(x); });
+      if (m.maxGap != null && (bs.maxGap == null || m.maxGap > bs.maxGap)) bs.maxGap = m.maxGap;
+      m.agentNames.forEach(function (a) { bs.agents[a] = 1; });
+
+      m.agentNames.forEach(function (a) {
+        var ba = st.byAgent[a] = st.byAgent[a] || {
+          name: a, n: 0, msgs: 0, firsts: [], alls: [], slow: 0, asked: 0, answered: 0, stores: {}
+        };
+        ba.n++; ba.stores[s.store] = 1;
+      });
+      /* 客服维度：会话内出现过的客服分摊该会话 */
+      var owners = m.agentNames.length ? m.agentNames : ['未识别客服'];
+      owners.forEach(function (a) {
+        var ba = st.byAgent[a] = st.byAgent[a] || {
+          name: a, n: 0, msgs: 0, firsts: [], alls: [], slow: 0, asked: 0, answered: 0, stores: {}
+        };
+        ba.stores[s.store] = 1;
+      });
+
+      Object.keys(m.themes).forEach(function (k) { st.themes[k] = (st.themes[k] || 0) + m.themes[k]; });
+      m.evidences.forEach(function (e) {
+        st.evidences.push({ theme: e.theme, text: e.text, t: e.t, store: s.store, cid: s.cid });
+      });
+    });
+
+    /* 客服消息数 / 响应：单独按消息归属统计，避免分摊虚高 */
+    var agentMsg = {};
+    sessions.forEach(function (s) {
+      s.items.forEach(function (x) {
+        if (!isAgentRole(x.r)) return;
+        var a = (x.r.agent || '').trim() || '未识别客服';
+        agentMsg[a] = agentMsg[a] || { msgs: 0, firsts: [], alls: [], slow: 0, asked: 0, answered: 0 };
+        agentMsg[a].msgs++;
+      });
+      /* 每个会话内的响应时长归给实际回复的客服（无法逐条归属时归给会话内客服） */
+      var owners = s.m.agentNames.length ? s.m.agentNames : ['未识别客服'];
+      var per = owners.length;
+      s.m.alls.forEach(function (g) {
+        owners.forEach(function (a) {
+          agentMsg[a] = agentMsg[a] || { msgs: 0, firsts: [], alls: [], slow: 0, asked: 0, answered: 0 };
+          agentMsg[a].alls.push(g);
+        });
+      });
+      s.m.firsts.forEach(function (g) {
+        owners.forEach(function (a) {
+          agentMsg[a] = agentMsg[a] || { msgs: 0, firsts: [], alls: [], slow: 0, asked: 0, answered: 0 };
+          agentMsg[a].firsts.push(g);
+        });
+      });
+      owners.forEach(function (a) {
+        agentMsg[a] = agentMsg[a] || { msgs: 0, firsts: [], alls: [], slow: 0, asked: 0, answered: 0 };
+        agentMsg[a].slow += s.m.slow / per;
+        agentMsg[a].answered += s.m.answered / per;
+        agentMsg[a].asked += s.m.asked / per;
+      });
+    });
+    Object.keys(agentMsg).forEach(function (a) {
+      var g = agentMsg[a];
+      var ba = st.byAgent[a] = st.byAgent[a] || { name: a, n: 0, msgs: 0, stores: {} };
+      ba.msgs = g.msgs; ba.firsts = g.firsts; ba.alls = g.alls;
+      ba.slow = Math.round(g.slow); ba.asked = Math.round(g.asked); ba.answered = Math.round(g.answered);
+    });
+
+    /* 24 小时分布：买家真实消息量 + 超 30 分钟断档次数 */
+    sessions.forEach(function (s) {
+      s.items.forEach(function (x) {
+        if (isBuyerRole(x.r) && isRealMsg(x.r)) st.msgByHour[new Date(x.t).getHours()]++;
+      });
+      s.m.gapByHour.forEach(function (h) { st.gapHour[h]++; });
+    });
+
+    st.firstMed = median(st.firsts);
+    st.allMed = median(st.alls);
+    st.allP90 = pct(st.alls, 0.9);
+    st.fast5 = st.alls.filter(function (x) { return x <= 300; }).length;
+    st.rate = st.askedTotal = 0;
+    var askedTotal = 0;
+    sessions.forEach(function (s) { askedTotal += s.m.asked; });
+    st.askedTotal = askedTotal;
+    st.answeredTotal = st.alls.length;
+    st.rate = askedTotal ? st.answeredTotal / askedTotal : 0;
+    return st;
+  }
+
+  function qualityScan(sessions) {
+    var types = {}, parts = {};
+    sessions.forEach(function (s) {
+      var hitType = {};
+      s.items.forEach(function (x) {
+        if (!isBuyerRole(x.r) || !isRealMsg(x.r)) return;
+        var c = x.r.content || '';
+        QUALITY_TYPES.forEach(function (t) {
+          if (!t.re.test(c)) return;
+          hitType[t.name] = true;
+          var ty = types[t.name] = types[t.name] || { name: t.name, link: t.link, sessions: {}, voices: [] };
+          ty.sessions[s.store + '||' + s.cid] = 1;
+          if (ty.voices.length < 3) ty.voices.push(c);
+          /* 部位抽取 */
+          PARTS.forEach(function (p) {
+            if (c.indexOf(p) < 0) return;
+            var key = p + '||' + t.name;
+            var pk = parts[key] = parts[key] || { part: p, type: t.name, sessions: {}, voice: c, store: s.store };
+            pk.sessions[s.store + '||' + s.cid] = 1;
+          });
+        });
+      });
+    });
+    return { types: types, parts: parts };
+  }
+
+  function lossScan(sessions) {
+    var out = [];
+    sessions.forEach(function (s) {
+      var hit = null, quote = '';
+      for (var i = 0; i < s.items.length; i++) {
+        var x = s.items[i];
+        if (!isBuyerRole(x.r) || !isRealMsg(x.r)) continue;
+        var c = x.r.content || '';
+        for (var j = 0; j < LOSS_SIGNALS.length; j++) {
+          if (LOSS_SIGNALS[j].re.test(c)) { hit = LOSS_SIGNALS[j]; quote = c; break; }
+        }
+        if (hit) break;
+      }
+      if (!hit) return;
+      var reason = quote;
+      out.push({
+        store: s.store, cid: s.cid, signal: hit, quote: quote, reason: reason,
+        session: s, score: (s.m.blocked ? 2 : 0) + (s.m.unanswered ? 2 : 0) + s.m.evidences.length
+      });
+    });
+    out.sort(function (a, b) { return b.score - a.score; });
+    return out;
+  }
+
+  function scriptFor(sigKey, quote) {
+    var head = '【人工审核草稿，未发送】亲，看到您提到“' + quote + '”，';
+    var mid;
+    if (sigKey === 'refund') mid = '很抱歉给您带来不好的体验。这边已为您登记，退换货流程与运费承担会按后台实际规则确认后一次性回复您，不让您反复说明。';
+    else if (sigKey === 'cancel') mid = '理解您的顾虑，我先确认您真正的需求和使用场景，能调整的方案（尺寸、搭配、数量）会一次给您列清楚。';
+    else if (sigKey === 'price') mid = '关于价格与优惠，我先核对当前可使用的活动与赠品方案，能争取的部分会直接给您明确答复。';
+    else if (sigKey === 'quality') mid = '关于您反馈的商品问题，我先登记具体现象并安排复核，确认后给您换新 / 补发 / 补偿的明确方案。';
+    else if (sigKey === 'logi') mid = '关于发货与时效，我先帮您核实订单当前状态和预计送达时间，有异常会第一时间给您处理方案。';
+    else mid = '我先按当前记录核对您遇到的具体问题和期望方案，涉及退换、运费、时效或补偿的内容，会以后台实际规则确认后一次回复您，避免让您重复说明。';
+    return head + mid + '您目前更希望优先解决继续使用、换新还是退货？';
+  }
+
+  /* ================= SVG 图形 ================= */
+  function arcPath(cx, cy, r, a0, a1) {
+    var large = (a1 - a0) > Math.PI ? 1 : 0;
+    var x0 = cx + r * Math.cos(a0), y0 = cy + r * Math.sin(a0);
+    var x1 = cx + r * Math.cos(a1), y1 = cy + r * Math.sin(a1);
+    return 'M ' + cx.toFixed(2) + ' ' + cy.toFixed(2) +
+      ' L ' + x0.toFixed(2) + ' ' + y0.toFixed(2) +
+      ' A ' + r + ' ' + r + ' 0 ' + large + ' 1 ' + x1.toFixed(2) + ' ' + y1.toFixed(2) + ' Z';
+  }
+  function pie(items, total, centerNum, centerLabel) {
+    if (!total) {
+      return '<svg viewBox="0 0 260 260" role="img"><circle cx="130" cy="130" r="100" fill="#f1f5f9"/>' +
+        '<text x="130" y="130" text-anchor="middle" dominant-baseline="central" font-size="15" fill="#94a3b8">暂无数据</text></svg>';
+    }
+    var a = -Math.PI / 2, out = [];
+    if (items.length === 1) {
+      out.push('<circle cx="130" cy="130" r="100" fill="' + items[0].color + '"><title>' +
+        esc(items[0].label) + ' 100.0%</title></circle>');
+    } else {
+      items.forEach(function (it) {
+        if (!it.v) return;
+        var sweep = it.v / total * Math.PI * 2;
+        out.push('<path d="' + arcPath(130, 130, 100, a, a + sweep) + '" fill="' + it.color + '"><title>' +
+          esc(it.label) + ' ' + pctStr(it.v, total) + '</title></path>');
+        a += sweep;
+      });
+    }
+    out.push('<circle cx="130" cy="130" r="55" fill="#fff"/>');
+    out.push('<text x="130" y="120" text-anchor="middle" dominant-baseline="central" font-size="26" font-weight="700" fill="#0f172a">' + esc(centerNum) + '</text>');
+    out.push('<text x="130" y="146" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#64748b">' + esc(centerLabel) + '</text>');
+    return '<svg viewBox="0 0 260 260" role="img">' + out.join('') + '</svg>';
+  }
+
+  function hourChart(msgByHour, gapHour) {
+    var W = 1080, H = 430, x0 = 70, yBase = 340, plotH = 260, slot = (W - x0 - 40) / 24;
+    var maxMsg = Math.max.apply(null, msgByHour.concat([1]));
+    var maxGap = Math.max.apply(null, gapHour.concat([1]));
+    var o = [];
+    o.push('<text x="' + x0 + '" y="22" fill="#0f172a" font-size="15" font-weight="700">24 小时接待全景：浅柱 = 买家消息量，红柱 = 该小时发生的超 30 分钟断档</text>');
+    /* 时段底纹 */
+    o.push('<rect x="' + (x0 + 0).toFixed(1) + '" y="60" width="' + (slot * 8).toFixed(1) + '" height="' + plotH + '" fill="#f8fafc"/>');
+    o.push('<text x="' + (x0 + 6) + '" y="76" fill="#94a3b8" font-size="11">凌晨 00:00–08:00</text>');
+    o.push('<text x="' + (x0 + slot * 8 + 6) + '" y="76" fill="#94a3b8" font-size="11">白天 08:00–18:00</text>');
+    o.push('<text x="' + (x0 + slot * 18 + 6) + '" y="76" fill="#94a3b8" font-size="11">晚间 18:00–24:00</text>');
+    /* 网格线 */
+    for (var gi = 0; gi <= 4; gi++) {
+      var gy = yBase - plotH * gi / 4;
+      o.push('<line x1="' + x0 + '" y1="' + gy.toFixed(1) + '" x2="' + (W - 40) + '" y2="' + gy.toFixed(1) + '" stroke="#eef2f7"/>');
+    }
+    var bw = Math.min(13, slot / 2 - 3);
+    for (var h = 0; h < 24; h++) {
+      var cx = x0 + slot * h;
+      var hm = msgByHour[h] / maxMsg * plotH;
+      var hg = gapHour[h] / maxGap * plotH;
+      o.push('<rect x="' + (cx + 4).toFixed(1) + '" y="' + (yBase - hm).toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + Math.max(hm, 1).toFixed(1) + '" fill="#cbd5e1"><title>' + h + ' 点：买家消息 ' + msgByHour[h] + ' 条</title></rect>');
+      if (gapHour[h] > 0) {
+        o.push('<rect x="' + (cx + 6 + bw).toFixed(1) + '" y="' + (yBase - hg).toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + Math.max(hg, 2).toFixed(1) + '" fill="#ef4444"><title>' + h + ' 点：超 30 分钟断档 ' + gapHour[h] + ' 次</title></rect>');
+      }
+      if (h % 3 === 0) {
+        o.push('<text x="' + (cx + slot / 2).toFixed(1) + '" y="' + (yBase + 18) + '" text-anchor="middle" fill="#64748b" font-size="11">' + pad2(h) + '</text>');
+      }
+    }
+    o.push('<line x1="' + x0 + '" y1="' + yBase + '" x2="' + (W - 40) + '" y2="' + yBase + '" stroke="#cbd5e1"/>');
+    /* 图例 */
+    o.push('<rect x="' + x0 + '" y="378" width="12" height="12" fill="#cbd5e1"/><text x="' + (x0 + 18) + '" y="388" fill="#64748b" font-size="11.5">买家消息量（峰值 ' + maxMsg + ' 条/小时）</text>');
+    o.push('<rect x="' + (x0 + 250) + '" y="378" width="12" height="12" fill="#ef4444"/><text x="' + (x0 + 268) + '" y="388" fill="#64748b" font-size="11.5">超 30 分钟断档次数（峰值 ' + maxGap + ' 次/小时）</text>');
+    o.push('<text x="' + x0 + '" y="414" fill="#94a3b8" font-size="11">口径：横轴为买家发言 / 断档起点所处小时；断档 = 同一会话内相邻两条真实消息间隔超过 30 分钟。</text>');
+    return '<div class="diagram"><svg viewBox="0 0 ' + W + ' ' + H + '" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system,\'PingFang SC\',sans-serif">' + o.join('') + '</svg></div>';
+  }
+
+  /* ================= 各章渲染 ================= */
+  function storeBadge(store) {
+    var cls = /天猫/.test(store) ? 'badge-tmall' : 'badge-taobao';
+    return '<span class="platform-badge ' + cls + '">' + esc(store) + '</span>';
+  }
+
+  function renderHero(st, hint) {
+    var healthy = st.n - st.blocked;
+    var rate = st.n ? healthy / st.n : 0;
+    var lv = rate >= 0.9 ? 'lv-good' : (rate >= 0.8 ? 'lv-warn' : 'lv-bad');
+    return '<div class="hero"><div class="hero-inner">' +
+      '<div class="hero-eyebrow">COMMUNICATION ANALYSIS</div>' +
+      '<h1>沟通分析报告</h1>' +
+      '<div class="hero-sub">按筛选条件实时计算：会话健康度、响应效率、坐席负载、质量信号与流失挽留。</div>' +
+      '<div class="report-periods">' +
+      '<span class="report-period-chip">时间：' + esc(hint.range) + '</span>' +
+      '<span class="report-period-chip">店铺：' + esc(hint.store) + '</span>' +
+      '<span class="report-period-chip">客服：' + esc(hint.agent) + '</span>' +
+      '<span class="report-period-chip report-period-chip--warn">主题/质量为关键词近似估算</span>' +
+      '</div>' +
+      '<div class="metric-row">' +
+      card(st.n, '会话数') +
+      card(st.msgs, '消息总数') +
+      card(healthy + ' / ' + st.n, '无卡点会话') +
+      card(pctStr(healthy, st.n), '会话健康率') +
+      card(fmtSec(st.firstMed), '首响中位数') +
+      card(st.slow, '超 30 分钟响应') +
+      '</div></div></div>';
+  }
+  function card(v, l) {
+    return '<div class="metric-card"><div class="metric-num">' + esc(v) + '</div><div class="metric-label">' + esc(l) + '</div></div>';
+  }
+
+  function ch1(st) {
+    var dims = [
+      { label: '负向情绪', color: '#ef4444', v: st.neg },
+      { label: '接待断档', color: '#f59e0b', v: st.gap2h },
+      { label: '问题没人接', color: '#8b5cf6', v: st.unanswered }
+    ];
+    var dimTotal = dims.reduce(function (a, b) { return a + b.v; }, 0);
+    var themeItems = THEMES.map(function (t) {
+      return { label: t.name, color: t.color, v: st.themes[t.key] || 0, link: t.link };
+    }).filter(function (x) { return x.v > 0; }).sort(function (a, b) { return b.v - a.v; });
+    var themeTotal = themeItems.reduce(function (a, b) { return a + b.v; }, 0);
+
+    var top = themeItems[0];
+    var o = [];
+    o.push('<section class="section" id="overview"><h2><span class="num-badge">1</span>有效响应：卡点问题在哪</h2>');
+    o.push('<div class="callout"><div class="callout-title">结论：' +
+      (top ? esc(top.label) + '是当前主要卡点' : '本次筛选范围内未发现明显卡点') + '</div>');
+    o.push('<p>· ' + st.n + ' 个会话里 <strong>' + st.blocked + ' 个是卡点会话</strong>，可重叠计入负向情绪、接待断档、问题没人接三个维度。</p>');
+    o.push('<p>· 买家抱怨最多的主题是<strong>「' + (top ? esc(top.label) : '无') + '」</strong>' +
+      (top ? '（' + top.v + ' 条证据，占 ' + pctStr(top.v, themeTotal) + '）' : '') + '。</p>');
+    o.push('<p>· 健康率 ' + pctStr(st.n - st.blocked, st.n) + '，优先处理高频卡点，并同步优化客服响应和问题闭环。</p>');
+    o.push('</div>');
+
+    /* 店铺卡 */
+    var stores = Object.keys(st.byStore);
+    o.push('<div class="platform-strip" style="grid-template-columns:repeat(' + Math.min(stores.length, 3) + ',1fr);">');
+    stores.forEach(function (k) {
+      var b = st.byStore[k];
+      var healthy = b.n - b.blocked;
+      var rate = b.n ? healthy / b.n : 0;
+      var lv = rate >= 0.9 ? 'lv-good' : (rate >= 0.8 ? 'lv-warn' : 'lv-bad');
+      o.push('<div class="platform-strip-card"><div class="psc-head">' + storeBadge(b.store) +
+        '<span class="psc-total">共 ' + b.n + ' 个会话 · ' + b.msgs + ' 条消息</span></div>' +
+        '<div class="psc-stats ' + lv + '"><div class="psc-main"><span class="psc-num">' + healthy + '</span>' +
+        '<span class="psc-of">/ ' + b.n + '</span><span class="psc-label">会话无卡点</span></div>' +
+        '<span class="psc-rate">健康率 ' + pctStr(healthy, b.n) + '</span></div></div>');
+    });
+    o.push('</div>');
+
+    /* 双饼图 */
+    o.push('<div class="pie-grid">');
+    o.push('<div class="pie-card"><div class="pie-title">卡点命中了哪个维度</div><div class="pie-body">' +
+      pie(dims, dimTotal, dimTotal, '次维度命中') +
+      '<div class="pie-legend">' + dims.map(function (d) {
+        return '<div class="pie-legend-row"><span class="pie-dot" style="background:' + d.color + '"></span>' +
+          '<span class="pie-legend-label">' + d.label + '</span><span class="pie-legend-value">' + d.v + ' 个会话</span></div>';
+      }).join('') + '</div></div></div>');
+    o.push('<div class="pie-card"><div class="pie-title">买家在抱怨什么（主题占比）</div><div class="pie-body">' +
+      pie(themeItems, themeTotal, themeTotal, '条抱怨证据') +
+      '<div class="pie-legend">' + (themeItems.length ? themeItems.map(function (d) {
+        return '<div class="pie-legend-row"><span class="pie-dot" style="background:' + d.color + '"></span>' +
+          '<span class="pie-legend-label">' + esc(d.label) + '</span><span class="pie-legend-value">' +
+          pctStr(d.v, themeTotal) + ' · ' + d.v + '</span></div>';
+      }).join('') : '<div class="pie-empty">暂无关键词命中</div>') + '</div></div></div>');
+    o.push('</div>');
+
+    /* 频次榜 */
+    o.push('<div class="rank-card"><div class="rank-title">买家抱怨主题频次（按证据条数）<span class="rp-est">关键词近似</span></div>');
+    o.push('<div class="table-wrap"><table class="rank-table"><tr><th>抱怨主题</th><th>提及频次</th><th>频次占比</th><th>典型买家原声</th><th>指向环节</th></tr>');
+    if (!themeItems.length) {
+      o.push('<tr><td colspan="5" class="not-supported">本次筛选范围内没有命中关键词的买家原话</td></tr>');
+    } else {
+      themeItems.forEach(function (t, i) {
+        var voices = st.evidences.filter(function (e) { return e.theme === t.key; })
+          .sort(function (a, b) { return a.text.length - b.text.length; }).slice(0, 3);
+        o.push('<tr><td class="rk-dim"><span class="rk-no">' + (i + 1) + '</span>' + esc(t.label) + '</td>' +
+          '<td class="rk-freq">' + t.v + '</td>' +
+          '<td><div class="rk-share"><span class="rk-track"><span class="rk-fill" style="width:' + (t.v / themeTotal * 100).toFixed(1) + '%"></span></span><span class="rk-pct">' + pctStr(t.v, themeTotal) + '</span></div></td>' +
+          '<td><div class="rk-voices">' + (voices.length ? voices.map(function (v) { return '<span class="plan-voice">“' + esc(clip(v.text, 40)) + '”</span>'; }).join('') : '<span class="not-supported">—</span>') + '</div></td>' +
+          '<td>' + esc(t.link) + '</td></tr>');
+      });
+    }
+    o.push('</table></div>');
+    o.push('<div class="rank-note">本表统计的是<strong>买家在抱怨什么</strong>（业务原因），与上方「卡点三维」是两个层次：' +
+      '三维（负向情绪 / 接待断档 / 问题没人接）用来判定一个会话算不算卡点，本表解释这些卡点卡在什么事上，因此两处数字互不对应。' +
+      '频次占比 = 该主题证据数 / 抱怨证据总数（' + themeTotal + ' 条）；同一会话可同时命中多个主题。' +
+      '主题识别为<strong>关键词近似</strong>，仅供参考。</div>');
+    o.push('</div></section>');
+    return o.join('');
+  }
+
+  function ch2(st) {
+    var o = [];
+    o.push('<section class="section" id="response-gap"><h2><span class="num-badge">2</span>及时响应：首次响应与断档时间</h2>');
+    var mainIssue = st.unanswered >= st.gap2h ? '无人接话是主要失血点' : '断档是主要失血点';
+    o.push('<div class="callout"><div class="callout-title">结论：' + mainIssue + '</div>');
+    o.push('<p>· 断档情况：<strong>' + st.gap2h + ' 个会话</strong>出现过超 2 小时断档，最长 <strong>' + fmtSec(st.maxGap) + '</strong>。</p>');
+    o.push('<p>· 收尾未接：<strong>' + st.unanswered + ' 个会话</strong>买家最后发言后无人接话，SLA 盯盘口径建议改成：买家最后发言必须有人接。</p>');
+    o.push('<p>· 整体响应：首响中位 <strong>' + fmtSec(st.firstMed) + '</strong>，后续回复中位 <strong>' + fmtSec(st.allMed) + '</strong>，响应率 ' + pctStr(st.answeredTotal, st.askedTotal) + '。</p>');
+    o.push('</div>');
+
+    o.push('<div class="stat-row">' +
+      sCard(fmtSec(st.firstMed), '', '首响中位数', st.firstMed != null && st.firstMed <= 60 ? 'is-ok' : '') +
+      sCard(st.gap2h, '个会话', '断档超过 2 小时', st.gap2h ? 'is-bad' : 'is-ok') +
+      sCard(fmtSec(st.maxGap), '', '最长一次断档', st.maxGap != null && st.maxGap > GAP2H ? 'is-bad' : '') +
+      sCard(st.unanswered, '个会话', '买家发言收尾、无人接话', st.unanswered ? 'is-bad' : 'is-ok') +
+      sCard(st.slow, '次', '响应超 30 分钟', st.slow ? 'is-bad' : 'is-ok') +
+      '</div>');
+
+    o.push('<h3>① 分店铺：首响与断档</h3>');
+    o.push('<div class="table-wrap"><table><tr><th>店铺</th><th>会话数</th><th>首响中位</th><th>超 30 分钟</th><th>断档&gt;2h</th><th>最长断档</th><th>无人接话</th><th>健康率</th></tr>');
+    Object.keys(st.byStore).forEach(function (k) {
+      var b = st.byStore[k];
+      o.push('<tr><td>' + storeBadge(b.store) + '</td><td class="num-cell">' + b.n + '</td>' +
+        '<td class="num-cell">' + fmtSec(median(b.firsts)) + '</td>' +
+        '<td class="num-cell">' + b.slow + '</td>' +
+        '<td class="num-cell">' + b.gap2h + '</td>' +
+        '<td class="wait-cell">' + fmtSec(b.maxGap) + '</td>' +
+        '<td class="num-cell">' + b.unanswered + '</td>' +
+        '<td class="num-cell">' + pctStr(b.n - b.blocked, b.n) + '</td></tr>');
+    });
+    o.push('</table></div>');
+
+    o.push('<h3>② 后续轮次回复速度</h3>');
+    var fastRate = st.alls.length ? st.fast5 / st.alls.length : 0;
+    o.push('<div class="table-wrap"><table><tr><th>范围</th><th>后续回复中位</th><th>P90</th><th>≤5 分钟占比</th><th>&gt;30 分钟次数</th><th>响应率</th><th>判定</th></tr>');
+    o.push('<tr><td>本次筛选</td><td class="num-cell">' + fmtSec(st.allMed) + '</td>' +
+      '<td class="num-cell">' + fmtSec(st.allP90) + '</td>' +
+      '<td class="num-cell">' + (fastRate * 100).toFixed(1) + '%</td>' +
+      '<td class="num-cell">' + st.slow + '</td>' +
+      '<td class="num-cell">' + pctStr(st.answeredTotal, st.askedTotal) + '</td>' +
+      '<td>' + (fastRate >= 0.8 ? '良好' : (fastRate >= 0.6 ? '一般，需优化' : '偏慢，重点整改')) + '</td></tr>');
+    o.push('</table></div>');
+    o.push('<div class="rp-scope">口径：按客户（店铺 + 客户 ID）聚合为会话并按时间排序，配对「真实买家消息 → 下一条客服消息」计算响应时长；' +
+      '机器人自动回复不计入客服响应；间隔超过 24 小时视为新会话，不计入。' +
+      '<strong>会话切分：同一客户相邻消息间隔超过 12 小时自动拆为新会话</strong>，避免把跨天往返算成超长断档。' +
+      '<strong>已剔除「' + PH + '」占位文本与纯链接消息。</strong></div>');
+    o.push('</section>');
+    return o.join('');
+  }
+  function sCard(v, unit, label, cls) {
+    return '<div class="stat-card"><div class="stat-num ' + cls + '">' + esc(v) +
+      (unit ? '<span class="stat-unit">' + unit + '</span>' : '') + '</div><div class="stat-label">' + esc(label) + '</div></div>';
+  }
+
+  function ch3(st) {
+    var o = [];
+    o.push('<section class="section" id="staffing"><h2><span class="num-badge">3</span>业务员接待情况</h2>');
+    var agents = Object.keys(st.byAgent).map(function (k) { return st.byAgent[k]; })
+      .sort(function (a, b) { return b.msgs - a.msgs; });
+    var top = agents[0];
+    var share = top && st.agentMsgs ? top.msgs / st.agentMsgs : 0;
+    o.push('<div class="callout"><div class="callout-title">结论：' + (share > 0.4 ? '会话向个别坐席集中，先匀负载再盯响应' : '负载相对均衡，重点盯响应与超时') + '</div>');
+    o.push('<p>· <strong>排班</strong>：' + (st.gapHour.reduce(function (a, b) { return a + b; }, 0) === 0 ? '本次范围内无超 30 分钟断档，维持当前值班覆盖即可。' : '共有 ' + st.gapHour.reduce(function (a, b) { return a + b; }, 0) + ' 次超 30 分钟断档，重点补足断档时段的值班。') + '</p>');
+    o.push('<p>· <strong>负载</strong>：' + (top ? '消息量最高的是 ' + esc(top.name) + '（' + top.msgs + ' 条，占客服消息 ' + (share * 100).toFixed(1) + '%）' : '暂无客服数据') + '，建议把新会话优先派给负荷轻的人、给单人设并发上限。</p>');
+    o.push('<p>· <strong>覆盖</strong>：共 ' + agents.length + ' 名客服参与本次范围的接待。</p>');
+    o.push('</div>');
+
+    o.push('<h3>① 排班：24 小时接待与断档分布</h3>');
+    o.push(hourChart(st.msgByHour, st.gapHour));
+
+    o.push('<h3>② 坐席负载与响应</h3>');
+    o.push('<div class="table-wrap"><table><tr><th>客服</th><th>店铺</th><th>参与会话</th><th>客服消息数</th><th>消息占比</th><th>首响中位</th><th>平均响应</th><th>响应率</th><th>超时数</th></tr>');
+    if (!agents.length) {
+      o.push('<tr><td colspan="9" class="not-supported">本次筛选范围内没有客服消息</td></tr>');
+    } else {
+      agents.forEach(function (a) {
+        var f = median(a.firsts || []), av = avg(a.alls || []);
+        var rate = a.asked ? Math.min(1, a.answered / a.asked) : 0;
+        o.push('<tr><td><strong>' + esc(a.name) + '</strong></td>' +
+          '<td>' + esc(Object.keys(a.stores).join(' / ')) + '</td>' +
+          '<td class="num-cell">' + (a.n || 0) + '</td>' +
+          '<td class="num-cell">' + a.msgs + '</td>' +
+          '<td class="num-cell">' + pctStr(a.msgs, st.agentMsgs) + '</td>' +
+          '<td class="num-cell">' + fmtSec(f) + '</td>' +
+          '<td class="num-cell">' + fmtSec(av) + '</td>' +
+          '<td class="num-cell">' + (rate * 100).toFixed(1) + '%</td>' +
+          '<td class="num-cell">' + (a.slow || 0) + '</td></tr>');
+      });
+    }
+    o.push('</table></div>');
+    o.push('<div class="rp-scope">口径：客服消息数按消息归属精确统计；首响 / 平均响应该客服参与的会话（多条客服时按会话分摊），因此同一会话的响应会同时计入多名客服，各列不可直接相加。未标注客服名的消息归入「未识别客服」。</div>');
+    o.push('</section>');
+    return o.join('');
+  }
+
+  function ch4(st, q) {
+    var o = [];
+    o.push('<section class="section" id="product-quality"><h2><span class="num-badge">4</span>产品线质量情况 <span class="rp-est">关键词近似估算</span></h2>');
+    var types = Object.keys(q.types).map(function (k) { return q.types[k]; })
+      .sort(function (a, b) { return b.sessions.length - a.sessions.length; });
+    o.push('<div class="callout"><div class="callout-title">结论：' + (types.length ? '按买家原话关键词识别质量问题并分型排查' : '本次范围内未识别到明确质量反馈') + '</div>');
+    o.push('<p>· ' + (types.length ? '优先复核出现频次高的「' + esc(types[0].name) + '」（' + types[0].sessions.length + ' 个会话）。' : '本次筛选范围内的买家原话未命中质量问题关键词。') + '</p>');
+    o.push('<p>· 结合买家指出的问题部位定位排查对象；原话未出现部位名时不做推断。</p>');
+    o.push('</div>');
+
+    o.push('<h3>① 质量问题分型</h3>');
+    o.push('<div class="table-wrap"><table><tr><th>问题类型</th><th>涉及会话</th><th>典型买家原话</th><th>指向环节</th></tr>');
+    if (!types.length) {
+      o.push('<tr><td colspan="4" class="not-supported">暂无命中</td></tr>');
+    } else {
+      types.forEach(function (t) {
+        o.push('<tr><td>' + esc(t.name) + '</td><td class="num-cell"><strong>' + t.sessions.length + '</strong></td>' +
+          '<td><div class="rk-voices">' + t.voices.map(function (v) { return '<span class="plan-voice">“' + esc(clip(v, 40)) + '”</span>'; }).join('') + '</div></td>' +
+          '<td>' + esc(t.link) + '</td></tr>');
+      });
+    }
+    o.push('</table></div>');
+
+    o.push('<h3>② 买家指出的问题部位</h3>');
+    var parts = Object.keys(q.parts).map(function (k) { return q.parts[k]; })
+      .sort(function (a, b) { return b.sessions.length - a.sessions.length; }).slice(0, 12);
+    o.push('<div class="table-wrap"><table><tr><th>店铺</th><th>问题部位</th><th>关联问题类型</th><th>涉及会话</th><th>典型买家原话</th></tr>');
+    if (!parts.length) {
+      o.push('<tr><td colspan="5" class="not-supported">暂无命中（买家原话中未出现已知部件名）</td></tr>');
+    } else {
+      parts.forEach(function (p) {
+        o.push('<tr><td>' + storeBadge(p.store) + '</td><td><strong>' + esc(p.part) + '</strong></td>' +
+          '<td>' + esc(p.type) + '</td><td class="num-cell"><strong>' + p.sessions.length + '</strong></td>' +
+          '<td><div class="rk-voices"><span class="plan-voice">“' + esc(clip(p.voice, 40)) + '”</span></div></td></tr>');
+      });
+    }
+    o.push('</table></div>');
+    o.push('<div class="evidence-scope-note">口径：本章为<strong>关键词近似估算</strong>——用买家原话中的质量问题词与已知部件名匹配，' +
+      '没有经过人工或模型逐条标注，可能存在误判与漏判；否定句、假设咨询不计入。同一会话同一类型只计一次，同一会话可命中多个不同类型，故各列不可直接相加。</div>');
+    o.push('</section>');
+    return o.join('');
+  }
+
+  function ch5(st, losses) {
+    var o = [];
+    o.push('<section class="section" id="followup"><h2><span class="num-badge">5</span>客户挽留与回复话术</h2>');
+    o.push('<div class="callout"><div class="callout-title">结论：共识别 ' + losses.length + ' 个流失信号会话，按严重程度排序</div>');
+    o.push('<p>· 流失信号来自买家原话中的退货 / 取消 / 价格敏感 / 质量抱怨 / 时效不满等关键词。</p>');
+    o.push('<p>· 下面给出<strong>人工审核草稿话术</strong>（未发送），需商家确认后台规则后再使用。</p>');
+    o.push('</div>');
+
+    if (!losses.length) {
+      o.push('<p class="not-supported">本次筛选范围内没有识别到流失信号。</p></section>');
+      return o.join('');
+    }
+
+    losses.slice(0, 8).forEach(function (L) {
+      var pri = L.score >= 4 ? 'P0' : (L.score >= 2 ? 'P1' : 'P2');
+      var color = pri === 'P0' ? '#ef4444' : (pri === 'P1' ? '#f59e0b' : '#64748b');
+      o.push('<div class="plan-card"><div class="plan-head">' +
+        '<span class="plan-priority" style="background:' + color + '">' + pri + '</span>' +
+        storeBadge(L.store) +
+        '<span class="plan-title">' + esc(L.cid) + '</span>' +
+        '<span class="badge ' + L.signal.cls + '">' + esc(L.signal.label) + '</span></div>');
+      o.push('<div class="plan-row"><div class="plan-row-label">流失原因</div><div class="plan-row-body">' + esc(clip(L.reason, 80)) + '</div></div>');
+      o.push('<div class="plan-row"><div class="plan-row-label">挽回话术</div><div class="plan-row-body plan-script">' + esc(scriptFor(L.signal.key, clip(L.quote, 40))) + '</div></div>');
+      o.push(timeline(L.session));
+      o.push('</div>');
+    });
+    o.push('<div class="rp-scope">最多展示 8 个会话（按「卡点 + 未接话 + 证据条数」综合排序）。话术为模板草稿，未发送、未调用任何生产写接口。</div>');
+    o.push('</section>');
+    return o.join('');
+  }
+
+  function timeline(s) {
+    var items = s.items.slice(-40);
+    var o = ['<div class="case-item plan-replay is-collapsed">' +
+      '<button type="button" class="case-item-head" aria-expanded="false">' +
+      '<span class="case-idx">会话还原</span><span class="case-counterpart">👤 ' + esc(s.cid) + '</span>' +
+      '<span class="badge">' + s.items.length + ' 条消息</span>' +
+      '<span class="case-toggle"><span class="case-toggle-text">展开</span></span></button>' +
+      '<div class="case-body" hidden>'];
+    var prev = null;
+    items.forEach(function (x) {
+      var r = x.r;
+      var cls = isBuyerRole(r) ? 'tl-user' : (isAgentRole(r) ? 'tl-agent' : 'tl-note');
+      var real = isBuyerRole(r) ? isRealMsg(r) : true;
+      var evi = isBuyerRole(r) && real && NEG_RE.test(r.content || '');
+      if (evi) cls += ' tl-evidence tl-emotion';
+      var gapHtml = '';
+      if (prev != null) {
+        var g = (x.t - prev) / 1000;
+        if (g >= SLOW_SEC && g <= MAX_GAP_SEC) {
+          gapHtml = '<span class="tl-gap ' + (g > GAP2H ? 'is-bad' : 'is-warn') + '">+' + fmtSec(g) + '</span>';
+        }
+      }
+      prev = x.t;
+      o.push('<div class="tl-step ' + cls + '"><div class="tl-dot">' + (isBuyerRole(r) ? '买' : '客') + '</div>' +
+        '<span class="tl-time">' + fmtTime(x.t) + gapHtml + '</span>' +
+        '<div class="tl-bubble"><span class="b-label">' + esc(r.role || '') + '</span>' +
+        (evi ? tagOf(r.content || '') : '') +
+        '<div class="tl-text">' + esc(r.content || '') + '</div></div></div>');
+    });
+    o.push('</div></div>');
+    return o.join('');
+  }
+  function tagOf(text) {
+    var hit = THEMES.filter(function (t) { return t.re.test(text); })[0];
+    return hit ? '<span class="tl-tag tag-evidence">' + esc(hit.name) + '</span><span class="tl-tag tag-emotion">卡点信号</span>' : '';
+  }
+  function fmtTime(t) {
+    var d = new Date(t);
+    return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()) + ' ' +
+      pad2(d.getHours()) + ':' + pad2(d.getMinutes()) + ':' + pad2(d.getSeconds());
+  }
+  function clip(s, n) {
+    s = String(s || '').replace(/\s+/g, ' ').trim();
+    return s.length > n ? s.slice(0, n) + '…' : s;
+  }
+
+  function ch6(st) {
+    var o = [];
+    var evs = st.evidences.slice().sort(function (a, b) { return b.t - a.t; });
+    var byTheme = {};
+    evs.forEach(function (e) { byTheme[e.theme] = (byTheme[e.theme] || 0) + 1; });
+    var order = THEMES.filter(function (t) { return byTheme[t.key]; })
+      .sort(function (a, b) { return byTheme[b.key] - byTheme[a.key]; });
+
+    o.push('<section class="section" id="voice-wall"><h2><span class="num-badge">6</span>客户原声墙：一眼看到问题全貌</h2>');
+    o.push('<div class="callout"><div class="callout-title">结论：' + evs.length + ' 句原话里，' +
+      (order.length ? esc(order[0].name) + '最多（' + byTheme[order[0].key] + ' 句）' : '暂无命中') + '</div>');
+    o.push('<p>· 共 ' + evs.length + ' 句原话：' + (order.length ? order.map(function (t) {
+      return esc(t.name) + ' <strong>' + byTheme[t.key] + ' 句</strong>';
+    }).join('、') : '无') + '。</p>');
+    o.push('<p>· 与第 1 章抱怨主题互为印证；识别方式为关键词近似，仅供参考。</p>');
+    o.push('</div>');
+
+    o.push('<div class="voice-wall">');
+    evs.slice(0, 60).forEach(function (e) {
+      var t = THEMES.filter(function (x) { return x.key === e.theme; })[0];
+      o.push('<div class="voice-card"><div class="voice-text">“' + esc(clip(e.text, 60)) + '”</div>' +
+        '<div class="voice-meta"><span class="voice-dim">' + esc(t ? t.name : e.theme) + '</span>' +
+        '<span>' + esc(e.store) + ' · ' + esc(e.cid) + '</span></div></div>');
+    });
+    o.push('</div>');
+    if (evs.length > 60) o.push('<div class="rank-note">原声较多，仅展示最近 60 句（共 ' + evs.length + ' 句）。</div>');
+    o.push('</section>');
+    return o.join('');
+  }
+
+  /* ================= 筛选 ================= */
+  function inRange(r) {
+    if (!filters.start && !filters.end) return true;
+    var d = dsOf(r);
+    if (!d) return false;
+    if (filters.start && d < filters.start) return false;
+    if (filters.end && d > filters.end) return false;
+    return true;
+  }
+  function applyFilter() {
+    return allRecords.filter(function (r) {
+      if (filters.store && r.store !== filters.store) return false;
+      if (filters.agent) {
+        if (isAgentRole(r) && (r.agent || '').trim() !== filters.agent) return false;
+      }
+      return inRange(r);
+    });
+  }
+  function computePreset(name) {
+    var now = new Date();
+    var y = now.getFullYear(), m = now.getMonth(), d = now.getDate();
+    if (name === 'today') return { s: toDS(new Date(y, m, d)), e: toDS(new Date(y, m, d)) };
+    if (name === 'yesterday') return { s: toDS(new Date(y, m, d - 1)), e: toDS(new Date(y, m, d - 1)) };
+    if (name === '7d') return { s: toDS(new Date(y, m, d - 6)), e: toDS(new Date(y, m, d)) };
+    if (name === '30d') return { s: toDS(new Date(y, m, d - 29)), e: toDS(new Date(y, m, d)) };
+    if (name === 'month') return { s: toDS(new Date(y, m, 1)), e: toDS(new Date(y, m + 1, 0)) };
+    return { s: dataMin, e: dataMax };
+  }
+  function syncDateUI() {
+    var btns = document.querySelectorAll('#dateQuick button');
+    Array.prototype.forEach.call(btns, function (b) {
+      b.classList.toggle('active', b.getAttribute('data-range') === filters.preset);
+    });
+    $('dateStart').value = filters.start || '';
+    $('dateEnd').value = filters.end || '';
+  }
+  function setDate(preset) {
+    var r = computePreset(preset);
+    filters.preset = preset;
+    filters.start = r.s; filters.end = r.e;
+    syncDateUI();
+  }
+  function onManualDate() {
+    var s = $('dateStart').value, e = $('dateEnd').value;
+    if (s && e && s > e) { var t = s; s = e; e = t; }
+    filters.start = s; filters.end = e;
+    filters.preset = '';
+    syncDateUI();
+  }
+  function renderHint() {
+    var parts = [];
+    parts.push((filters.start || dataMin) + ' ~ ' + (filters.end || dataMax));
+    if (filters.store) parts.push(filters.store);
+    if (filters.agent) parts.push('客服 ' + filters.agent);
+    $('filterHint').textContent = '当前：' + parts.join(' · ');
+  }
+
+  /* ================= 主流程 ================= */
+  function renderReport() {
+    var btn = $('btnGen');
+    btn.disabled = true;
+    btn.textContent = '生成中…';
+    setTimeout(function () {
+      try {
+        var rows = applyFilter();
+        var sessions = buildSessions(rows).map(analyzeSession);
+        var st = computeAll(sessions);
+        var q = qualityScan(sessions);
+        var losses = lossScan(sessions);
+
+        var hint = {
+          range: (filters.start || dataMin) + ' ~ ' + (filters.end || dataMax),
+          store: filters.store || '全部店铺',
+          agent: filters.agent || '全部客服'
+        };
+        $('rpPeriod').textContent = hint.range + ' · ' + rows.length + ' 条消息 · ' + st.n + ' 个会话';
+
+        if (!rows.length) {
+          bodyEl.innerHTML = '<div class="rp-empty"><h3>没有符合条件的数据</h3><p>当前筛选：' +
+            esc(hint.range + ' · ' + hint.store + ' · ' + hint.agent) + '<br>请放宽时间范围或清空店铺 / 客服条件后重新生成。</p></div>';
+        } else {
+          bodyEl.innerHTML = [
+            renderHero(st, hint),
+            ch1(st), ch2(st), ch3(st), ch4(st, q), ch5(st, losses), ch6(st)
+          ].join('');
+        }
+        renderHint();
+      } catch (err) {
+        bodyEl.innerHTML = '<div class="rp-error">生成报告失败：' + esc(err && err.message ? err.message : err) + '</div>';
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '生成报告';
+      }
+    }, 20);
+  }
+
+  function fillSel(id, allLabel, list) {
+    var el = $(id);
+    el.innerHTML = '<option value="">' + allLabel + '</option>' +
+      list.map(function (v) { return '<option value="' + esc(v) + '">' + esc(v) + '</option>'; }).join('');
+  }
+
+  function bind() {
+    Array.prototype.forEach.call(document.querySelectorAll('#dateQuick button'), function (b) {
+      b.addEventListener('click', function () { setDate(b.getAttribute('data-range')); });
+    });
+    $('dateStart').addEventListener('change', onManualDate);
+    $('dateEnd').addEventListener('change', onManualDate);
+    $('selStore').addEventListener('change', function () { filters.store = this.value; renderHint(); });
+    $('selAgent').addEventListener('change', function () { filters.agent = this.value; renderHint(); });
+    $('btnGen').addEventListener('click', renderReport);
+    $('btnClearFilter').addEventListener('click', function () {
+      filters.store = ''; filters.agent = '';
+      $('selStore').value = ''; $('selAgent').value = '';
+      setDate('all');
+      renderHint();
+      renderReport();
+    });
+  }
+
+  function loadData() {
+    fetch('/api/qianniu-chat').then(function (r) { return r.json(); }).then(function (j) {
+      allRecords = (j && j.records) || [];
+      if (!allRecords.length) {
+        bodyEl.innerHTML = '<div class="rp-empty"><h3>暂无聊天数据</h3><p>请先在「千牛聊天记录 / 千牛聊天分析」页导入聊天数据。</p></div>';
+        $('rpPeriod').textContent = '无数据';
+        return;
+      }
+      var ds = allRecords.map(dsOf).filter(Boolean).sort();
+      dataMin = ds[0] || ''; dataMax = ds[ds.length - 1] || '';
+
+      var stores = uniq(allRecords.map(function (r) { return r.store; }).filter(Boolean));
+      var agents = uniq(allRecords.filter(isAgentRole).map(function (r) { return (r.agent || '').trim(); }).filter(Boolean))
+        .sort(function (a, b) { return a.localeCompare(b, 'zh'); });
+      fillSel('selStore', '全部店铺', stores);
+      fillSel('selAgent', '全部客服', agents);
+
+      setDate('all');
+      bind();
+      renderHint();
+      renderReport();
+    }).catch(function (e) {
+      bodyEl.innerHTML = '<div class="rp-error">读取聊天数据失败：' + esc(e && e.message ? e.message : e) + '</div>';
+      $('rpPeriod').textContent = '读取失败';
+    });
+  }
+
+  loadData();
+})();
+</script>
+
+</body>
+</html>

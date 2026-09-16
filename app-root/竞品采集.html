@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="mobile-ui.css">
+<script src="mobile-adapter.js"></script>
+<title>竞品采集 · 运营工作台</title>
+<style>
+  :root[data-theme="eye"]{
+    --bg:#F5F1E8; --panel:#FBF8F1; --panel2:#F0EADC;
+    --line:#E5DCCB; --line2:#D5C9B4;
+    --ink:#3C3229; --muted:#7A6E5F; --muted2:#A2957F;
+    --accent:#F97316; --accent-d:#EA580C; --accent-soft:rgba(249,115,10,0.12);
+    --ok:#16A34A; --danger:#EF4444;
+    --shadow:0 6px 24px rgba(60,50,41,.08);
+    --radius:14px;
+  }
+  :root{
+    --bg:#100E0C; --panel:#171412; --panel2:#221C18;
+    --line:#2A231E; --line2:#3D332C;
+    --ink:#F1F5F9; --muted:#94A3B8; --muted2:#64748B;
+    --accent:#F97316; --accent-d:#EA580C; --accent-soft:rgba(249,115,10,0.12);
+    --ok:#34D399; --danger:#F87171;
+    --shadow:0 8px 28px rgba(0,0,0,.40);
+    --radius:14px;
+  }
+  :root[data-theme="dark"]{
+    --bg:#100E0C; --panel:#171412; --panel2:#221C18;
+    --line:#2A231E; --line2:#3D332C;
+    --ink:#F5EFEA; --muted:#B4A49A; --muted2:#8A7A70;
+    --accent:#FB923C; --accent-d:#F97316; --accent-soft:rgba(251,146,60,0.14);
+    --ok:#34D399; --danger:#F87171;
+    --shadow:0 8px 28px rgba(0,0,0,.40);
+    --radius:14px;
+  }
+  :root[data-theme="light"]{
+    --bg:#FAF7F5; --panel:#FFFFFF; --panel2:#F3EDE8;
+    --line:#EFE6DE; --line2:#DCD2C9;
+    --ink:#111827; --muted:#475569; --muted2:#94A3B8;
+    --accent:#F97316; --accent-d:#EA580C; --accent-soft:rgba(249,115,10,0.12);
+    --ok:#16A34A; --danger:#EF4444;
+    --shadow:0 6px 24px rgba(15,23,42,.10);
+    --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;margin:0;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    background:var(--bg); color:var(--ink);
+    display:flex; flex-direction:column; min-height:100vh;
+  }
+  header{
+    padding:16px 24px; border-bottom:1px solid var(--line);
+    display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+    background:linear-gradient(180deg, rgba(249,115,10,0.06), transparent);
+  }
+  header h1{font-size:19px; margin:0; font-weight:700; display:flex; align-items:center; gap:10px;}
+  header .dot{width:10px; height:10px; border-radius:50%; background:var(--accent); box-shadow:0 0 0 4px rgba(249,115,10,0.15);}
+  header .sub{font-size:12px; color:var(--muted);}
+  header .spacer{flex:1;}
+  .refresh-btn{
+    padding:8px 16px; border-radius:9px; border:1px solid var(--line2);
+    background:var(--panel2); color:var(--ink); cursor:pointer; font-size:13px; transition:.15s;
+  }
+  .refresh-btn:hover{border-color:var(--accent); color:var(--accent);}
+
+  .summary{display:flex; gap:12px; padding:14px 24px; flex-wrap:wrap; align-items:stretch;}
+  .stat{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:12px 18px; min-width:112px;}
+  .stat .k{font-size:12px; color:var(--muted); margin-bottom:6px;}
+  .stat .v{font-size:20px; font-weight:700; color:var(--accent);}
+  .sum-scope{
+    align-self:center; font-size:12px; color:var(--muted); margin-left:auto;
+    display:flex; align-items:center; gap:6px; white-space:nowrap;
+  }
+  .sum-scope .chip{
+    background:var(--panel); border:1px solid var(--line2); border-radius:999px;
+    padding:4px 12px; color:var(--muted);
+  }
+  .sum-scope.filtered .chip{background:var(--accent-soft); border-color:var(--accent); color:var(--accent); font-weight:600;}
+  .sum-scope button{
+    background:none; border:none; color:var(--accent); cursor:pointer;
+    font-size:12px; font-family:inherit; text-decoration:underline; padding:0 2px;
+  }
+
+  .toolbar{display:flex; gap:10px; padding:0 24px 14px; flex-wrap:wrap; align-items:center;}
+  .toolbar input, .toolbar select{
+    background:var(--panel2); border:1px solid var(--line2); color:var(--ink);
+    border-radius:9px; padding:8px 12px; font-size:13px; outline:none; transition:.15s;
+  }
+  .toolbar input:focus, .toolbar select:focus{border-color:var(--accent);}
+  .toolbar input[type="text"]{min-width:240px;}
+  .toolbar .btn{
+    padding:8px 16px; border-radius:9px; border:1px solid var(--line2);
+    background:var(--panel2); color:var(--ink); cursor:pointer; font-size:13px; transition:.15s; white-space:nowrap;
+  }
+  .toolbar .btn:hover{border-color:var(--accent); color:var(--accent);}
+  .toolbar .btn.primary{background:var(--accent); border-color:var(--accent); color:#1a1206; font-weight:600;}
+  .toolbar .btn.primary:hover{background:var(--accent-d); border-color:var(--accent-d); color:#fff;}
+  .toolbar .btn.danger:hover{border-color:var(--danger); color:var(--danger);}
+
+  .quickbar{display:flex; gap:8px; padding:0 24px 12px; flex-wrap:wrap; align-items:center;}
+  .quickbar .qlabel{font-size:12px; color:var(--muted);}
+  .quickbar .qbtn{
+    padding:6px 13px; border-radius:999px; border:1px solid var(--line2);
+    background:var(--panel2); color:var(--muted); cursor:pointer; font-size:12.5px;
+    font-family:inherit; transition:.15s; white-space:nowrap;
+  }
+  .quickbar .qbtn:hover{border-color:var(--accent); color:var(--accent);}
+  .quickbar .qbtn.active{background:var(--accent-soft); border-color:var(--accent); color:var(--accent); font-weight:600;}
+  .quickbar .qhint{font-size:12px; color:var(--muted2); margin-left:4px;}
+
+  .banner{
+    display:none; margin:0 24px 12px; padding:10px 14px; border-radius:10px; font-size:13px;
+    background:rgba(239,68,68,.10); border:1px solid rgba(239,68,68,.30); color:var(--danger);
+  }
+  .banner.show{display:block;}
+  .banner.info{background:var(--accent-soft); border-color:rgba(249,115,10,.30); color:var(--muted);}
+
+  .table-wrap{flex:1; overflow:auto; margin:0 24px; border:1px solid var(--line); border-radius:var(--radius); background:var(--panel); box-shadow:var(--shadow);}
+  table{width:100%; border-collapse:collapse; font-size:13px;}
+  thead th{
+    position:sticky; top:0; z-index:2; background:var(--panel2); color:var(--muted);
+    font-weight:600; font-size:12px; text-align:left; padding:10px 12px; white-space:nowrap;
+    border-bottom:1px solid var(--line);
+  }
+  tbody td{padding:9px 12px; border-bottom:1px solid var(--line); vertical-align:middle;}
+  tbody tr:hover{background:var(--accent-soft);}
+  td.num, th.num{text-align:right; font-variant-numeric:tabular-nums;}
+  td .thumb{
+    width:46px; height:46px; border-radius:8px; object-fit:cover;
+    border:1px solid var(--line2); background:var(--panel2); display:block;
+  }
+  td .thumb.ph{display:flex; align-items:center; justify-content:center; color:var(--muted2); font-size:10px;}
+  td .ttl{max-width:320px; line-height:1.45;}
+  td .ttl a{color:var(--ink); text-decoration:none;}
+  td .ttl a:hover{color:var(--accent); text-decoration:underline;}
+  .pill{
+    display:inline-block; padding:2px 8px; border-radius:999px; font-size:11px; font-weight:600; white-space:nowrap;
+  }
+  .pill.own{background:rgba(22,163,74,.12); color:var(--ok);}
+  .pill.rival{background:rgba(239,68,68,.12); color:var(--danger);}
+  .pill.na{background:var(--panel2); color:var(--muted2);}
+  .spec{font-size:11px; color:var(--muted); line-height:1.5; max-width:150px;}
+  .tag{display:inline-block; background:var(--panel2); border:1px solid var(--line2); border-radius:6px; padding:1px 6px; margin:0 3px 3px 0; font-size:11px; color:var(--muted);}
+  .del{
+    border:1px solid var(--line2); background:transparent; color:var(--muted2);
+    border-radius:7px; padding:4px 9px; cursor:pointer; font-size:12px; font-family:inherit; transition:.15s;
+  }
+  .del:hover{border-color:var(--danger); color:var(--danger);}
+  .empty{text-align:center; padding:48px 20px; color:var(--muted); font-size:13px; line-height:1.9;}
+
+  .pagination{
+    display:flex; gap:10px; align-items:center; padding:14px 24px; flex-wrap:wrap;
+    font-size:12.5px; color:var(--muted);
+  }
+  .pagination button{
+    padding:6px 13px; border-radius:8px; border:1px solid var(--line2);
+    background:var(--panel2); color:var(--ink); cursor:pointer; font-size:12.5px; font-family:inherit;
+  }
+  .pagination button:disabled{opacity:.45; cursor:not-allowed;}
+  .pagination button:not(:disabled):hover{border-color:var(--accent); color:var(--accent);}
+
+  .modal-mask{
+    display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:999;
+    align-items:center; justify-content:center; padding:20px;
+  }
+  .modal-mask.show{display:flex;}
+  .modal{
+    background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:22px;
+    max-width:460px; width:100%; box-shadow:var(--shadow);
+  }
+  .modal h3{margin:0 0 10px; font-size:15px; color:var(--divider, var(--ink));}
+  .modal p{margin:0 0 16px; font-size:13px; color:var(--muted); line-height:1.7;}
+  .modal .acts{display:flex; gap:10px; justify-content:flex-end;}
+</style>
+<script>
+(function(){
+  var WP='wb_theme', WS='wb_theme_auto_start', WE='wb_theme_auto_end';
+  function mins(t){ var p=String(t||'00:00').split(':'); return (parseInt(p[0],10)||0)*60+(parseInt(p[1],10)||0); }
+  function resolve(mode){
+    if(mode==='light'||mode==='dark'||mode==='eye') return mode;
+    if(mode!=='auto') return 'light';
+    var d=new Date(), m=d.getHours()*60+d.getMinutes(), s=1080, e=360;
+    try{ s=mins(localStorage.getItem(WS)||'18:00'); e=mins(localStorage.getItem(WE)||'06:00'); }catch(x){}
+    var dark=(s<e)?(m>=s&&m<e):(m>=s||m<e);
+    return dark?'dark':'light';
+  }
+  window.__wbResolveTheme = resolve;
+  function apply(){
+    var mode='light'; try{ mode=localStorage.getItem(WP)||'light'; }catch(e){}
+    document.documentElement.setAttribute('data-theme', resolve(mode));
+  }
+  apply();
+  window.addEventListener('message', function(e){
+    if(e.data && e.data.type==='wb-theme'){
+      var t=e.data.theme||e.data.mode;
+      if(t) document.documentElement.setAttribute('data-theme', resolve(t));
+      else apply();
+    }
+  });
+  try{ window.addEventListener('storage', function(e){ if(!e.key||e.key===WP||e.key===WS||e.key===WE) apply(); }); }catch(e){}
+})();
+</script>
+<link rel="stylesheet" href="scrollbar.css?v=1">
+</head>
+<body>
+  <header>
+    <h1><span class="dot"></span>竞品采集</h1>
+    <span class="sub">浏览器扩展「详情页采集」导入 · 自家商品与竞品同表 · 采价 / 销量 / SKU 对比</span>
+    <span class="spacer"></span>
+    <button class="refresh-btn" id="btnRefresh">↻ 刷新数据</button>
+  </header>
+
+  <div class="summary" id="summary">
+    <div class="stat"><div class="k">商品总数</div><div class="v" id="statTotal">0</div></div>
+    <div class="stat" title="店铺名含自家特征词（朋内 / 小木 / PurrKnave / 风速文化）的记录"><div class="k">自家</div><div class="v" id="statOwn" style="color:var(--ok)">0</div></div>
+    <div class="stat" title="其余记录，即竞品"><div class="k">竞品</div><div class="v" id="statRival" style="color:var(--danger)">0</div></div>
+    <div class="stat"><div class="k">店铺数</div><div class="v" id="statShop">0</div></div>
+    <div class="stat" title="有价格（可参与比价）的记录数"><div class="k">有价格</div><div class="v" id="statPrice">0</div></div>
+    <div class="stat" title="采到 SKU 明细的记录数"><div class="k">有SKU</div><div class="v" id="statSku">0</div></div>
+    <div class="stat" title="竞品价格中位数（仅竞品）"><div class="k">竞品价中位</div><div class="v" id="statMed">—</div></div>
+    <div class="stat" title="最近一次采集时间"><div class="k">最近采集</div><div class="v" id="statLast" style="font-size:14px">—</div></div>
+    <div class="sum-scope" id="sumScope">
+      <span class="chip" id="sumScopeChip">全部数据</span>
+      <button type="button" id="sumScopeClear" style="display:none">清空筛选</button>
+    </div>
+  </div>
+
+  <div class="banner" id="banner">无法连接运营工作台服务，请先双击「启动工作台.bat」启动本地服务。</div>
+  <div class="banner info" id="hintBar">
+    采集方式：在淘宝/天猫商品详情页打开插件浮窗 → 点「📥 采集本页商品」→「🚀 发送到工作台」。
+    自家商品和竞品用同一套操作，插件会自动按店铺名区分归属（判错了在这里也能改）。
+  </div>
+
+  <div class="toolbar" id="toolbar">
+    <input type="text" id="kw" placeholder="搜索：商品名称 / 商品ID / 店铺名">
+    <select id="selShop"><option value="">全部店铺</option></select>
+    <select id="selType">
+      <option value="">全部归属</option>
+      <option value="own">自家</option>
+      <option value="rival">竞品</option>
+    </select>
+    <select id="selSort">
+      <option value="">默认排序（最新采集在前）</option>
+      <option value="sold">已售 ↓</option>
+      <option value="review">评价数 ↓</option>
+      <option value="priceAsc">价格 ↑</option>
+      <option value="priceDesc">价格 ↓</option>
+      <option value="sku">SKU数 ↓</option>
+    </select>
+    <button class="btn" id="btnClearFilter">清空筛选</button>
+    <span class="spacer" style="flex:1"></span>
+    <button class="btn" id="btnCsv">导出 CSV</button>
+    <button class="btn" id="btnJson">导出 JSON</button>
+    <button class="btn danger" id="btnDelShop">删除当前店铺</button>
+  </div>
+
+  <div class="quickbar" id="quickbar">
+    <span class="qlabel">快捷筛选</span>
+    <button type="button" class="qbtn active" data-qf="all">全部</button>
+    <button type="button" class="qbtn" data-qf="own">自家商品</button>
+    <button type="button" class="qbtn" data-qf="rival">竞品</button>
+    <button type="button" class="qbtn" data-qf="hot" title="已售 ≥ 100">竞品热销</button>
+    <button type="button" class="qbtn" data-qf="nosku" title="没采到 SKU 明细，建议回页面重采一次">缺SKU</button>
+    <span class="qhint" id="qHint"></span>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>主图</th>
+          <th>商品名称</th>
+          <th>店铺</th>
+          <th>归属</th>
+          <th class="num">价格</th>
+          <th class="num">已售</th>
+          <th class="num">评价</th>
+          <th class="num">收藏</th>
+          <th class="num">SKU</th>
+          <th>规格</th>
+          <th>参数</th>
+          <th>采集时间</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="tbody">
+        <tr><td colspan="13" class="empty">正在加载数据…</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="pagination">
+    <span class="info" id="pageInfo">共 0 条</span>
+    <button id="btnPrev">‹ 上一页</button>
+    <span class="pages" id="pageLabel">第 1 / 1 页</span>
+    <button id="btnNext">下一页 ›</button>
+    <span class="spacer" style="flex:1"></span>
+    <span class="info">每页 <select id="pageSize" style="background:var(--panel2);color:var(--ink);border:1px solid var(--line2);border-radius:7px;padding:4px 6px;">
+      <option value="50">50</option><option value="100" selected>100</option><option value="200">200</option><option value="500">500</option>
+    </select> 条</span>
+  </div>
+
+  <div class="modal-mask" id="delMask">
+    <div class="modal">
+      <h3 id="delTitle">确认删除</h3>
+      <p id="delText"></p>
+      <div class="acts">
+        <button class="btn" id="delCancel">取消</button>
+        <button class="btn primary" id="delOk" style="background:var(--danger);border-color:var(--danger);color:#fff">删除</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+(function () {
+  'use strict';
+
+  var API = '/api/qianniu-item-collect';
+  var allRecords = [];
+  var filtered = [];
+  var page = 1;
+  var pageSize = 100;
+  var currentQuick = 'all';
+  var pendingDel = null;      // 待确认的删除动作
+
+  function $(id) { return document.getElementById(id); }
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+  function num(v) { return (typeof v === 'number' && isFinite(v)) ? v : 0; }
+  function fmtMoney(v) { return num(v) ? ('¥' + (Math.round(num(v) * 100) / 100)) : '—'; }
+  function fmtInt(v) { return num(v) ? num(v).toLocaleString('zh-CN') : '—'; }
+  function fmtTime(s) {
+    if (!s) return '—';
+    var d = new Date(s);
+    if (isNaN(d.getTime())) return String(s).slice(0, 16);
+    function p(n) { return (n < 10 ? '0' : '') + n; }
+    return (d.getMonth() + 1) + '/' + d.getDate() + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+  }
+  function specText(specs) {
+    if (!specs || !specs.length) return '';
+    return specs.map(function (s) {
+      var vals = (s && s.values) || [];
+      var head = String((s && s.name) || '');
+      return vals.length ? (head + '：' + vals.slice(0, 4).join('/') + (vals.length > 4 ? '…' : '')) : head;
+    }).filter(Boolean).join(' · ');
+  }
+
+  /* ===== 加载 ===== */
+  function load() {
+    fetch(API, { headers: { Accept: 'application/json' } })
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(function (j) {
+        if (!j || !j.ok) throw new Error((j && j.error) || '返回数据异常');
+        allRecords = Array.isArray(j.records) ? j.records : [];
+        $('banner').classList.remove('show');
+        $('hintBar').style.display = allRecords.length ? 'none' : 'block';
+        fillShopSelect();
+        render();
+      })
+      .catch(function (e) {
+        $('banner').classList.add('show');
+        $('banner').textContent = '无法连接运营工作台服务（' + (e && e.message ? e.message : e) +
+          '），请先双击「启动工作台.bat」启动本地服务。';
+        $('tbody').innerHTML = '<tr><td colspan="13" class="empty">加载失败：' + esc(e && e.message) + '</td></tr>';
+      });
+  }
+
+  function fillShopSelect() {
+    var sel = $('selShop');
+    var cur = sel.value;
+    var shops = [];
+    allRecords.forEach(function (r) {
+      var s = r.shopName || r.store || '';
+      if (s && shops.indexOf(s) < 0) shops.push(s);
+    });
+    shops.sort();
+    sel.innerHTML = '<option value="">全部店铺</option>' + shops.map(function (s) {
+      return '<option value="' + esc(s) + '">' + esc(s) + '</option>';
+    }).join('');
+    if (shops.indexOf(cur) >= 0) sel.value = cur;
+  }
+
+  /* ===== 汇总 ===== */
+  function renderSummary() {
+    var own = 0, rival = 0, priceN = 0, skuN = 0, shops = {}, prices = [], last = '';
+    allRecords.forEach(function (r) {
+      if (r.shopType === 'own') own++; else rival++;
+      var s = r.shopName || r.store || '';
+      if (s) shops[s] = 1;
+      if (num(r.price) > 0) { priceN++; if (r.shopType !== 'own') prices.push(num(r.price)); }
+      if (num(r.skuCount) > 0) skuN++;
+      var t = r.collectedAt || '';
+      if (t > last) last = t;
+    });
+    $('statTotal').textContent = allRecords.length;
+    $('statOwn').textContent = own;
+    $('statRival').textContent = rival;
+    $('statShop').textContent = Object.keys(shops).length;
+    $('statPrice').textContent = priceN;
+    $('statSku').textContent = skuN;
+    if (prices.length) {
+      prices.sort(function (a, b) { return a - b; });
+      var mid = prices.length % 2 ? prices[(prices.length - 1) / 2]
+        : (prices[prices.length / 2 - 1] + prices[prices.length / 2]) / 2;
+      $('statMed').textContent = '¥' + (Math.round(mid * 100) / 100);
+    } else {
+      $('statMed').textContent = '—';
+    }
+    $('statLast').textContent = last ? fmtTime(last) : '—';
+  }
+
+  /* ===== 筛选 ===== */
+  function applyFilter() {
+    var kw = ($('kw').value || '').trim().toLowerCase();
+    var shop = $('selShop').value;
+    var type = $('selType').value;
+    var sort = $('selSort').value;
+
+    filtered = allRecords.filter(function (r) {
+      if (kw) {
+        var hay = ((r.title || '') + ' ' + (r.itemId || '') + ' ' + (r.shopName || '') + ' ' + (r.store || '')).toLowerCase();
+        if (hay.indexOf(kw) < 0) return false;
+      }
+      if (shop && (r.shopName || r.store || '') !== shop) return false;
+      if (type && (r.shopType || 'rival') !== type) return false;
+      if (currentQuick === 'own' && r.shopType !== 'own') return false;
+      if (currentQuick === 'rival' && r.shopType === 'own') return false;
+      if (currentQuick === 'hot' && !(num(r.sold) >= 100)) return false;
+      if (currentQuick === 'nosku' && num(r.skuCount) > 0) return false;
+      return true;
+    });
+
+    if (sort) {
+      filtered.sort(function (a, b) {
+        if (sort === 'priceAsc') return (num(a.price) || 1e12) - (num(b.price) || 1e12);
+        if (sort === 'priceDesc') return num(b.price) - num(a.price);
+        if (sort === 'sold') return num(b.sold) - num(a.sold);
+        if (sort === 'review') return num(b.review) - num(a.review);
+        if (sort === 'sku') return num(b.skuCount) - num(a.skuCount);
+        return 0;
+      });
+    } else {
+      filtered.sort(function (a, b) { return String(b.collectedAt || '').localeCompare(String(a.collectedAt || '')); });
+    }
+
+    var scopeChip = $('sumScopeChip'), scopeClear = $('sumScopeClear'), scopeBox = $('sumScope');
+    var anyFilter = !!(kw || shop || type || currentQuick !== 'all');
+    scopeBox.classList.toggle('filtered', anyFilter);
+    scopeChip.textContent = anyFilter ? ('已筛选 ' + filtered.length + ' / ' + allRecords.length + ' 条') : '全部数据';
+    scopeClear.style.display = anyFilter ? '' : 'none';
+    $('qHint').textContent = currentQuick === 'nosku' ? '这些商品没采到 SKU 明细，回详情页重采一次通常就有了' : '';
+
+    var totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+    if (page > totalPages) page = totalPages;
+    renderPage();
+  }
+
+  /* ===== 渲染表格 ===== */
+  function renderPage() {
+    var tbody = $('tbody');
+    var totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+    var start = (page - 1) * pageSize;
+    var slice = filtered.slice(start, start + pageSize);
+
+    if (!slice.length) {
+      tbody.innerHTML = '<tr><td colspan="13" class="empty">' +
+        (allRecords.length ? '没有符合筛选条件的记录' :
+          '还没有采集数据。<br>在淘宝/天猫商品详情页打开插件浮窗 →「📥 采集本页商品」→「🚀 发送到工作台」。') +
+        '</td></tr>';
+      $('pageInfo').textContent = '共 0 条';
+      $('pageLabel').textContent = '第 1 / 1 页';
+      $('btnPrev').disabled = true;
+      $('btnNext').disabled = true;
+      return;
+    }
+
+    tbody.innerHTML = slice.map(function (r) {
+      var img = r.mainImage || (r.images && r.images[0]) || '';
+      var imgCell = img
+        ? '<img class="thumb" src="' + esc(img) + '" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display=\'none\'">'
+        : '<div class="thumb ph">无图</div>';
+      var url = r.itemUrl || (r.itemId ? ('https://item.taobao.com/item.htm?id=' + r.itemId) : '');
+      var title = r.title || '(无标题)';
+      var titleCell = url
+        ? '<a href="' + esc(url) + '" target="_blank" rel="noopener">' + esc(title) + '</a>'
+        : esc(title);
+      var type = r.shopType === 'own' ? '<span class="pill own">自家</span>'
+        : (r.shopType === 'rival' ? '<span class="pill rival">竞品</span>' : '<span class="pill na">未判定</span>');
+      var spec = specText(r.skuSpecs);
+      var paramKeys = r.params ? Object.keys(r.params) : [];
+      var paramHtml = paramKeys.length
+        ? paramKeys.slice(0, 4).map(function (k) { return '<span class="tag">' + esc(k) + ':' + esc(r.params[k]) + '</span>'; }).join('')
+        : '<span style="color:var(--muted2)">—</span>';
+
+      return '<tr data-id="' + esc(r.itemId || '') + '">' +
+        '<td>' + imgCell + '</td>' +
+        '<td class="ttl">' + titleCell +
+          (r.itemId ? '<div style="font-size:11px;color:var(--muted2);margin-top:2px">ID ' + esc(r.itemId) + '</div>' : '') +
+        '</td>' +
+        '<td>' + esc(r.shopName || r.store || '—') + '</td>' +
+        '<td>' + type + '</td>' +
+        '<td class="num">' + fmtMoney(r.price) + '</td>' +
+        '<td class="num">' + fmtInt(r.sold) + '</td>' +
+        '<td class="num">' + fmtInt(r.review) + '</td>' +
+        '<td class="num">' + fmtInt(r.collect) + '</td>' +
+        '<td class="num">' + (num(r.skuCount) ? num(r.skuCount) : '—') + '</td>' +
+        '<td>' + (spec ? '<div class="spec">' + esc(spec) + '</div>' : '<span style="color:var(--muted2)">—</span>') + '</td>' +
+        '<td>' + paramHtml + '</td>' +
+        '<td style="white-space:nowrap;font-size:12px;color:var(--muted)">' + fmtTime(r.collectedAt) + '</td>' +
+        '<td><button class="del" data-del="' + esc(r.itemId || '') + '">删除</button></td>' +
+      '</tr>';
+    }).join('');
+
+    $('pageInfo').textContent = '共 ' + filtered.length + ' 条（全部 ' + allRecords.length + ' 条）';
+    $('pageLabel').textContent = '第 ' + page + ' / ' + totalPages + ' 页';
+    $('btnPrev').disabled = page <= 1;
+    $('btnNext').disabled = page >= totalPages;
+  }
+
+  function render() {
+    renderSummary();
+    page = 1;
+    applyFilter();
+  }
+
+  /* ===== 删除 ===== */
+  function confirmDel(title, text, action) {
+    pendingDel = action;
+    $('delTitle').textContent = title;
+    $('delText').innerHTML = text;
+    $('delMask').classList.add('show');
+  }
+  function doDelete(body, okMsg) {
+    fetch(API, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    })
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(function (j) {
+        if (!j || !j.ok) throw new Error((j && j.error) || '删除失败');
+        alert(okMsg.replace('{n}', j.removed != null ? j.removed : '?'));
+        load();
+      })
+      .catch(function (e) { alert('删除失败：' + (e && e.message ? e.message : e)); });
+  }
+
+  /* ===== 导出 ===== */
+  function csvCell(v) {
+    var s = String(v == null ? '' : v);
+    /* CSV 公式注入防护：以 =+-@ 开头的普通文本前面加个单引号，避免被 Excel 当公式执行。
+       （HYPERLINK 是我们自己刻意写的公式，走单独的 titleCell 分支，不进这里。） */
+    if (/^[=+\-@]/.test(s)) s = "'" + s;
+    return '"' + s.replace(/"/g, '""') + '"';
+  }
+  function exportCsv() {
+    if (!filtered.length) { alert('没有可导出的记录'); return; }
+    var headers = ['商品主图', '商品名称', '商品ID', '店铺', '归属', '价格', '已售', '评价数', '收藏数',
+      'SKU数', 'SKU价下限', 'SKU价上限', '规格', '商品参数', '根类目ID', '商品链接', '采集时间'];
+    var lines = [headers.map(csvCell).join(',')];
+    filtered.forEach(function (r) {
+      var url = r.itemUrl || (r.itemId ? ('https://item.taobao.com/item.htm?id=' + r.itemId) : '');
+      /* 商品名称列写成 =HYPERLINK 公式 —— 导出的表格里点标题能直接打开详情页，
+         和「商品管理」页的 CSV 约定保持一致。 */
+      var titleCell = url
+        ? ('=HYPERLINK(' + csvCell(url) + ',' + csvCell(r.title || '(无标题)') + ')')
+        : csvCell(r.title || '');
+      var params = r.params ? Object.keys(r.params).map(function (k) { return k + ':' + r.params[k]; }).join('；') : '';
+      lines.push([
+        csvCell(r.mainImage || (r.images && r.images[0]) || ''),
+        titleCell,
+        csvCell(r.itemId || ''),
+        csvCell(r.shopName || r.store || ''),
+        csvCell(r.shopType === 'own' ? '自家' : '竞品'),
+        csvCell(num(r.price) || ''),
+        csvCell(num(r.sold) || ''),
+        csvCell(num(r.review) || ''),
+        csvCell(num(r.collect) || ''),
+        csvCell(num(r.skuCount) || ''),
+        csvCell(num(r.skuPriceMin) || ''),
+        csvCell(num(r.skuPriceMax) || ''),
+        csvCell(specText(r.skuSpecs)),
+        csvCell(params),
+        csvCell(r.catId || ''),
+        csvCell(url),
+        csvCell(fmtTime(r.collectedAt))
+      ].join(','));
+    });
+    download('竞品采集_' + stamp() + '.csv', '\ufeff' + lines.join('\r\n'), 'text/csv;charset=utf-8;');
+  }
+  function exportJson() {
+    if (!filtered.length) { alert('没有可导出的记录'); return; }
+    download('竞品采集_' + stamp() + '.json', JSON.stringify(filtered, null, 2), 'application/json;charset=utf-8;');
+  }
+  function stamp() {
+    var d = new Date();
+    function p(n) { return (n < 10 ? '0' : '') + n; }
+    return d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + '_' + p(d.getHours()) + p(d.getMinutes());
+  }
+  function download(name, content, mime) {
+    var blob = new Blob([content], { type: mime });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+  }
+
+  /* ===== 事件 ===== */
+  $('btnRefresh').onclick = load;
+  $('kw').oninput = function () { page = 1; applyFilter(); };
+  $('selShop').onchange = function () { page = 1; applyFilter(); };
+  $('selType').onchange = function () { page = 1; applyFilter(); };
+  $('selSort').onchange = function () { page = 1; applyFilter(); };
+  $('pageSize').onchange = function () { pageSize = parseInt(this.value, 10) || 100; page = 1; renderPage(); };
+  $('btnPrev').onclick = function () { if (page > 1) { page--; renderPage(); } };
+  $('btnNext').onclick = function () {
+    var totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+    if (page < totalPages) { page++; renderPage(); }
+  };
+  $('btnClearFilter').onclick = function () {
+    $('kw').value = ''; $('selShop').value = ''; $('selType').value = ''; $('selSort').value = '';
+    setQuick('all');
+  };
+  $('sumScopeClear').onclick = $('btnClearFilter').onclick;
+  $('btnCsv').onclick = exportCsv;
+  $('btnJson').onclick = exportJson;
+
+  function setQuick(q) {
+    currentQuick = q;
+    Array.prototype.forEach.call(document.querySelectorAll('#quickbar .qbtn'), function (b) {
+      b.classList.toggle('active', b.getAttribute('data-qf') === q);
+    });
+    page = 1;
+    applyFilter();
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('#quickbar .qbtn'), function (b) {
+    b.onclick = function () { setQuick(b.getAttribute('data-qf') || 'all'); };
+  });
+
+  $('btnDelShop').onclick = function () {
+    var shop = $('selShop').value;
+    if (!shop) { alert('请先在「全部店铺」下拉里选中要删除的店铺'); return; }
+    var n = allRecords.filter(function (r) { return (r.shopName || r.store || '') === shop; }).length;
+    confirmDel('删除店铺「' + shop + '」',
+      '将删除该店铺的 <b>' + n + '</b> 条采集记录，<b>不可恢复</b>。确定吗？',
+      function () { doDelete({ store: shop }, '已删除 {n} 条'); });
+  };
+
+  $('tbody').addEventListener('click', function (e) {
+    var id = e.target && e.target.getAttribute && e.target.getAttribute('data-del');
+    if (!id) return;
+    var rec = null;
+    for (var i = 0; i < allRecords.length; i++) {
+      if (String(allRecords[i].itemId) === String(id)) { rec = allRecords[i]; break; }
+    }
+    confirmDel('删除这条采集记录',
+      '将删除：<b>' + esc((rec && rec.title) || id) + '</b><br>不可恢复。',
+      function () { doDelete({ itemIds: [id] }, '已删除 {n} 条'); });
+  });
+
+  $('delCancel').onclick = function () { $('delMask').classList.remove('show'); pendingDel = null; };
+  $('delMask').onclick = function (e) { if (e.target === $('delMask')) { $('delMask').classList.remove('show'); pendingDel = null; } };
+  $('delOk').onclick = function () {
+    var act = pendingDel;
+    $('delMask').classList.remove('show');
+    pendingDel = null;
+    if (typeof act === 'function') act();
+  };
+
+  load();
+})();
+</script>
+</body>
+</html>

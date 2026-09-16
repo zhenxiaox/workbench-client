@@ -1,0 +1,299 @@
+/* 运营工作台 · 日间模式（白色主题）追加覆盖
+   仅当 <html data-theme="light"> 时生效，用于给硬编码深色的页面补亮。 */
+
+/* ===== 基础层 ===== */
+:is([data-theme="light"],[data-theme="eye"]) body {
+  background: #FAF7F5 !important;
+  color: #111827 !important;
+}
+:is([data-theme="light"],[data-theme="eye"]) .sidebar,
+:is([data-theme="light"],[data-theme="eye"]) .main,
+:is([data-theme="light"],[data-theme="eye"]) .page,
+:is([data-theme="light"],[data-theme="eye"]) .card,
+:is([data-theme="light"],[data-theme="eye"]) .card-header,
+:is([data-theme="light"],[data-theme="eye"]) .settings-box,
+:is([data-theme="light"],[data-theme="eye"]) .modal,
+:is([data-theme="light"],[data-theme="eye"]) .stat-item,
+:is([data-theme="light"],[data-theme="eye"]) .stat-card {
+  background: #FFFFFF !important;
+  color: #111827 !important;
+  box-shadow: 0 6px 24px rgba(15,23,42,.06) !important;
+  border-color: #EFE6DE !important;
+}
+
+/* ===== 标题 / 说明文字 ===== */
+:is([data-theme="light"],[data-theme="eye"]) h1,
+:is([data-theme="light"],[data-theme="eye"]) h2,
+:is([data-theme="light"],[data-theme="eye"]) h3,
+:is([data-theme="light"],[data-theme="eye"]) .page-title,
+:is([data-theme="light"],[data-theme="eye"]) .set-h2,
+:is([data-theme="light"],[data-theme="eye"]) .ov-head h1 { color: #111827 !important; }
+:is([data-theme="light"],[data-theme="eye"]) p,
+:is([data-theme="light"],[data-theme="eye"]) .page-subtitle,
+:is([data-theme="light"],[data-theme="eye"]) .set-desc,
+:is([data-theme="light"],[data-theme="eye"]) .ov-head p,
+:is([data-theme="light"],[data-theme="eye"]) .import-guide-path,
+:is([data-theme="light"],[data-theme="eye"]) .hint,
+:is([data-theme="light"],[data-theme="eye"]) .stat-item .label,
+:is([data-theme="light"],[data-theme="eye"]) .stat-card .label { color: #57534e !important; }
+:is([data-theme="light"],[data-theme="eye"]) .stat-item .value,
+:is([data-theme="light"],[data-theme="eye"]) .stat-card .value { color: #111827 !important; }
+:is([data-theme="light"],[data-theme="eye"]) .kpi-card { background: #FFFFFF !important; color: #111827 !important; border-color: #EFE6DE !important; }
+:is([data-theme="light"],[data-theme="eye"]) .kpi-label { color: #57534e !important; }
+:is([data-theme="light"],[data-theme="eye"]) .kpi-value { color: #111827 !important; }
+:is([data-theme="light"],[data-theme="eye"]) .kpi-change { color: #57534e !important; }
+:is([data-theme="light"],[data-theme="eye"]) .item-info-bar { background: #FFFFFF !important; color: #111827 !important; border-color: #EFE6DE !important; }
+:is([data-theme="light"],[data-theme="eye"]) .form-group,
+:is([data-theme="light"],[data-theme="eye"]) .data-table-wrapper,
+:is([data-theme="light"],[data-theme="eye"]) .filter-bar,
+:is([data-theme="light"],[data-theme="eye"]) .type-selector-btn { background: #FFFFFF !important; color: #111827 !important; }
+:is([data-theme="light"],[data-theme="eye"]) .btn-secondary { background: #F3EDE8 !important; color: #57534e !important; border-color: #DCD2C9 !important; }
+:is([data-theme="light"],[data-theme="eye"]) .toast { background: #FFFFFF !important; color: #111827 !important; border-color: #EFE6DE !important; }
+:is([data-theme="light"],[data-theme="eye"]) .btn-add-item { background: #F3EDE8 !important; color: #57534e !important; border-color: #DCD2C9 !important; }
+:is([data-theme="light"],[data-theme="eye"]) .mobile-header { background: #FFFFFF !important; color: #111827 !important; }
+:is([data-theme="light"],[data-theme="eye"]) .store-manage-item { background: #FAF7F5 !important; color: #111827 !important; border: 1px solid #EFE6DE !important; }
+:is([data-theme="light"],[data-theme="eye"]) .funnel-bar-wrap { background: #FFFFFF !important; color: #111827 !important; }
+:is([data-theme="light"],[data-theme="eye"]) .item-info-bar .item-image { border-color: #EFE6DE !important; }
+:is([data-theme="light"],[data-theme="eye"]) .type-hover-submenu,
+:is([data-theme="light"],[data-theme="eye"]) .date-filter-input { background: #FFFFFF !important; color: #111827 !important; }
+
+/* ===== 表格 ===== */
+:is([data-theme="light"],[data-theme="eye"]) .data-table,
+:is([data-theme="light"],[data-theme="eye"]) table { background: #FFFFFF !important; color: #111827 !important; }
+:is([data-theme="light"],[data-theme="eye"]) thead th { background: #F3EDE8 !important; color: #111827 !important; }
+:is([data-theme="light"],[data-theme="eye"]) tbody td { border-color: #EFE6DE !important; color: #111827 !important; }
+:is([data-theme="light"],[data-theme="eye"]) tbody tr:nth-child(even) { background: #FAF7F5 !important; }
+
+/* ===== 表单 / 输入 ===== */
+:is([data-theme="light"],[data-theme="eye"]) input,
+:is([data-theme="light"],[data-theme="eye"]) select,
+:is([data-theme="light"],[data-theme="eye"]) textarea {
+  background: #FFFFFF !important; color: #111827 !important; border-color: #DCD2C9 !important;
+}
+:is([data-theme="light"],[data-theme="eye"]) .file-drop-zone { background: #FAF7F5 !important; border-color: #DCD2C9 !important; color: #57534e !important; }
+
+/* ===== 通用：把内联 style 里的深色背景提亮（属性选择器）===== */
+:is([data-theme="light"],[data-theme="eye"]) [style*="#1c1917"],
+:is([data-theme="light"],[data-theme="eye"]) [style*="#100E0C"],
+:is([data-theme="light"],[data-theme="eye"]) [style*="#111827"],
+:is([data-theme="light"],[data-theme="eye"]) [style*="#292524"],
+:is([data-theme="light"],[data-theme="eye"]) [style*="#151E32"],
+:is([data-theme="light"],[data-theme="eye"]) [style*="#0F1420"],
+:is([data-theme="light"],[data-theme="eye"]) [style*="#1a2332"],
+:is([data-theme="light"],[data-theme="eye"]) [style*="#171717"],
+:is([data-theme="light"],[data-theme="eye"]) [style*="#262626"],
+:is([data-theme="light"],[data-theme="eye"]) [style*="#212121"],
+:is([data-theme="light"],[data-theme="eye"]) [style*="#31353a"],
+:is([data-theme="light"],[data-theme="eye"]) [style*="#191936"],
+:is([data-theme="light"],[data-theme="eye"]) [style*="#111214"],
+:is([data-theme="light"],[data-theme="eye"]) [style*="#1d1c23"],
+:is([data-theme="light"],[data-theme="eye"]) [style*="#25252d"],
+:is([data-theme="light"],[data-theme="eye"]) [style*="#2A2F3C"],
+:is([data-theme="light"],[data-theme="eye"]) [style*="#252C38"],
+:is([data-theme="light"],[data-theme="eye"]) [style*="#1E2530"],
+:is([data-theme="light"],[data-theme="eye"]) [style*="#161B22"],
+:is([data-theme="light"],[data-theme="eye"]) [style*="#1F2937"] { background-color: #FFFFFF !important; }
+
+/* ===== 通用：把内联 style 里的浅色文字转深色（属性选择器）===== */
+:is([data-theme="light"],[data-theme="eye"]) [style*="color:#F2F2F0"],
+:is([data-theme="light"],[data-theme="eye"]) [style*="color:#d6d3d1"],
+:is([data-theme="light"],[data-theme="eye"]) [style*="color:#FAFAF9"],
+:is([data-theme="light"],[data-theme="eye"]) [style*="color:#e7e5e4"],
+:is([data-theme="light"],[data-theme="eye"]) [style*="color:#A4B1D7"],
+:is([data-theme="light"],[data-theme="eye"]) [style*="color:#E5E7EB"] { color: #111827 !important; }
+:is([data-theme="light"],[data-theme="eye"]) [style*="color:#a8a29e"],
+:is([data-theme="light"],[data-theme="eye"]) [style*="color:#78716c"],
+:is([data-theme="light"],[data-theme="eye"]) [style*="color:#939fb8"] { color: #57534e !important; }
+/* ===== 悬停态：把 :hover 的深色背景改成浅灰，避免鼠标停留时还是黑块 ===== */
+:is([data-theme="light"],[data-theme="eye"]) .nav-item:hover,
+:is([data-theme="light"],[data-theme="eye"]) .sidebar-bottom button:hover,
+:is([data-theme="light"],[data-theme="eye"]) .type-option:hover,
+:is([data-theme="light"],[data-theme="eye"]) .type-selector-btn:hover,
+:is([data-theme="light"],[data-theme="eye"]) .btn-secondary:hover,
+:is([data-theme="light"],[data-theme="eye"]) .btn-add-item:hover,
+:is([data-theme="light"],[data-theme="eye"]) .store-manage-item:hover,
+:is([data-theme="light"],[data-theme="eye"]) tbody tr:hover { background: #F3EDE8 !important; color: #111827 !important; }
+
+/* ===== 单品/店铺分析：左侧导航明确浅色态（彻底消除点击后的黑块）===== */
+:is([data-theme="light"],[data-theme="eye"]) .sidebar .nav-item,
+:is([data-theme="light"],[data-theme="eye"]) .nav-menu .nav-item,
+:is([data-theme="light"],[data-theme="eye"]) .sidebar-section .nav-item { color:#57534e !important; background:transparent !important; }
+:is([data-theme="light"],[data-theme="eye"]) .nav-item:hover { background:#F3EDE8 !important; color:#111827 !important; }
+:is([data-theme="light"],[data-theme="eye"]) .nav-item.active { background:rgba(245,158,11,0.12) !important; color:#F97316 !important; border-color:rgba(245,158,11,0.35) !important; }
+:is([data-theme="light"],[data-theme="eye"]) .nav-item.active .nm,
+:is([data-theme="light"],[data-theme="eye"]) .nav-item.active .ds,
+:is([data-theme="light"],[data-theme="eye"]) .nav-item.active .ico { color:#F97316 !important; }
+:is([data-theme="light"],[data-theme="eye"]) .nav-item.active .ico { background:#FFFFFF !important; }
+:is([data-theme="light"],[data-theme="eye"]) .sidebar-section-label { color:#78716c !important; }
+:is([data-theme="light"],[data-theme="eye"]) .sidebar-logo h1 { color:#111827 !important; }
+:is([data-theme="light"],[data-theme="eye"]) .sidebar-logo p { color:#78716c !important; }
+:is([data-theme="light"],[data-theme="eye"]) .sidebar-bottom button { color:#57534e !important; border-color:#DCD2C9 !important; background:#FFFFFF !important; }
+:is([data-theme="light"],[data-theme="eye"]) .sidebar-bottom button:hover { background:#F3EDE8 !important; color:#111827 !important; }
+
+/* ===== 表格：商品列表等更具体覆盖（盖住硬编码深色表头/行）===== */
+:is([data-theme="light"],[data-theme="eye"]) .data-table,
+:is([data-theme="light"],[data-theme="eye"]) .data-table-wrapper .data-table { background:#FFFFFF !important; color:#111827 !important; }
+:is([data-theme="light"],[data-theme="eye"]) .data-table th,
+:is([data-theme="light"],[data-theme="eye"]) .data-table-wrapper .data-table thead th,
+:is([data-theme="light"],[data-theme="eye"]) .data-table-wrapper .data-table th { background:#F3EDE8 !important; color:#111827 !important; border-bottom:2px solid #EFE6DE !important; }
+:is([data-theme="light"],[data-theme="eye"]) .data-table td,
+:is([data-theme="light"],[data-theme="eye"]) .data-table-wrapper .data-table tbody td { background:#FFFFFF !important; color:#111827 !important; border-bottom:1px solid #EFE6DE !important; }
+:is([data-theme="light"],[data-theme="eye"]) .data-table-wrapper .data-table tbody tr:nth-child(even) td { background:#FAF7F5 !important; }
+:is([data-theme="light"],[data-theme="eye"]) .data-table-wrapper .data-table tbody tr:hover td { background:#F3EDE8 !important; color:#111827 !important; }
+:is([data-theme="light"],[data-theme="eye"]) .card-header { background:#FFFFFF !important; color:#111827 !important; }
+:is([data-theme="light"],[data-theme="eye"]) .data-table .sort-indicator { color:#78716c !important; }
+:is([data-theme="light"],[data-theme="eye"]) .table-container .data-table th { background:#F3EDE8 !important; color:#111827 !important; }
+
+/* ===== KPI / 指标按钮 / 日期筛选 ===== */
+:is([data-theme="light"],[data-theme="eye"]) .kpi-label { color:#57534e !important; }
+:is([data-theme="light"],[data-theme="eye"]) .kpi-value { color:#111827 !important; }
+:is([data-theme="light"],[data-theme="eye"]) .kpi-change.flat { color:#78716c !important; }
+:is([data-theme="light"],[data-theme="eye"]) .metric-btn { color:#57534e !important; border-color:#DCD2C9 !important; background:#FFFFFF !important; }
+:is([data-theme="light"],[data-theme="eye"]) .metric-btn.active { background:#F97316 !important; color:#1a1206 !important; border-color:#F97316 !important; }
+:is([data-theme="light"],[data-theme="eye"]) .metric-btn:hover { border-color:#F97316 !important; color:#111827 !important; }
+:is([data-theme="light"],[data-theme="eye"]) .date-quick-btn { color:#57534e !important; border-color:#DCD2C9 !important; background:#FFFFFF !important; }
+:is([data-theme="light"],[data-theme="eye"]) .date-quick-btn.active { background:#F97316 !important; color:#1a1206 !important; border-color:#F97316 !important; }
+:is([data-theme="light"],[data-theme="eye"]) .date-filter-input { background:#FFFFFF !important; color:#111827 !important; border-color:#DCD2C9 !important; color-scheme:light; }
+
+/* ===== 通用：echarts/内联提示文字在浅底上转深色 ===== */
+:is([data-theme="light"],[data-theme="eye"]) .empty-state p,
+:is([data-theme="light"],[data-theme="eye"]) .empty-state { color:#78716c !important; }
+:is([data-theme="light"],[data-theme="eye"]) .store-selector select { background:#FFFFFF !important; color:#111827 !important; border-color:#DCD2C9 !important; }
+
+/* ===== 滚动条：light 下统一为浅灰系，避免黑 thumb/黑轨道 ===== */
+:is([data-theme="light"],[data-theme="eye"]) * { scrollbar-color: #DCD2C9 #F3EDE8 !important; }
+:is([data-theme="light"],[data-theme="eye"]) ::-webkit-scrollbar { width: 8px; height: 8px; }
+:is([data-theme="light"],[data-theme="eye"]) ::-webkit-scrollbar-track { background: #F3EDE8 !important; }
+:is([data-theme="light"],[data-theme="eye"]) ::-webkit-scrollbar-thumb { background: #DCD2C9 !important; border-radius: 4px; }
+:is([data-theme="light"],[data-theme="eye"]) ::-webkit-scrollbar-thumb:hover { background: #a8a29e !important; }
+:is([data-theme="light"],[data-theme="eye"]) ::-webkit-scrollbar-corner { background: #F3EDE8 !important; }
+/* 工作台.html 自身已用 rgba 透明轨道，light 下保留其风格但 thumb 更协调 */
+:is([data-theme="light"],[data-theme="eye"]) .nav-scroll::-webkit-scrollbar-thumb { background: rgba(148,163,184,0.55) !important; }
+
+/* ===== 补齐单品/店铺分析剩余深色硬编码（边框、背景、文字）===== */
+:is([data-theme="light"],[data-theme="eye"]) .main-content { background:#FFFFFF !important; color:#111827 !important; }
+:is([data-theme="light"],[data-theme="eye"]) .sidebar { border-right-color:#EFE6DE !important; }
+:is([data-theme="light"],[data-theme="eye"]) .sidebar-logo { border-bottom-color:#EFE6DE !important; }
+:is([data-theme="light"],[data-theme="eye"]) .sidebar-section { border-bottom-color:#EFE6DE !important; }
+:is([data-theme="light"],[data-theme="eye"]) .filter-bar { background:#FFFFFF !important; border-color:#EFE6DE !important; color:#111827 !important; }
+:is([data-theme="light"],[data-theme="eye"]) .filter-bar select,
+:is([data-theme="light"],[data-theme="eye"]) .filter-bar input { background:#FFFFFF !important; color:#111827 !important; border-color:#DCD2C9 !important; }
+:is([data-theme="light"],[data-theme="eye"]) .item-info-bar { background:#FFFFFF !important; border:1px solid #EFE6DE !important; color:#111827 !important; }
+:is([data-theme="light"],[data-theme="eye"]) .item-info-bar .item-name { color:#111827 !important; }
+:is([data-theme="light"],[data-theme="eye"]) .item-info-bar .item-store { color:#78716c !important; }
+:is([data-theme="light"],[data-theme="eye"]) .store-selector select,
+:is([data-theme="light"],[data-theme="eye"]) .item-selector { background:#FFFFFF !important; color:#111827 !important; border-color:#DCD2C9 !important; }
+:is([data-theme="light"],[data-theme="eye"]) .btn-secondary { background:#F3EDE8 !important; color:#57534e !important; border-color:#DCD2C9 !important; }
+:is([data-theme="light"],[data-theme="eye"]) .btn-secondary:hover { background:#F3EDE8 !important; color:#111827 !important; }
+:is([data-theme="light"],[data-theme="eye"]) .btn-add-item { background:#F3EDE8 !important; color:#57534e !important; border-color:#DCD2C9 !important; }
+:is([data-theme="light"],[data-theme="eye"]) .modal { background:#FFFFFF !important; color:#111827 !important; border-color:#EFE6DE !important; }
+:is([data-theme="light"],[data-theme="eye"]) .toast { background:#FFFFFF !important; color:#111827 !important; border-color:#EFE6DE !important; }
+:is([data-theme="light"],[data-theme="eye"]) .toast.success { border-left-color:#10B981 !important; }
+:is([data-theme="light"],[data-theme="eye"]) .toast.error { border-left-color:#EF4444 !important; }
+:is([data-theme="light"],[data-theme="eye"]) .toast.info { border-left-color:#EA580C !important; }
+:is([data-theme="light"],[data-theme="eye"]) .toast.warning { border-left-color:#F97316 !important; }
+:is([data-theme="light"],[data-theme="eye"]) .page-title { color:#111827 !important; }
+:is([data-theme="light"],[data-theme="eye"]) .page-subtitle { color:#57534e !important; }
+:is([data-theme="light"],[data-theme="eye"]) .file-drop-zone { background:#FAF7F5 !important; border-color:#DCD2C9 !important; color:#57534e !important; }
+:is([data-theme="light"],[data-theme="eye"]) .file-drop-zone:hover { border-color:#F97316 !important; }
+:is([data-theme="light"],[data-theme="eye"]) input[type="date"],
+:is([data-theme="light"],[data-theme="eye"]) input[type="datetime-local"] { color-scheme:light; background:#FFFFFF !important; color:#111827 !important; border-color:#DCD2C9 !important; }
+
+/* ===== 内联 input/select/textarea/button 的深色边框在浅色下转浅灰 ===== */
+:is([data-theme="light"],[data-theme="eye"]) input[style*="border:1px solid #44403c"],
+:is([data-theme="light"],[data-theme="eye"]) select[style*="border:1px solid #44403c"],
+:is([data-theme="light"],[data-theme="eye"]) textarea[style*="border:1px solid #44403c"],
+:is([data-theme="light"],[data-theme="eye"]) button[style*="border:1px solid #44403c"] { border-color:#D9D9D4 !important; }
+:is([data-theme="light"],[data-theme="eye"]) [style*="border-bottom:1px solid #292524"] { border-bottom-color:#EAEAE7 !important; }
+:is([data-theme="light"],[data-theme="eye"]) [style*="border-top:1px solid #44403c"] { border-top-color:#EAEAE7 !important; }
+/* 修正 date / datetime-local 原生控件的深色日历（color-scheme:dark） */
+:is([data-theme="light"],[data-theme="eye"]) [style*="color-scheme:dark"] { color-scheme:light !important; }
+:is([data-theme="light"],[data-theme="eye"]) .kpi-change { color:#57534e !important; }
+:is([data-theme="light"],[data-theme="eye"]) .kpi-change.up { color:#10B981 !important; }
+:is([data-theme="light"],[data-theme="eye"]) .kpi-change.down { color:#EF4444 !important; }
+
+/* ===== 对齐补强：消除日间模式下残留的生硬黑边（单品/店铺分析通用）=====
+   仅作用 :is([data-theme="light"],[data-theme="eye"])，把中性深色边框统一换成浅灰系，
+   使亮色主题下各子页的边、分隔线、卡片描边与圆角过渡一致、柔和。 */
+:is([data-theme="light"],[data-theme="eye"]) .sidebar-bottom { border-top-color: #EFE6DE !important; }
+
+/* 单品分析：商品选择下拉、日志条目、商品信息条图片等残留深边框 */
+:is([data-theme="light"],[data-theme="eye"]) .item-selector select { background: #FFFFFF !important; color: #111827 !important; border-color: #DCD2C9 !important; }
+:is([data-theme="light"],[data-theme="eye"]) .log-entry { border-bottom-color: #EFE6DE !important; }
+:is([data-theme="light"],[data-theme="eye"]) .item-info-bar .item-image { border-color: #EFE6DE !important; background: #F3EDE8 !important; }
+
+/* 类型选择器（单品/店铺通用）下拉与悬浮子菜单：底色与边框统一提亮 */
+:is([data-theme="light"],[data-theme="eye"]) .type-selector-btn { border-color: #DCD2C9 !important; }
+:is([data-theme="light"],[data-theme="eye"]) .type-selector-dropdown { background: #FFFFFF !important; color: #111827 !important; border-color: #EFE6DE !important; box-shadow: 0 8px 24px rgba(15,23,42,.10) !important; }
+:is([data-theme="light"],[data-theme="eye"]) .type-hover-submenu { background: #FFFFFF !important; color: #111827 !important; border-color: #EFE6DE !important; box-shadow: 0 8px 24px rgba(15,23,42,.10) !important; }
+:is([data-theme="light"],[data-theme="eye"]) .type-option { color: #111827 !important; }
+:is([data-theme="light"],[data-theme="eye"]) .type-option:hover { background: #F3EDE8 !important; color: #111827 !important; }
+:is([data-theme="light"],[data-theme="eye"]) .type-option.active { background: rgba(245,158,11,0.12) !important; color: #F97316 !important; }
+:is([data-theme="light"],[data-theme="eye"]) .type-sub-option.custom { border-top-color: #EFE6DE !important; }
+
+/* 移动端顶栏（窄屏才出现）：底部分隔线提亮 */
+:is([data-theme="light"],[data-theme="eye"]) .mobile-header { background: #FFFFFF !important; color: #111827 !important; border-bottom-color: #EFE6DE !important; }
+:is([data-theme="light"],[data-theme="eye"]) .mobile-header h1 { color: #111827 !important; }
+:is([data-theme="light"],[data-theme="eye"]) .mobile-menu-btn { color: #57534e !important; }
+
+/* 兜底：内联 style 里的深色边框简写，避免在亮底上变成生硬黑边 */
+:is([data-theme="light"],[data-theme="eye"]) [style*="border:1px solid #292524"] { border-color: #EAEAE7 !important; }
+:is([data-theme="light"],[data-theme="eye"]) [style*="border:2px solid #292524"] { border-color: #EAEAE7 !important; }
+:is([data-theme="light"],[data-theme="eye"]) [style*="border:2px dashed #44403c"] { border-color: #D9D9D4 !important; }
+:is([data-theme="light"],[data-theme="eye"]) [style*="border-top:1px solid #292524"] { border-top-color: #EAEAE7 !important; }
+:is([data-theme="light"],[data-theme="eye"]) [style*="border-bottom:2px solid #292524"] { border-bottom-color: #EAEAE7 !important; }
+
+/* ===== 店铺/单品分析：亮色下画布分层 + 卡片柔边 =====
+   暗色模式靠三层背景（body/#100E0C → main/#1c1917 → card/#151E32）自然过渡；
+   亮色下若 .main/.page/.card 全白，卡片只能靠边框，形成「生硬边缘」。
+   把画布改成浅灰 #FAF7F5，卡片保持纯白，分隔线与卡片描边用 #F3EDE8，
+   让店铺概况等所有子页的左/上/圆角边缘与暗色版一样柔和。 */
+:is([data-theme="light"],[data-theme="eye"]) .main,
+:is([data-theme="light"],[data-theme="eye"]) .main-content,
+:is([data-theme="light"],[data-theme="eye"]) .page { background: #FAF7F5 !important; color: #111827 !important; }
+
+/* 侧边栏纯白，与浅灰主区间用极淡 hairline；内部三段分隔线统一 */
+:is([data-theme="light"],[data-theme="eye"]) .sidebar { border-right-color: #F3EDE8 !important; }
+:is([data-theme="light"],[data-theme="eye"]) .sidebar-logo { border-bottom-color: #F3EDE8 !important; }
+:is([data-theme="light"],[data-theme="eye"]) .sidebar-section { border-bottom-color: #F3EDE8 !important; }
+:is([data-theme="light"],[data-theme="eye"]) .sidebar-bottom { border-top-color: #F3EDE8 !important; }
+
+/* 卡片/面板统一纯白底、极淡边框、柔和悬浮阴影，覆盖所有子页 */
+:is([data-theme="light"],[data-theme="eye"]) .card,
+:is([data-theme="light"],[data-theme="eye"]) .kpi-card,
+:is([data-theme="light"],[data-theme="eye"]) .stat-item,
+:is([data-theme="light"],[data-theme="eye"]) .stat-card,
+:is([data-theme="light"],[data-theme="eye"]) .settings-box,
+:is([data-theme="light"],[data-theme="eye"]) .modal,
+:is([data-theme="light"],[data-theme="eye"]) .item-info-bar,
+:is([data-theme="light"],[data-theme="eye"]) .store-manage-item { background: #FFFFFF !important; color: #111827 !important; border-color: #F3EDE8 !important; box-shadow: 0 4px 20px rgba(15,23,42,.05) !important; }
+
+/* 卡片头部不需要独立阴影/边框，避免 sticky 头出现硬边 */
+:is([data-theme="light"],[data-theme="eye"]) .card-header { background: #FFFFFF !important; box-shadow: none !important; border: none !important; }
+
+/* 表格内部边框再淡一档 */
+:is([data-theme="light"],[data-theme="eye"]) .data-table th { border-bottom-color: #EFE6DE !important; }
+:is([data-theme="light"],[data-theme="eye"]) .data-table td { border-bottom-color: #F3EDE8 !important; }
+
+/* ===== 护眼模式（暖米黄）专用覆盖 =====
+   上面所有规则已通过 :is() 同时作用于 light 与 eye，
+   这里只把 eye 的背景 / 面板 / 边框换成低蓝光的暖米黄。 */
+[data-theme="eye"] body {
+  background: #F5F1E8 !important;
+  color: #3C3229 !important;
+}
+
+[data-theme="eye"] .sidebar,
+[data-theme="eye"] .main,
+[data-theme="eye"] .page,
+[data-theme="eye"] .card,
+[data-theme="eye"] .card-header,
+[data-theme="eye"] .settings-box,
+[data-theme="eye"] .modal,
+[data-theme="eye"] .stat-item,
+[data-theme="eye"] .stat-card {
+  background: #FBF8F1 !important;
+  color: #3C3229 !important;
+  box-shadow: 0 6px 24px rgba(60,50,41,.07) !important;
+  border-color: #E5DCCB !important;
+}

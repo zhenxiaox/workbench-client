@@ -1,0 +1,1949 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<script>
+  (function(){
+    function resolve(){
+      var t=null; try{ t=localStorage.getItem('wb_theme'); }catch(e){}
+      if(t==='auto'){ var n=new Date(), m=n.getHours()*60+n.getMinutes(); t=(m>=1080||m<360)?'dark':'light'; }
+      if(t!=='light'&&t!=='dark'&&t!=='eye'){ try{ t=localStorage.getItem('theme'); }catch(e){} }
+      if(t!=='light'&&t!=='dark'&&t!=='eye'){ t=(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light'; }
+      return t;
+    }
+    function apply(t){
+      document.documentElement.setAttribute('data-theme', t);
+      var b=document.body; if(!b) return;
+      b.classList.toggle('dark-mode', t==='dark');
+      b.classList.toggle('theme-bright', t==='light');
+    }
+    apply(resolve());
+    document.addEventListener('DOMContentLoaded', function(){ apply(document.documentElement.getAttribute('data-theme')||'light'); });
+    window.addEventListener('message', function(e){ if(e.data&&e.data.type==='wb-theme'&&e.data.theme){ try{ apply(e.data.theme); }catch(err){} } });
+  })();
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>效率工具 · 千牛数据助手</title>
+<link rel="stylesheet" href="icons/tabler-icons.min.css">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: linear-gradient(180deg, #f0f4fa 0%, #f7f9fc 60%, #eef4fb 100%);
+    color: #333;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+  header {
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(255,255,255,0.92); backdrop-filter: blur(10px);
+    border-bottom: 1px solid #eef1f6;
+  }
+  .topbar { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; gap: 12px; padding: 14px 24px; flex-wrap: wrap; }
+  .brand { display: flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 700; color: #333; }
+  .brand img { width: 22px; height: 22px; border-radius: 5px; }
+  .top-actions { margin-left: auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .save-hint { font-size: 12px; color: #999; }
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 8px 12px; border: 1px solid #e2e6ee; border-radius: 7px;
+    background: #fff; color: #555; font-size: 13px; font-weight: 600;
+    font-family: inherit; cursor: pointer;
+    transition: border-color .2s, background .2s, color .2s;
+  }
+  .btn:hover { border-color: #F97316; color: #F97316; }
+  .btn.primary { background: #F97316; border-color: #F97316; color: #fff; }
+  .btn.primary:hover { background: #3a80d2; border-color: #3a80d2; color: #fff; }
+  .btn.active { background: #F97316; border-color: #F97316; color: #fff; }
+
+  .pomo-bar {
+    position: relative;
+    max-width: 1200px; margin: 0 auto;
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    padding: 14px 24px 18px; flex-wrap: wrap;
+    background: #fff; border: 1px solid #eef1f6; border-radius: 12px;
+    box-shadow: 0 4px 20px -2px rgba(0,0,0,0.05); overflow: hidden;
+  }
+  .header-left { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+  .pomo-icon { width: 32px; height: 32px; flex-shrink: 0; border-radius: 8px; display: block; }
+  .status-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 12px; border-radius: 99px;
+    background: #eef5fe; color: #F97316; font-size: 13px; font-weight: 700;
+    white-space: nowrap; transition: background .2s, color .2s;
+  }
+  .timer-display {
+    font-size: 30px; font-weight: 800; color: #1f2937; line-height: 1;
+    font-variant-numeric: tabular-nums; letter-spacing: -0.5px; white-space: nowrap;
+  }
+  .header-center { display: flex; align-items: center; gap: 12px; flex: 1; justify-content: center; min-width: 0; }
+  .task-select-wrapper { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #6b7280; white-space: nowrap; min-width: 0; }
+  .task-select-wrapper label { display: flex; align-items: center; gap: 5px; color: #6b7280; }
+  .custom-select {
+    appearance: none; -webkit-appearance: none;
+    background-color: #f9fafb;
+    border: 1px solid #e5e7eb;
+    padding: 7px 32px 7px 12px; border-radius: 8px;
+    font-size: 13px; color: #1f2937;
+    outline: none; cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 8px center; background-size: 14px;
+    max-width: 200px; text-overflow: ellipsis;
+    transition: border-color .2s, background-color .2s;
+  }
+  .custom-select:hover { border-color: #d1d5db; }
+  .custom-select:focus { border-color: #F97316; box-shadow: 0 0 0 3px rgba(74,144,226,0.12); }
+  .button-group { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .button-group .btn { padding: 8px 16px; border-radius: 8px; }
+  .button-group .btn.primary { box-shadow: 0 2px 8px rgba(74,144,226,0.28); }
+  .button-group .btn.primary:hover { box-shadow: 0 4px 12px rgba(74,144,226,0.35); }
+  .header-right { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+  .stats-group { display: flex; align-items: center; gap: 8px; }
+  .stats-group .tag { padding: 4px 10px; background: #f3f4f6; color: #6b7280; border-radius: 6px; font-size: 12px; font-weight: 500; white-space: nowrap; }
+  .icon-group { display: flex; align-items: center; gap: 4px; }
+  .icon-btn {
+    background: none; border: none; color: #6b7280; cursor: pointer;
+    padding: 6px; border-radius: 6px; font-size: 16px;
+    display: flex; align-items: center; justify-content: center;
+    transition: all .2s;
+  }
+  .icon-btn:hover { background-color: #f3f4f6; color: #1f2937; }
+  .progress-bar-container { position: absolute; left: 0; bottom: 0; width: 100%; height: 3px; background: #f3f4f6; }
+  .progress-bar-container i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #F97316, #7ab3f0); transition: width .4s; }
+
+  .layout {
+    max-width: 1200px; margin: 0 auto; padding: 28px 24px 64px;
+    display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 20px; align-items: start;
+  }
+  .col-left { min-width: 0; }
+  .col-right { min-width: 0; display: flex; flex-direction: column; gap: 20px; }
+
+  main#grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 20px; align-items: start;
+  }
+  .card {
+    background: #fff; border: 1px solid #eef1f6; border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06); overflow: hidden;
+    transition: box-shadow .2s;
+  }
+  .card:hover { box-shadow: 0 8px 20px rgba(74,144,226,0.10); }
+  .mod-head { display: flex; align-items: center; gap: 8px; padding: 14px 16px; border-bottom: 1px solid #eef1f6; }
+  .mod-head .ti { color: #F97316; font-size: 18px; }
+  .mod-head h3 { font-size: 15px; font-weight: 700; color: #333; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .todo-card .mod-head h3 { flex: 0 0 auto; margin-right: 8px; }
+  .todo-card .mod-head .btn-xs { margin-left: auto; }
+  .btn-help {
+    background: none;
+    border: none;
+    color: #a8a29e;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+  }
+  .btn-help:hover {
+    color: #F97316;
+    background-color: #eff6ff;
+    transform: scale(1.1);
+  }
+  .mod-name-input { flex: 1; min-width: 0; font-size: 15px; font-weight: 700; color: #333; border: 1px solid #d8dee9; border-radius: 6px; padding: 4px 8px; background: #fff; font-family: inherit; }
+  .mod-name-input:focus { outline: none; border-color: #F97316; }
+  .mod-count {
+    font-size: 12px; color: #999; background: #f7f9fc;
+    border: 1px solid #eef1f6; border-radius: 99px; padding: 2px 8px; flex-shrink: 0;
+  }
+  .open-all {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px; border: none; border-radius: 6px;
+    background: #eaf1fb; color: #F97316; cursor: pointer; flex-shrink: 0;
+    transition: background .2s, color .2s;
+  }
+  .open-all:hover { background: #d9e6fa; color: #3a80d2; }
+  .links { list-style: none; padding: 10px 12px; }
+  .links li { display: flex; align-items: center; gap: 8px; padding: 8px; border-radius: 8px; transition: background .2s; }
+  .links li:hover { background: #f7f9fc; }
+  .links li.empty { justify-content: center; color: #999; font-size: 12px; }
+  .links .ti { color: #999; font-size: 16px; flex-shrink: 0; }
+  .links a { color: #F97316; text-decoration: none; font-size: 13px; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .links a:hover { text-decoration: underline; }
+  .del {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 26px; height: 26px; border: none; border-radius: 6px;
+    background: #fdecee; color: #e5484d; cursor: pointer; flex-shrink: 0;
+    transition: background .2s;
+  }
+  .del:hover { background: #f5c6ca; }
+
+  .add-link { display: flex; gap: 8px; padding: 12px; border-top: 1px solid #eef1f6; flex-wrap: wrap; }
+  .add-link input, .add-mod input {
+    flex: 1; min-width: 100px; padding: 8px 10px;
+    border: 1px solid #e2e6ee; border-radius: 7px; font-size: 13px;
+    font-family: inherit; outline: none; transition: border .2s;
+  }
+  .add-link input:focus, .add-mod input:focus { border-color: #F97316; }
+  .add-mod { padding: 16px; border-style: dashed; background: #fbfcfe; }
+  .add-mod form { display: flex; gap: 8px; width: 100%; flex-wrap: wrap; }
+
+  .notes-wrap { padding: 10px 12px; display: flex; flex-direction: column; gap: 12px; max-height: 320px; overflow-y: auto; }
+  .notes-wrap > .empty { margin: 14px 0; }
+  .note { border: 1px solid #eef1f6; border-radius: 8px; overflow: hidden; background: #fff; flex-shrink: 0; }
+  .note textarea {
+    width: 100%; border: none; resize: vertical; padding: 10px;
+    font-size: 13px; line-height: 1.6; font-family: inherit; color: #333;
+    outline: none; background: #fff; display: block;
+  }
+  .note-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 4px 8px 4px 10px; background: #f7f9fc; border-top: 1px solid #eef1f6; }
+  .note-time { font-size: 11px; color: #999; }
+  .btn.block { width: 100%; border-radius: 0; border: none; border-top: 1px solid #eef1f6; padding: 12px; background: #fbfcfe; justify-content: center; }
+  .btn.block:hover { background: #f0f6fd; }
+
+  .empty { text-align: center; color: #999; font-size: 12px; padding: 14px; }
+
+  .mask { position: fixed; inset: 0; background: rgba(0,0,0,0.35); display: none; align-items: center; justify-content: center; z-index: 100; }
+  .mask.show { display: flex; }
+  .modal-box { background: #fff; border-radius: 12px; padding: 24px; width: min(90vw, 360px); box-shadow: 0 12px 30px rgba(0,0,0,0.18); text-align: center; }
+  .modal-box p { font-size: 14px; color: #555; line-height: 1.6; margin-bottom: 18px; }
+  .modal-box .btn { width: 100%; }
+  .modal-box.modal-lg .btn { width: auto; }
+
+  .quote-bar {
+    max-width: 1200px; margin: 0 auto; padding: 8px 24px;
+    display: flex; align-items: center; gap: 8px; font-size: 13px; color: #555;
+    background: rgba(74, 144, 226, 0.05); border-bottom: 1px solid #eef1f6;
+  }
+  .quote-bar .ti-quote { color: #F97316; font-size: 16px; flex-shrink: 0; }
+  #quote-text { font-style: italic; font-weight: 500; }
+  #quote-from { color: #888; font-size: 12px; margin-right: auto; }
+  .quote-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+  .quote-settings-inline { display: flex; gap: 6px; align-items: center; }
+  #btn-manage-cats { display: inline-flex; }
+  .quote-settings-inline select {
+    font-size: 12px; padding: 2px 6px; border: 1px solid #e2e6ee;
+    border-radius: 5px; background: #fff; outline: none; font-family: inherit;
+  }
+  .btn-xs {
+    padding: 2px 8px; font-size: 12px; border: 1px solid #F97316;
+    background: #fff; color: #F97316; border-radius: 5px; cursor: pointer;
+  }
+  .btn-xs:hover { background: #F97316; color: #fff; }
+  #btn-refresh-quote { border: none; background: transparent; color: #888; cursor: pointer; padding: 2px; }
+  #btn-refresh-quote:hover { color: #F97316; }
+
+  /* 待办看板 */
+  .todo-card { grid-column: 1 / -1; }
+  .tianzige-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    background: #eef1f6;
+    gap: 2px;
+    border: 1px solid #eef1f6;
+    border-radius: 8px;
+    overflow: hidden;
+    height: 560px;
+    margin: 12px;
+  }
+  .quadrant {
+    background: #ffffff;
+    padding: 12px;
+    min-height: 180px;
+    display: flex;
+    flex-direction: column;
+    cursor: pointer;
+    position: relative;
+    transition: background-color .2s;
+  }
+  .quadrant:hover { background-color: #fafbfc; }
+  .quadrant.drag-over {
+    background-color: rgba(59, 130, 246, 0.06);
+    border: 2px dashed #EA580C !important;
+    border-radius: 8px;
+  }
+  body.dark-mode .quadrant.drag-over {
+    background-color: rgba(59, 130, 246, 0.15);
+    border-color: #60a5fa !important;
+  }
+  .q1 { border-top: 3px solid #EF4444; }
+  .q2 { border-top: 3px solid #F97316; }
+  .q3 { border-top: 3px solid #EA580C; }
+  .q4 { border-top: 3px solid #10B981; }
+  .quad-head { font-size: 13px; font-weight: 700; color: #333; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+  .quadrant.q1 .quad-head { color: #EF4444; }
+  .quadrant.q2 .quad-head { color: #F97316; }
+  .quadrant.q3 .quad-head { color: #EA580C; }
+  .quadrant.q4 .quad-head { color: #10B981; }
+  .tag { font-size: 10px; padding: 1px 5px; border-radius: 4px; color: #fff; font-weight: 800; }
+  .q1-tag { background: #EF4444; }
+  .q2-tag { background: #F97316; }
+  .q3-tag { background: #EA580C; }
+  .q4-tag { background: #10B981; }
+  .todo-list { list-style: none; display: flex; flex-direction: column; gap: 6px; flex: 1; min-height: 0; overflow-y: auto; }
+  .todo-list .empty-placeholder {
+    height: 76px;
+    border: 1.5px dashed #d6d3d1;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    color: #a8a29e;
+    font-size: 13px;
+    background: #f8fafc;
+    transition: all 0.2s ease;
+    user-select: none;
+  }
+  .quadrant:hover .empty-placeholder {
+    border-color: #F97316;
+    color: #F97316;
+    background: #eff6ff;
+  }
+  .todo-item {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 8px;
+    min-height: 38px; max-width: 100%; min-width: 0; overflow: hidden;
+    background: #f9fafb; border: 1px solid #f3f4f6; border-radius: 6px;
+    font-size: 13px; transition: background .2s, opacity .15s, transform .15s, box-shadow .15s;
+    cursor: pointer; user-select: none; /* 整卡可点击切换勾选 */
+  }
+  .todo-item:active { cursor: grabbing; }
+  .todo-item:not(.dragging):hover { background: #eef2f7; } /* 悬浮反馈（拖拽中不变化） */
+  .todo-item.dragging {
+    opacity: 0.4; transform: scale(0.98);
+    border: 1px dashed #EA580C;
+  }
+  .todo-item .todo-main-row { display: flex; align-items: center; gap: 6px; flex: 1; min-width: 0; }
+  .todo-item:hover { background: #f3f4f6; }
+  .todo-item.done .todo-title { text-decoration: line-through; color: #9CA3AF; }
+  .todo-item input[type="checkbox"] { cursor: pointer; accent-color: #F97316; flex-shrink: 0; }
+  .todo-title { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .todo-item-right { display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0; }
+  .todo-item .del-todo {
+    border: none; background: transparent; color: #9CA3AF; cursor: pointer;
+    padding: 2px; font-size: 14px; opacity: 0; transition: opacity .2s, color .2s;
+  }
+  .todo-item:hover .del-todo { opacity: 1; }
+  .todo-item .del-todo:hover { color: #EF4444; }
+  .todo-item .edit-todo {
+    border: none; background: transparent; color: #9CA3AF; cursor: pointer;
+    padding: 2px; font-size: 14px; opacity: 0; transition: opacity .2s, color .2s;
+  }
+  .todo-item:hover .edit-todo { opacity: 1; }
+  .todo-item .edit-todo:hover { color: #F97316; }
+  .todo-note-icon-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    margin-left: 4px; color: #a8a29e; cursor: pointer; font-size: 13px;
+    opacity: 0; transition: opacity .2s, color .2s; flex-shrink: 0;
+  }
+  .todo-item:hover .todo-note-icon-btn { opacity: 0.6; }
+  .todo-note-icon-btn:hover { opacity: 1 !important; color: #EA580C; }
+  .todo-note-icon-btn.has-note { opacity: 1; color: #d97706; }
+  body.dark-mode .todo-note-icon-btn.has-note { color: #F97316; }
+  .note-popover {
+    position: absolute; z-index: 1000; width: 220px;
+    background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px;
+    padding: 8px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.18);
+  }
+  body.dark-mode .note-popover { background: #1f2937; border-color: #374151; }
+  .note-popover textarea {
+    width: 100%; height: 70px; border: none; background: transparent;
+    resize: none; outline: none; font-size: 12px; color: #78350f;
+    box-sizing: border-box; font-family: inherit; line-height: 1.5;
+  }
+  body.dark-mode .note-popover textarea { color: #f3f4f6; }
+  .note-popover-actions { display: flex; justify-content: flex-end; gap: 6px; margin-top: 4px; }
+  .note-popover-actions button {
+    font-size: 10px; padding: 2px 6px; border-radius: 3px;
+    border: none; cursor: pointer; transition: background .2s;
+  }
+  .btn-note-save { background: #F97316; color: #fff; }
+  .btn-note-save:hover { background: #d97706; }
+  .btn-note-cancel { background: #e7e5e4; color: #57534e; }
+  .btn-note-cancel:hover { background: #d6d3d1; }
+  @media (max-width: 640px) {
+    .tianzige-container { grid-template-columns: 1fr; grid-template-rows: auto; }
+  }
+
+  /* 弹窗通用扩展 */
+  .modal-box.modal-lg { width: min(92vw, 480px); text-align: left; padding: 20px 24px; }
+  .modal-body { padding-top: 4px; }
+  .modal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; border-bottom: 1px solid #f0f3f8; padding-bottom: 12px; }
+  .modal-head h3 { font-size: 16px; font-weight: 700; color: #333; }
+  .btn-close { border: none; background: transparent; font-size: 18px; color: #999; cursor: pointer; }
+  .btn-close:hover { color: #333; }
+  .form-group { margin-bottom: 14px; }
+  .form-group label { display: block; font-size: 12px; font-weight: 600; color: #666; margin-bottom: 6px; }
+  .form-group input, .form-group select {
+    width: 100%; padding: 8px 10px; border: 1px solid #e2e6ee; border-radius: 7px;
+    font-size: 13px; font-family: inherit; outline: none; transition: border .2s;
+  }
+  .form-group input:focus, .form-group select:focus { border-color: #F97316; }
+  .form-group textarea.form-control {
+    width: 100%; padding: 8px 10px; border: 1px solid #e2e6ee; border-radius: 7px;
+    font-size: 13px; font-family: inherit; outline: none; transition: border .2s;
+    background: #fff; color: #333; resize: vertical;
+  }
+  .form-group textarea.form-control:focus { border-color: #F97316; }
+  body.dark-mode .form-group textarea.form-control { background: #1c1917; border-color: #44403c; color: #e7e5e4; }
+  .modal-foot { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+  .modal-foot .btn { width: auto; }
+
+  .guide-modal { max-width: 680px; width: 90%; text-align: left; }
+  .guide-body { max-height: 70vh; overflow-y: auto; padding-right: 6px; }
+  .guide-intro {
+    font-size: 13px; color: #78716c; background: #f8fafc;
+    padding: 10px 14px; border-radius: 8px; margin-bottom: 16px; line-height: 1.5;
+  }
+  .lyu-modal { max-width: 460px; width: 90%; text-align: left; }
+  .lyu-intro {
+    font-size: 13px; color: #1e3a8a; background: #eff6ff;
+    border: 1px solid #bfdbfe; padding: 12px 14px; border-radius: 8px;
+    margin-bottom: 16px; line-height: 1.6;
+  }
+  .lyu-steps { display: flex; flex-direction: column; gap: 14px; }
+  .lyu-step-item { display: flex; align-items: flex-start; gap: 12px; }
+  .lyu-step-item .step-num {
+    flex-shrink: 0; width: 22px; height: 22px; border-radius: 50%;
+    background: #EA580C; color: #fff; font-size: 12px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center; margin-top: 2px;
+  }
+  .lyu-step-body { display: flex; flex-direction: column; gap: 2px; font-size: 12px; color: #57534e; line-height: 1.5; }
+  .lyu-step-body strong { font-size: 13px; color: #44403c; display: flex; align-items: center; gap: 5px; }
+  .lyu-step-body p { margin: 0; }
+  .quad-guide-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+  .guide-card { border-radius: 8px; padding: 12px; border: 1px solid #e7e5e4; background: #fff; }
+  .guide-card .card-tag { font-size: 11px; font-weight: bold; text-transform: uppercase; margin-bottom: 4px; }
+  .guide-card h4 { margin: 0 0 6px 0; font-size: 14px; color: #1c1917; }
+  .guide-card .card-action {
+    font-size: 12px; font-weight: 600; margin-bottom: 8px; padding: 2px 6px;
+    border-radius: 4px; display: inline-block;
+  }
+  .guide-card ul { margin: 0; padding-left: 16px; font-size: 12px; color: #57534e; line-height: 1.5; }
+  .guide-card ul li { margin-bottom: 4px; }
+  .q1-card { border-left: 4px solid #ef4444; background: #fef2f2; }
+  .q1-card .card-tag, .q1-card .card-action { color: #dc2626; background: #fee2e2; }
+  .q2-card { border-left: 4px solid #EA580C; background: #eff6ff; }
+  .q2-card .card-tag, .q2-card .card-action { color: #2563eb; background: #dbeafe; }
+  .q3-card { border-left: 4px solid #F97316; background: #fffbeb; }
+  .q3-card .card-tag, .q3-card .card-action { color: #d97706; background: #fef3c7; }
+  .q4-card { border-left: 4px solid #10b981; background: #ecfdf5; }
+  .q4-card .card-tag, .q4-card .card-action { color: #059669; background: #d1fae5; }
+  .guide-tips { background: #f5f5f4; border-radius: 8px; padding: 12px 16px; }
+  .guide-tips h4 { margin: 0 0 8px 0; font-size: 13px; color: #44403c; display: flex; align-items: center; gap: 6px; }
+  .guide-tips ol { margin: 0; padding-left: 18px; font-size: 12px; color: #57534e; line-height: 1.6; }
+
+  /* ===== 番茄钟顶栏响应式 ===== */
+  @media (max-width: 868px) {
+    .pomo-bar { flex-wrap: wrap; padding-bottom: 22px; }
+    .header-left { order: 1; }
+    .button-group { order: 2; margin-left: auto; }
+    .header-right { order: 3; }
+    .header-center {
+      order: 4; width: 100%; flex: 1 0 100%;
+      justify-content: flex-start; padding-top: 10px;
+      border-top: 1px dashed #e5e7eb;
+    }
+    .task-select-wrapper { flex: 1; }
+    .custom-select { max-width: 100%; width: 100%; }
+  }
+  @media (max-width: 576px) {
+    .pomo-bar { gap: 10px; padding: 12px 16px 20px; }
+    .pomo-icon { width: 26px; height: 26px; }
+    .status-badge { padding: 3px 8px; font-size: 12px; }
+    .timer-display { font-size: 22px; }
+    .task-select-label { display: none; }
+    .tag-long { display: none; }
+    .button-group { margin-left: auto; }
+    .button-group .btn { padding: 6px 12px; font-size: 12px; }
+    .header-right .stats-group { gap: 4px; }
+    .header-center { flex-direction: column; align-items: stretch; gap: 8px; }
+    .header-center .button-group { order: 1; width: 100%; }
+    .header-center .button-group .btn { flex: 1; }
+    .task-select-wrapper { order: 2; width: 100%; }
+  }
+
+  /* 番茄工作法指南弹窗 */
+  .pomo-guide-modal { max-width: 680px; width: 92%; text-align: left; }
+  .pomo-guide-modal .modal-foot { margin-top: 16px; }
+  .pomo-intro {
+    border-left: 4px solid #F97316;
+    background: #fffbeb;
+    color: #92400e;
+  }
+  .pomo-rhythm-box {
+    background: #f8fafc;
+    border: 1px solid #e7e5e4;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 16px;
+  }
+  .pomo-rhythm-box h4 {
+    margin: 0 0 10px 0;
+    font-size: 13px;
+    color: #44403c;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .rhythm-steps {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    overflow-x: auto;
+  }
+  .rhythm-step {
+    flex: 1;
+    min-width: 0;
+    background: #fff;
+    border: 1px solid #d6d3d1;
+    border-radius: 6px;
+    padding: 8px 6px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+  .rhythm-step .step-num {
+    width: 18px; height: 18px;
+    background: #a8a29e; color: #fff;
+    border-radius: 50%;
+    font-size: 11px; font-weight: bold;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .rhythm-step .step-txt { font-size: 11px; color: #57534e; line-height: 1.3; }
+  .rhythm-arrow { color: #a8a29e; font-size: 14px; flex-shrink: 0; }
+  .rhythm-step.active-work { border-color: #ef4444; background: #fef2f2; }
+  .rhythm-step.active-work .step-num { background: #ef4444; }
+  .rhythm-step.active-rest { border-color: #10b981; background: #ecfdf5; }
+  .rhythm-step.active-rest .step-num { background: #10b981; }
+  .pomo-guide-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .pomo-guide-grid .guide-card h4 {
+    margin: 0 0 6px 0;
+    font-size: 13px;
+    color: #292524;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .pomo-guide-grid .guide-card p {
+    margin: 0;
+    font-size: 12px;
+    color: #78716c;
+    line-height: 1.5;
+  }
+  .pomo-card-1 h4 i { color: #ef4444; }
+  .pomo-card-2 h4 i { color: #F97316; }
+  .pomo-card-3 h4 i { color: #10b981; }
+  .pomo-card-4 h4 i { color: #EA580C; }
+  @media (max-width: 640px) {
+    .pomo-guide-grid { grid-template-columns: 1fr; }
+  }
+
+  .todo-time-tag { font-size: 11px; color: #F97316; background: #eef5fe; padding: 1px 6px; border-radius: 4px; display: inline-flex; align-items: center; gap: 3px; white-space: nowrap; }
+  .todo-time-tag.due { color: #e5484d; background: #fdecec; }
+  .todo-repeat-tag { font-size: 12px; color: #7c3aed; background: #f3e8ff; padding: 2px 5px; border-radius: 4px; display: inline-flex; align-items: center; justify-content: center; }
+  .todo-promote-tag { font-size: 12px; color: #e5484d; background: #fdecec; padding: 2px 5px; border-radius: 4px; display: inline-flex; align-items: center; justify-content: center; }
+  body.dark-mode .todo-promote-tag { color: #fca5a5; background: rgba(229, 72, 77, 0.15); }
+
+  .custom-repeat-box {
+    background: #f8fafc;
+    border: 1px solid #e7e5e4;
+    border-radius: 8px;
+    padding: 12px;
+    margin-top: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .custom-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: #57534e;
+  }
+  .custom-label {
+    width: 75px;
+    font-weight: 500;
+    flex-shrink: 0;
+  }
+  .custom-inline {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .input-num {
+    width: 50px;
+    padding: 4px 6px;
+    border: 1px solid #d6d3d1;
+    border-radius: 4px;
+    text-align: center;
+    font-size: 13px;
+  }
+  .select-sm {
+    padding: 4px 8px;
+    border: 1px solid #d6d3d1;
+    border-radius: 4px;
+    background: #fff;
+    font-size: 13px;
+  }
+  .custom-repeat-box .form-control {
+    padding: 6px 10px;
+    border: 1px solid #d6d3d1;
+    border-radius: 4px;
+    font-size: 13px;
+  }
+  .week-picker {
+    display: flex;
+    gap: 4px;
+  }
+  .week-btn { cursor: pointer; }
+  .week-btn input { display: none; }
+  .week-btn span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #fff;
+    border: 1px solid #d6d3d1;
+    font-size: 12px;
+    color: #78716c;
+    transition: all 0.2s;
+  }
+  .week-btn input:checked + span {
+    background: #F97316;
+    color: #fff;
+    border-color: #F97316;
+    font-weight: bold;
+  }
+
+  .quote-add-box { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid #edf2f7; }
+  .quote-add-box input { padding: 8px; border: 1px solid #e2e6ee; border-radius: 6px; font-size: 13px; outline: none; }
+  .quote-add-box input:focus { border-color: #F97316; }
+  .quote-add-box .btn { width: auto; align-self: flex-end; }
+  .quote-list-wrap { max-height: 220px; overflow-y: auto; }
+  .quote-item-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 10px; border-bottom: 1px solid #f0f3f8; font-size: 13px; }
+  .quote-item-row:last-child { border-bottom: none; }
+  .quote-item-text { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .quote-item-from { color: #999; font-size: 12px; flex-shrink: 0; }
+  .cats-item-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 10px; border-bottom: 1px solid #f0f3f8; font-size: 13px; }
+  .cats-item-row:last-child { border-bottom: none; }
+  .cats-item-text { flex: 1; }
+  .cats-item-count { color: #999; font-size: 12px; flex-shrink: 0; }
+  .cats-item-del { background: none; border: none; color: #bbb; cursor: pointer; font-size: 15px; line-height: 1; padding: 2px 4px; flex-shrink: 0; }
+  .cats-item-del:hover { color: #e5484d; }
+  .quote-list-wrap .empty { padding: 16px; text-align: center; color: #999; font-size: 13px; }
+  .quote-batch-actions {
+    display: flex; gap: 10px; margin-bottom: 12px; justify-content: flex-end;
+    padding-bottom: 12px; border-bottom: 1px dashed #e2e6ee;
+  }
+  .quote-batch-actions .btn-xs {
+    padding: 4px 10px; font-size: 12px; border: 1px solid #d8dee9;
+    background: #f8fafc; color: #555; border-radius: 5px; cursor: pointer;
+  }
+  .quote-batch-actions .btn-xs:hover { background: #eef1f6; color: #333; }
+  .quote-batch-actions .ti { margin-right: 4px; }
+
+  /* 四象限彩色单选卡片组 */
+  .quad-selector { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .quad-opt {
+    display: flex; align-items: center; gap: 6px; padding: 8px 10px;
+    border: 1.5px solid #e2e6ee; border-radius: 8px; cursor: pointer;
+    background: #fff; font-size: 12px; color: #555; transition: all 0.2s ease;
+  }
+  .quad-opt input[type="radio"] { display: none; }
+  .quad-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .quad-badge { font-weight: 800; font-size: 11px; }
+  .q1 .quad-dot { background: #EF4444; }
+  .q1 .quad-badge { color: #EF4444; }
+  .q2 .quad-dot { background: #F97316; }
+  .q2 .quad-badge { color: #F97316; }
+  .q3 .quad-dot { background: #EA580C; }
+  .q3 .quad-badge { color: #EA580C; }
+  .q4 .quad-dot { background: #10B981; }
+  .q4 .quad-badge { color: #10B981; }
+  .quad-opt.q1:has(input:checked) { border-color: #EF4444; background: #FEF2F2; color: #991B1B; font-weight: 600; }
+  .quad-opt.q2:has(input:checked) { border-color: #F97316; background: #FFFBEB; color: #92400E; font-weight: 600; }
+  .quad-opt.q3:has(input:checked) { border-color: #EA580C; background: #EFF6FF; color: #1E40AF; font-weight: 600; }
+  .quad-opt.q4:has(input:checked) { border-color: #10B981; background: #ECFDF5; color: #065F46; font-weight: 600; }
+
+  /* 待办筛选按钮栏 */
+  .todo-filter-bar { display: flex; gap: 8px; padding: 10px 12px 0 12px; flex-wrap: wrap; }
+  .todo-filter-btn {
+    padding: 4px 12px; font-size: 12px; border: 1px solid #e2e6ee;
+    border-radius: 14px; background: #fff; color: #666; cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .todo-filter-btn:hover { border-color: #F97316; color: #F97316; }
+  .todo-filter-btn.active { background: #F97316; border-color: #F97316; color: #fff; font-weight: 600; }
+
+  /* 时光轴 */
+  #timeline-list { padding: 12px 16px; max-height: 70vh; overflow-y: auto; display: flex; flex-direction: column; gap: 18px; }
+  #timeline-list::-webkit-scrollbar { width: 6px; }
+  #timeline-list::-webkit-scrollbar-track { background: transparent; }
+  #timeline-list::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0); border-radius: 3px;
+    transition: background .25s;
+  }
+  #timeline-list.scrolling::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.35); }
+  #timeline-list.scrolling::-webkit-scrollbar-thumb:hover { background: rgba(148, 163, 184, 0.6); }
+  #timeline-list { scrollbar-width: thin; scrollbar-color: transparent transparent; }
+  #timeline-list.scrolling { scrollbar-color: rgba(148, 163, 184, 0.35) transparent; }
+  .tl-calendar {
+    display: none; position: absolute; z-index: 1200; width: 248px;
+    background: #fff; border: 1px solid #e7e5e4; border-radius: 8px;
+    box-shadow: 0 10px 20px -4px rgba(0,0,0,0.15); padding: 10px;
+  }
+  .tl-calendar.show { display: block; }
+  .tl-cal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .tl-cal-title { font-size: 13px; font-weight: 700; color: #333; }
+  .tl-cal-nav {
+    border: none; background: transparent; color: #78716c; cursor: pointer;
+    font-size: 14px; padding: 2px 6px; border-radius: 4px; display: inline-flex; align-items: center;
+    transition: background .2s, color .2s;
+  }
+  .tl-cal-nav:hover { background: #f5f5f4; color: #8B5CF6; }
+  .tl-cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+  .tl-cal-week { text-align: center; font-size: 10px; color: #a8a29e; padding: 2px 0; }
+  .tl-cal-cell {
+    position: relative; text-align: center; font-size: 12px; color: #57534e;
+    padding: 5px 0; border-radius: 4px; cursor: pointer; transition: background .2s, color .2s;
+  }
+  .tl-cal-cell:hover { background: #f5f5f4; }
+  .tl-cal-cell.empty { visibility: hidden; }
+  .tl-cal-cell.today { color: #8B5CF6; font-weight: 700; }
+  .tl-cal-cell.has-data { font-weight: 600; }
+  .tl-cal-cell.has-data::after {
+    content: ''; position: absolute; left: 50%; bottom: 2px; transform: translateX(-50%);
+    width: 4px; height: 4px; border-radius: 50%; background: #8B5CF6;
+  }
+  .tl-cal-cell.no-data { animation: tl-shake .3s; }
+  @keyframes tl-shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-4px); }
+    50% { transform: translateX(4px); }
+    75% { transform: translateX(-4px); }
+  }
+  .tl-group.tl-flash { background: linear-gradient(90deg, rgba(139,92,246,0.18), transparent); border-radius: 6px; }
+  body.dark-mode .tl-calendar { background: #1e1e2e; border-color: #44403c; }
+  body.dark-mode .tl-cal-title { color: #e7e5e4; }
+  body.dark-mode .tl-cal-nav { color: #a8a29e; }
+  body.dark-mode .tl-cal-nav:hover { background: #2a2a3a; color: #a78bfa; }
+  body.dark-mode .tl-cal-cell { color: #d6d3d1; }
+  body.dark-mode .tl-cal-cell:hover { background: #2a2a3a; }
+  body.dark-mode .tl-cal-cell.today { color: #a78bfa; }
+  body.dark-mode .tl-cal-cell.has-data::after { background: #a78bfa; }
+  body.dark-mode .tl-group.tl-flash { background: linear-gradient(90deg, rgba(167,139,250,0.22), transparent); }
+  .tl-group h4 {
+    font-size: 12px; color: #a8a29e; font-weight: 600; margin-bottom: 8px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .tl-group h4 i { font-size: 14px; }
+  .tl-items { position: relative; padding-left: 18px; }
+  .tl-items::before {
+    content: ''; position: absolute; left: 5px; top: 5px; bottom: 4px;
+    width: 2px; background: #e9eef5;
+  }
+  .tl-item { position: relative; display: flex; align-items: flex-start; gap: 8px; padding: 4px 0 10px; }
+  .tl-item::before {
+    content: ''; position: absolute; left: -18px; top: 7px;
+    width: 10px; height: 10px; border-radius: 50%;
+    background: #fff; border: 2px solid #8B5CF6; box-sizing: border-box;
+  }
+  .tl-item.tl-todo::before { border-color: #F97316; }
+  .tl-item.tl-focus::before { border-color: #E5533D; }
+  .tl-time { font-size: 11px; color: #a8a29e; flex-shrink: 0; width: 42px; font-variant-numeric: tabular-nums; }
+  .tl-text {
+    font-size: 12.5px; color: #57534e; line-height: 1.5; flex: 1;
+    display: flex; align-items: center; gap: 4px;
+  }
+  .tl-text .ti { font-size: 13px; color: #8B5CF6; flex-shrink: 0; }
+  .tl-text .tl-focus-icon { width: 14px; height: 14px; border-radius: 2px; flex-shrink: 0; }
+  .tl-item.tl-todo .tl-text .ti { color: #F97316; }
+  .tl-item.tl-focus .tl-text .ti { color: #E5533D; }
+  .tl-del {
+    border: none; background: none; color: #d6d3d1; cursor: pointer;
+    font-size: 14px; padding: 0 2px; flex-shrink: 0; line-height: 1.4;
+  }
+  .tl-dur { font-size: 11px; color: #8B5CF6; background: #f3ecff; padding: 1px 6px; border-radius: 4px; flex-shrink: 0; white-space: nowrap; }
+  .tl-del:hover { color: #e5484d; }
+
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; }
+    .col-left { position: static; }
+  }
+  @media (max-width: 560px) {
+    #timer-time { font-size: 30px; }
+    .top-actions { margin-left: 0; }
+  }
+
+  .btn-theme-toggle {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid #e2e6ee;
+    color: #57534e;
+    font-size: 18px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    outline: none;
+  }
+  .btn-theme-toggle:hover { background: #eff6ff; color: #F97316; transform: rotate(15deg); }
+  .btn-theme-toggle .icon-sun { display: none; }
+  .btn-theme-toggle .icon-moon { display: inline-block; }
+
+  body.dark-mode .btn-theme-toggle { border-color: #44403c; background: #292524; }
+  body.dark-mode .btn-theme-toggle .icon-sun { display: inline-block; color: #fbbf24; }
+  body.dark-mode .btn-theme-toggle .icon-moon { display: none; }
+
+  body.dark-mode {
+    background: linear-gradient(180deg, #1c1917 0%, #111c33 60%, #0b1526 100%);
+    color: #e7e5e4;
+  }
+  body.dark-mode header { background: rgba(15, 23, 42, 0.9); border-bottom-color: #292524; }
+  body.dark-mode .brand { color: #f5f5f4; }
+  body.dark-mode .btn {
+    background: #292524; border-color: #44403c; color: #d6d3d1;
+  }
+  body.dark-mode .btn:hover { border-color: #F97316; color: #93c5fd; }
+  body.dark-mode .btn.primary { background: #F97316; border-color: #F97316; color: #fff; }
+  body.dark-mode .card {
+    background: #292524; border-color: #2a3a52; box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+  }
+  body.dark-mode .card:hover { box-shadow: 0 8px 20px rgba(0,0,0,0.5); }
+  body.dark-mode .mod-head { border-bottom-color: #2a3a52; }
+  body.dark-mode .mod-head h3 { color: #f5f5f4; }
+  body.dark-mode .pomo-bar {
+    background: #292524; border-color: #2a3a52;
+    box-shadow: 0 4px 20px -2px rgba(0,0,0,0.4);
+  }
+  body.dark-mode .timer-display { color: #f8fafc; }
+  body.dark-mode .status-badge { background: #17304f; color: #93c5fd; }
+  body.dark-mode .custom-select {
+    background-color: #1c1917; border-color: #44403c;
+    color: #f8fafc;
+  }
+  body.dark-mode .custom-select:hover { border-color: #57534e; }
+  body.dark-mode .custom-select option { background: #1c1917; color: #f8fafc; }
+  body.dark-mode .task-select-wrapper,
+  body.dark-mode .task-select-wrapper label { color: #a8a29e; }
+  body.dark-mode .stats-group .tag { background: #44403c; color: #d6d3d1; }
+  body.dark-mode .icon-btn { color: #a8a29e; }
+  body.dark-mode .icon-btn:hover { background: #44403c; color: #f5f5f4; }
+  body.dark-mode .quote-bar { background: #16233c; border-color: #2a3a52; }
+  body.dark-mode #quote-text { color: #d6d3d1; }
+  body.dark-mode .quote-actions select {
+    background: #1c1917; border-color: #44403c; color: #d6d3d1;
+  }
+  body.dark-mode .mask { background: rgba(2, 6, 23, 0.6); }
+  body.dark-mode .modal-box { background: #292524; color: #e7e5e4; }
+  body.dark-mode .modal-box p { color: #d6d3d1; }
+  body.dark-mode .modal-head { border-bottom-color: #44403c; }
+  body.dark-mode .modal-head h3 { color: #f5f5f4; }
+  body.dark-mode .btn-close { color: #a8a29e; }
+  body.dark-mode .btn-close:hover { color: #f8fafc; background: #44403c; border-radius: 4px; }
+  body.dark-mode .form-group label { color: #d6d3d1; }
+  body.dark-mode .form-group input,
+  body.dark-mode .form-group select,
+  body.dark-mode .input-num,
+  body.dark-mode .select-sm,
+  body.dark-mode .form-control {
+    background-color: #1c1917; border-color: #44403c; color: #f8fafc;
+  }
+  body.dark-mode .form-group input::placeholder { color: #57534e; }
+  body.dark-mode .guid-body,
+  body.dark-mode .guide-intro { background: #1c1917; color: #d6d3d1; }
+  body.dark-mode .guide-intro { border-color: #44403c; }
+  body.dark-mode .lyu-intro { background: rgba(59, 130, 246, 0.12); color: #93c5fd; border-color: rgba(59, 130, 246, 0.3); }
+  body.dark-mode .lyu-step-body { color: #a8a29e; }
+  body.dark-mode .lyu-step-body strong { color: #e7e5e4; }
+  body.dark-mode .pomo-intro { background: #33291c; color: #fcd34d; border-color: #F97316; }
+  body.dark-mode .guide-tips { background: #16233c; color: #d6d3d1; }
+  body.dark-mode .guide-tips h4 { color: #e7e5e4; }
+  body.dark-mode .guide-tips ol { color: #d6d3d1; }
+  body.dark-mode .pomo-rhythm-box,
+  body.dark-mode .custom-repeat-box { background: #1c1917; border-color: #44403c; }
+  body.dark-mode .pomo-rhythm-box h4 { color: #e7e5e4; }
+  body.dark-mode .rhythm-step { background: #292524; border-color: #57534e; }
+  body.dark-mode .rhythm-step .step-txt { color: #d6d3d1; }
+  body.dark-mode .rhythm-step.active-work { background: #3a1d23; border-color: #ef4444; }
+  body.dark-mode .rhythm-step.active-rest { background: #123127; border-color: #10b981; }
+  body.dark-mode .pomo-guide-grid .guide-card { background: #292524; border-color: #44403c; }
+  body.dark-mode .pomo-guide-grid .guide-card h4 { color: #f5f5f4; }
+  body.dark-mode .pomo-guide-grid .guide-card p { color: #d6d3d1; }
+  body.dark-mode .quad-guide-grid .guide-card { background: #292524; border-color: #44403c; }
+  body.dark-mode .guide-card h4 { color: #f5f5f4; }
+  body.dark-mode .guide-card ul { color: #d6d3d1; }
+  body.dark-mode .guide-card .card-tag { color: inherit; }
+  body.dark-mode .q1-card { background: #3a1d23; border-left-color: #ef4444; }
+  body.dark-mode .q2-card { background: #1a2f47; border-left-color: #EA580C; }
+  body.dark-mode .q3-card { background: #33291c; border-left-color: #F97316; }
+  body.dark-mode .q4-card { background: #123127; border-left-color: #10b981; }
+  body.dark-mode .q1-card .card-action { background: #4b252c; }
+  body.dark-mode .q2-card .card-action { background: #223d5c; }
+  body.dark-mode .q3-card .card-action { background: #46371f; }
+  body.dark-mode .q4-card .card-action { background: #164333; }
+
+.timeline-card { position: relative; overflow: visible; }
+  #today-summary {
+    padding: 10px 16px; border-bottom: 1px solid #eef1f6;
+    display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: center;
+    background: #fbfcfe;
+  }
+  #today-summary .ts-label { font-size: 11px; color: #a8a29e; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
+  #today-summary .ts-item { font-size: 12px; color: #57534e; display: inline-flex; align-items: center; gap: 4px; }
+  #today-summary .ts-item .ts-cat { color: #8B5CF6; font-weight: 600; }
+  #today-summary .ts-item .ts-amt { font-weight: 700; color: #44403c; font-variant-numeric: tabular-nums; }
+  #today-summary .ts-empty { font-size: 11px; color: #d6d3d1; }
+  body.dark-mode #today-summary { background: #16233c; border-bottom-color: #2a3a52; }
+  body.dark-mode #today-summary .ts-label { color: #78716c; }
+  body.dark-mode #today-summary .ts-item { color: #a8a29e; }
+  body.dark-mode #today-summary .ts-item .ts-cat { color: #a78bfa; }
+  body.dark-mode #today-summary .ts-item .ts-amt { color: #e7e5e4; }
+  body.dark-mode #today-summary .ts-empty { color: #57534e; }
+  body.dark-mode .timeline-card .tl-item { border-color: #2a3a52; }
+
+  /* ===== 心情记录栏（Mood Tracker） ===== */
+  .mood-bar {
+    padding: 10px 16px; border-bottom: 1px solid #eef1f6; background: #fbfcfe;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .mood-title {
+    font-size: 11px; color: #a8a29e; font-weight: 600;
+    display: inline-flex; align-items: center; gap: 4px;
+  }
+  .mood-title .ti { font-size: 14px; color: #F97316; }
+  .mood-icons { display: flex; gap: 8px; flex-wrap: wrap; }
+  .mood-btn {
+    width: 34px; height: 34px; border-radius: 10px; cursor: pointer;
+    border: 1.5px solid #e6eaf2; background: #fff; color: #78716c;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 19px; transition: transform .12s ease, border-color .12s ease, background .12s ease, box-shadow .12s ease;
+  }
+  .mood-btn:hover { transform: translateY(-2px); border-color: #d6d3d1; color: #57534e; }
+  .mood-btn.active {
+    border-color: #8B5CF6; background: #f5f0ff; box-shadow: 0 3px 10px rgba(139,92,246,.18); color: #8B5CF6;
+  }
+  .mood-input-row { display: flex; gap: 8px; align-items: center; }
+  .mood-input {
+    flex: 1; height: 32px; border: 1px solid #e6eaf2; border-radius: 8px;
+    padding: 0 10px; font-size: 12.5px; color: #44403c; background: #fff;
+    font-family: inherit; outline: none;
+  }
+  .mood-input:focus { border-color: #8B5CF6; box-shadow: 0 0 0 3px rgba(139,92,246,.12); }
+  .mood-input::placeholder { color: #d6d3d1; }
+  .mood-save {
+    width: 34px; height: 32px; border-radius: 8px; cursor: pointer; flex-shrink: 0;
+    border: none; background: #8B5CF6; color: #fff; font-size: 16px;
+    display: inline-flex; align-items: center; justify-content: center; transition: background .12s ease;
+  }
+  .mood-save:hover { background: #7c4ddb; }
+  .mood-hint { font-size: 10.5px; color: #d6d3d1; }
+
+  /* 心情节点（时光轴内） */
+  .tl-item.tl-mood { padding: 5px 0 11px; }
+  .tl-item.tl-mood::before { border-color: var(--mood-c, #8B5CF6); }
+  .tl-item.tl-mood .tl-text .ti { color: var(--mood-c, #8B5CF6); }
+  .tl-mood-text { color: #57534e; }
+  .tl-mood-label { color: var(--mood-c, #8B5CF6); font-weight: 600; }
+
+  body.dark-mode .mood-bar { background: #16233c; border-bottom-color: #2a3a52; }
+  body.dark-mode .mood-title { color: #78716c; }
+  body.dark-mode .mood-title .ti { color: #fbbf24; }
+  body.dark-mode .mood-btn { background: #292524; border-color: #2a3a52; color: #a8a29e; }
+  body.dark-mode .mood-btn:hover { border-color: #57534e; color: #e7e5e4; }
+  body.dark-mode .mood-btn.active { border-color: #a78bfa; background: rgba(139,92,246,.18); color: #a78bfa; }
+  body.dark-mode .mood-input { background: #1c1917; border-color: #44403c; color: #e7e5e4; }
+  body.dark-mode .mood-input::placeholder { color: #57534e; }
+  body.dark-mode .mood-hint { color: #57534e; }
+  body.dark-mode .tl-mood-text { color: #d6d3d1; }
+  body.dark-mode .tl-dur { color: #a78bfa; background: rgba(139, 92, 246, 0.18); }
+  body.dark-mode .tl-text { color: #d6d3d1; }
+  body.dark-mode .tl-empty,
+  body.dark-mode .empty { color: #78716c; }
+
+  body.dark-mode .todo-card .quadrant { background: #16233c; border-color: #2a3a52; }
+  body.dark-mode .quad-name { color: #f5f5f4; }
+  body.dark-mode .todo-item { background: #1c1917; border-color: #44403c; color: #e7e5e4; }
+  body.dark-mode .todo-item.done > .todo-main-row > span { color: #78716c; }
+  body.dark-mode .todo-item .edit-todo,
+  body.dark-mode .todo-item .del-todo { color: #a8a29e; }
+  body.dark-mode .todo-filter-btn { background: #292524; border-color: #44403c; color: #d6d3d1; }
+  body.dark-mode .todo-filter-btn.active { background: #F97316; border-color: #F97316; color: #fff; }
+
+  body.dark-mode .notes-wrap > .empty { color: #78716c; }
+  body.dark-mode .note { background: #16233c; border-color: #2a3a52; }
+  body.dark-mode .note textarea {
+    background: #1c1917; border-color: #44403c; color: #e7e5e4;
+  }
+  body.dark-mode .note textarea::placeholder { color: #78716c; }
+  body.dark-mode .note-foot { background: #111c33; border-top-color: #2a3a52; }
+  body.dark-mode .note-time { color: #a8a29e; }
+  body.dark-mode .del { color: #a8a29e; }
+  body.dark-mode .del:hover { color: #f87171; }
+
+  body.dark-mode .link-card-mod .mod-name-input,
+  body.dark-mode .mod-name-input { background: #1c1917; border-color: #44403c; color: #e7e5e4; }
+  body.dark-mode .mod-count { background: #16233c; border-color: #2a3a52; color: #a8a29e; }
+  body.dark-mode .card ul li { color: #d6d3d1; }
+  body.dark-mode .card ul li.empty { color: #78716c; }
+  body.dark-mode .add-card { border-color: #44403c; color: #a8a29e; }
+  body.dark-mode .add-card:hover { color: #93c5fd; border-color: #F97316; }
+  body.dark-mode .save-hint { color: #a8a29e; }
+  body.dark-mode .pomo-stats,
+  body.dark-mode .pomo-mode { color: inherit; }
+  body.dark-mode .flex-btn,
+  body.dark-mode .btn-xs { background: #292524; border-color: #44403c; color: #d6d3d1; }
+  body.dark-mode .btn-xs:hover { border-color: #F97316; color: #93c5fd; }
+
+  /* ==========================================
+     高级黑暗模式微调 (Dark Mode Pro)
+     ========================================== */
+  body.dark-mode {
+    background: linear-gradient(180deg, #100E0C 0%, #0e1627 55%, #0a111f 100%);
+    color: #a8a29e;
+  }
+  body.dark-mode header {
+    background: rgba(11, 17, 32, 0.92);
+  }
+  body.dark-mode .brand { color: #f8fafc; }
+  body.dark-mode .card,
+  body.dark-mode .pomo-bar,
+  body.dark-mode .modal-box {
+    background-color: #292524;
+    border: 1px solid #44403c;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+  body.dark-mode input[type="text"],
+  body.dark-mode input[type="number"],
+  body.dark-mode input[type="datetime-local"],
+  body.dark-mode textarea,
+  body.dark-mode select,
+  body.dark-mode .form-control,
+  body.dark-mode .custom-select {
+    background-color: #1c1917;
+    border-color: #44403c;
+    color: #e7e5e4;
+  }
+  body.dark-mode input::placeholder,
+  body.dark-mode textarea::placeholder {
+    color: #57534e;
+  }
+  body.dark-mode input:focus,
+  body.dark-mode textarea:focus,
+  body.dark-mode select:focus {
+    border-color: #EA580C !important;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2) !important;
+  }
+
+  /* 链接与标题 */
+  body.dark-mode a { color: #60a5fa; }
+  body.dark-mode a:hover { color: #93c5fd; }
+  body.dark-mode h1,
+  body.dark-mode h2,
+  body.dark-mode h3,
+  body.dark-mode h4,
+  body.dark-mode .mod-head h3,
+  body.dark-mode .modal-head h3 { color: #f8fafc; }
+
+  /* 全局滚动条暗化（宽高/圆角统一由 scrollbar.css 规范，这里只调色） */
+  body.dark-mode ::-webkit-scrollbar-track { background: #171412; }
+  body.dark-mode ::-webkit-scrollbar-thumb {
+    background: #3D332C; border-radius: 999px;
+  }
+  body.dark-mode ::-webkit-scrollbar-thumb:hover { background: #57493E; }
+  body.dark-mode ::-webkit-scrollbar-thumb:active { background: #F97316; }
+
+  /* ==========================================
+     四象限高级暗黑重置 (现代极简风)
+     ========================================== */
+  body.dark-mode .tianzige-container,
+  body.dark-mode .quadrant {
+    background-color: #111827;
+    border-color: #1f2937;
+  }
+  body.dark-mode .quadrant.q1,
+  body.dark-mode .quadrant.q2,
+  body.dark-mode .quadrant.q3,
+  body.dark-mode .quadrant.q4 {
+    background-color: #111827;
+  }
+  body.dark-mode .quadrant.q1 { border-left: 3px solid #ef4444; }
+  body.dark-mode .quadrant.q2 { border-left: 3px solid #F97316; }
+  body.dark-mode .quadrant.q3 { border-left: 3px solid #EA580C; }
+  body.dark-mode .quadrant.q4 { border-left: 3px solid #10b981; }
+  body.dark-mode .quad-head .tag {
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  body.dark-mode .quadrant .todo-list .empty-placeholder {
+    background-color: rgba(255, 255, 255, 0.02);
+    border: 1px dashed #374151;
+    color: #6b7280;
+  }
+  body.dark-mode .quadrant .todo-list .empty-placeholder:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+    color: #9ca3af;
+  }
+  body.dark-mode .todo-item {
+    background-color: #1f2937;
+    border-color: #374151;
+    color: #e5e7eb;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+  body.dark-mode .todo-item:hover { border-color: #4b5563; }
+  body.dark-mode .todo-note-icon-btn.has-note { color: #F97316; }
+  body.dark-mode .todo-time-tag { color: #93c5fd; background: rgba(59, 130, 246, 0.15); }
+  body.dark-mode .todo-time-tag.due { color: #fca5a5; background: rgba(229, 72, 77, 0.15); }
+  body.dark-mode .todo-repeat-tag { color: #c4b5fd; background: rgba(124, 58, 237, 0.18); }
+
+  /* ==========================================
+     常用网址输入框暗黑适配 (实际类名 .lab/.url/.add-mod)
+     ========================================== */
+  body.dark-mode .add-link input,
+  body.dark-mode .add-mod input {
+    background-color: #1c1917;
+    border-color: #44403c;
+    color: #f8fafc;
+  }
+  body.dark-mode .add-link input::placeholder,
+  body.dark-mode .add-mod input::placeholder {
+    color: #78716c;
+  }
+  body.dark-mode .add-mod {
+    background: rgba(15, 23, 42, 0.5);
+    border-color: #57534e;
+  }
+  body.dark-mode .add-link { border-top-color: #44403c; }
+  body.dark-mode .add-link .btn.primary {
+    background-color: #2563eb;
+    border-color: #EA580C;
+    color: #ffffff;
+  }
+  body.dark-mode .add-link .btn.primary:hover {
+    background-color: #1d4ed8; border-color: #1d4ed8;
+  }
+
+  /* ==========================================
+     同步设置 / 备份与导入 弹窗 (idb-backup.js)
+     ========================================== */
+  .sync-opt { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #57534e; cursor: pointer; margin-bottom: 14px; }
+  .sync-opt input[type="checkbox"] { width: 15px; height: 15px; accent-color: #F97316; cursor: pointer; }
+  .sync-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+  .sync-actions .btn { flex: 1; min-width: 120px; }
+  .sync-sub-row { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+  .sync-sub-label { font-size: 12px; font-weight: 600; color: #666; }
+  .sync-sub-input {
+    width: 100%; box-sizing: border-box; padding: 7px 10px;
+    border: 1px solid #e2e6ee; border-radius: 7px; font-size: 13px;
+    font-family: inherit; outline: none; transition: border .2s; color: #44403c;
+  }
+  .sync-sub-input:focus { border-color: #F97316; }
+  .sync-hint { font-size: 11px; color: #a8a29e; line-height: 1.5; }
+  .sync-hint code, .sync-hint span { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: #78716c; }
+  body.dark-mode .sync-sub-label { color: #d6d3d1; }
+  body.dark-mode .sync-sub-input {
+    background-color: #1c1917; border-color: #44403c; color: #f8fafc;
+  }
+  body.dark-mode .sync-sub-input::placeholder { color: #57534e; }
+  body.dark-mode .sync-hint code, body.dark-mode .sync-hint span { color: #a8a29e; }
+  body.dark-mode .sync-opt { color: #d6d3d1; }
+  body.dark-mode .sync-hint { color: #78716c; }
+
+/* ==========================================================================
+   主题适配层 · 效率工具 → 运营工作台
+   目标：把本页原本的「蓝灰冷色调」对齐到工作台暖橙体系（accent #F97316）。
+   做法：只覆盖需要校色的规则，不改动原有结构与既有 body.dark-mode 暗色样式。
+   三主题：light（暖白） / dark（既有暗色，仅微调） / eye（暖米黄）。
+   ========================================================================== */
+
+/* ---------- 亮色：暖白底（原来是 #f0f4fa→#eef4fb 的冷蓝渐变） ---------- */
+[data-theme="light"] body,
+body.theme-bright {
+  background: linear-gradient(180deg, #FFF8F2 0%, #FFFCF9 55%, #FDF4EC 100%) !important;
+  color: #221813;
+}
+[data-theme="light"] header,
+body.theme-bright header {
+  background: rgba(255, 255, 255, 0.92) !important;
+  border-bottom: 1px solid #EFE6DE !important;
+}
+
+/* 亮色下的冷色中性底 → 暖色中性底 */
+[data-theme="light"] .card,
+[data-theme="light"] .modal-box,
+[data-theme="light"] .guide-card,
+[data-theme="light"] .note,
+[data-theme="light"] .pomo-bar,
+[data-theme="light"] .quadrant,
+[data-theme="light"] .todo-item,
+[data-theme="light"] .custom-select,
+[data-theme="light"] .select-sm,
+[data-theme="light"] .tl-calendar,
+[data-theme="light"] .quad-opt,
+[data-theme="light"] .mood-btn,
+[data-theme="light"] .btn,
+[data-theme="light"] .btn-xs,
+[data-theme="light"] .week-btn span,
+[data-theme="light"] .rhythm-step,
+[data-theme="light"] .mood-input,
+[data-theme="light"] .mod-name-input,
+[data-theme="light"] .form-group textarea.form-control,
+[data-theme="light"] .quote-settings-inline select {
+  background-color: #FFFFFF;
+  border-color: #EFE6DE;
+}
+
+[data-theme="light"] .mod-count,
+[data-theme="light"] .add-mod,
+[data-theme="light"] .note-foot,
+[data-theme="light"] #today-summary,
+[data-theme="light"] .mood-bar,
+[data-theme="light"] .guide-tips,
+[data-theme="light"] .guide-intro,
+[data-theme="light"] .pomo-rhythm-box,
+[data-theme="light"] .custom-repeat-box,
+[data-theme="light"] .quote-add-box,
+[data-theme="light"] .todo-list .empty-placeholder,
+[data-theme="light"] .pomo-rhythm-box,
+[data-theme="light"] .status-badge,
+[data-theme="light"] .todo-time-tag {
+  background-color: #FBF7F3;
+  border-color: #EFE6DE;
+}
+
+[data-theme="light"] .links li:hover,
+[data-theme="light"] .icon-btn:hover,
+[data-theme="light"] .tl-cal-nav:hover,
+[data-theme="light"] .tl-cal-cell:hover,
+[data-theme="light"] .quadrant:hover,
+[data-theme="light"] .todo-item:hover,
+[data-theme="light"] .stats-group .tag,
+[data-theme="light"] .quote-batch-actions .btn-xs:hover {
+  background-color: #F6EFE8;
+}
+
+[data-theme="light"] .progress-bar-container,
+[data-theme="light"] .tianzige-container {
+  background-color: #F1E8DF;
+}
+
+/* 冷蓝强调 → 暖橙强调 */
+[data-theme="light"] .open-all,
+[data-theme="light"] .lyu-intro,
+[data-theme="light"] .q2-card,
+[data-theme="light"] .todo-list .quadrant:hover .empty-placeholder,
+[data-theme="light"] .btn-help:hover,
+[data-theme="light"] .btn.block:hover,
+[data-theme="light"] .btn-theme-toggle:hover {
+  background-color: #FEF1E6;
+}
+
+/* 进度条冷蓝渐变 → 暖橙渐变 */
+[data-theme="light"] .progress-bar-container i {
+  background: linear-gradient(90deg, #F97316, #FBBF24);
+}
+
+/* 时间轴轨线冷灰 → 暖灰 */
+[data-theme="light"] .tl-items::before { background: #EADFD4; }
+
+/* ---------- 护眼：暖米黄（与工作台 eye 完全一致） ---------- */
+[data-theme="eye"] body {
+  background: linear-gradient(180deg, #F5F1E8 0%, #FBF8F1 55%, #F2EDE0 100%) !important;
+  color: #3C3229;
+}
+[data-theme="eye"] header {
+  background: rgba(251, 248, 241, 0.92) !important;
+  border-bottom: 1px solid #E5DCCB !important;
+}
+[data-theme="eye"] .card,
+[data-theme="eye"] .modal-box,
+[data-theme="eye"] .guide-card,
+[data-theme="eye"] .note,
+[data-theme="eye"] .pomo-bar,
+[data-theme="eye"] .quadrant,
+[data-theme="eye"] .custom-select,
+[data-theme="eye"] .select-sm,
+[data-theme="eye"] .tl-calendar,
+[data-theme="eye"] .quad-opt,
+[data-theme="eye"] .mood-btn,
+[data-theme="eye"] .btn,
+[data-theme="eye"] .btn-xs,
+[data-theme="eye"] .week-btn span,
+[data-theme="eye"] .rhythm-step,
+[data-theme="eye"] .mood-input,
+[data-theme="eye"] .mod-name-input,
+[data-theme="eye"] .form-group textarea.form-control,
+[data-theme="eye"] .quote-settings-inline select {
+  background-color: #FBF8F1;
+  border-color: #E5DCCB;
+}
+[data-theme="eye"] .todo-item,
+[data-theme="eye"] .mod-count,
+[data-theme="eye"] .add-mod,
+[data-theme="eye"] .note-foot,
+[data-theme="eye"] #today-summary,
+[data-theme="eye"] .mood-bar,
+[data-theme="eye"] .guide-tips,
+[data-theme="eye"] .guide-intro,
+[data-theme="eye"] .pomo-rhythm-box,
+[data-theme="eye"] .custom-repeat-box,
+[data-theme="eye"] .quote-add-box,
+[data-theme="eye"] .todo-list .empty-placeholder,
+[data-theme="eye"] .status-badge,
+[data-theme="eye"] .todo-time-tag {
+  background-color: #F0EADC;
+  border-color: #E5DCCB;
+}
+[data-theme="eye"] .links li:hover,
+[data-theme="eye"] .icon-btn:hover,
+[data-theme="eye"] .tl-cal-nav:hover,
+[data-theme="eye"] .tl-cal-cell:hover,
+[data-theme="eye"] .quadrant:hover,
+[data-theme="eye"] .todo-item:hover,
+[data-theme="eye"] .quote-batch-actions .btn-xs:hover {
+  background-color: #EAE2D2;
+}
+[data-theme="eye"] .progress-bar-container,
+[data-theme="eye"] .tianzige-container { background-color: #E7DFCF; }
+[data-theme="eye"] .open-all,
+[data-theme="eye"] .lyu-intro,
+[data-theme="eye"] .q2-card,
+[data-theme="eye"] .btn-help:hover,
+[data-theme="eye"] .btn.block:hover,
+[data-theme="eye"] .btn-theme-toggle:hover { background-color: #FCEEDF; }
+[data-theme="eye"] .progress-bar-container i { background: linear-gradient(90deg, #F97316, #FBBF24); }
+[data-theme="eye"] .tl-items::before { background: #E0D6C4; }
+
+/* 护眼下的文字：整页统一到深棕，避免残留冷灰蓝 */
+[data-theme="eye"] body,
+[data-theme="eye"] .card,
+[data-theme="eye"] .note textarea,
+[data-theme="eye"] .todo-item,
+[data-theme="eye"] .guide-card { color: #3C3229; }
+[data-theme="eye"] .save-hint,
+[data-theme="eye"] .mod-count,
+[data-theme="eye"] .note-foot { color: #7A6E5F; }
+
+/* ---------- 暗色：沿用既有 body.dark-mode，仅把整体色温从冷蓝拉回暖黑 ---------- */
+body.dark-mode {
+  background: linear-gradient(180deg, #191411 0%, #171310 55%, #100E0C 100%) !important;
+  color: #F5EFEA;
+}
+body.dark-mode header {
+  background: rgba(23, 20, 18, 0.92) !important;
+  border-bottom-color: #2A231E !important;
+}
+body.dark-mode .card,
+body.dark-mode .quadrant,
+body.dark-mode .modal-box,
+body.dark-mode .note,
+body.dark-mode .tl-calendar { border-color: #2A231E; }
+
+/* ---------- 顶栏主题按钮：三主题下的图标可见性 ---------- */
+/* 默认（亮色）显示月亮；非亮色显示太阳 */
+[data-theme="dark"] .btn-theme-toggle .icon-sun,
+[data-theme="eye"] .btn-theme-toggle .icon-sun { display: inline-block; color: #F97316; }
+[data-theme="dark"] .btn-theme-toggle .icon-moon,
+[data-theme="eye"] .btn-theme-toggle .icon-moon { display: none; }
+[data-theme="eye"] .btn-theme-toggle { border-color: #E5DCCB; background: #FBF8F1; color: #7A6E5F; }
+
+</style>
+<script>if(typeof window.QNLogger==='undefined'){window.QNLogger={info:function(){},warn:function(){},error:function(){},debug:function(){}};}</script>
+<script>
+// 全局错误兜底：任何脚本错误/未捕获 Promise 拒绝都显示为红色横幅，绝不让页面静默空白；
+// 并提供「重置并刷新」按钮（清空共享 IndexedDB 后重载），用于脏数据自救。
+(function(){
+  function esc(s){return String(s==null?'':s).replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];});}
+  function ensureBanner(){
+    var b=document.getElementById('wb-fatal');
+    if(b)return b;
+    b=document.createElement('div');
+    b.id='wb-fatal';
+    b.style.cssText='position:fixed;left:0;right:0;top:0;z-index:99999;background:#b91c1c;color:#fff;font:13px/1.5 -apple-system,system-ui,sans-serif;padding:10px 14px;box-shadow:0 2px 10px rgba(0,0,0,.35);display:none;';
+    if(document.body){document.body.appendChild(b);}else{document.addEventListener('DOMContentLoaded',function(){if(!document.getElementById('wb-fatal'))document.body.appendChild(b);});}
+    return b;
+  }
+  window.__wbShowFatal=function(msg){
+    var b=ensureBanner();
+    b.style.display='block';
+    b.innerHTML='<strong>效率工具加载出错：</strong>'+esc(msg)+
+      ' <button id="wb-fatal-reset" style="margin-left:12px;background:#fff;color:#b91c1c;border:0;border-radius:4px;padding:3px 10px;cursor:pointer;font-weight:700;">重置并刷新</button>';
+    var r=document.getElementById('wb-fatal-reset');
+    if(r)r.onclick=function(){
+      try{var req=indexedDB.deleteDatabase('QianniuCollectorDB');req.onsuccess=req.onerror=function(){location.reload();};}catch(e){location.reload();}
+    };
+  };
+  window.addEventListener('error',function(e){ if(window.__wbShowFatal) window.__wbShowFatal((e&&e.message)||'脚本错误'); });
+  window.addEventListener('unhandledrejection',function(e){ if(window.__wbShowFatal) window.__wbShowFatal('异步错误：'+((e&&e.reason&&e.reason.message)||(e&&e.reason)||'未知')); });
+})();
+</script>
+<link rel="stylesheet" href="../scrollbar.css?v=1">
+</head>
+<body>
+
+<header>
+  <div class="topbar">
+    <div class="brand"><span style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:6px;background:linear-gradient(135deg,#ff6a00,#ff9500);color:#fff;font-weight:700;font-size:13px;margin-right:6px;flex:none;">牛</span>千牛数据助手 · 效率工具<span style="font-size:11px;color:#999;margin-left:6px;font-weight:500;">v1.2.2</span></div>
+    <div class="top-actions">
+      <button id="btn-theme-toggle" class="btn-theme-toggle" type="button" title="切换深色/浅色模式">
+        <i class="ti ti-sun icon-sun"></i>
+        <i class="ti ti-moon icon-moon"></i>
+      </button>
+      <span class="save-hint" id="save-hint"></span>
+      <button class="btn" id="btn-sync-settings" type="button" title="同步设置"><i class="ti ti-settings"></i>同步设置</button>
+      <button class="btn" id="btn-backup-import" type="button" title="备份与导入"><i class="ti ti-database"></i>备份与导入</button>
+      <button class="btn" id="btn-help" type="button" title="查看使用说明"><i class="ti ti-book"></i>使用说明</button>
+    </div>
+  </div>
+  <div class="pomo-bar">
+    <div class="header-left">
+      <div class="pomo-icon-wrap">
+        <img src="icons/tomato_timer.svg" class="pomo-icon" alt="番茄钟">
+      </div>
+      <span class="status-badge" id="timer-mode">专注中</span>
+      <span class="timer-display" id="timer-time">25:00</span>
+    </div>
+    <div class="header-center">
+      <div class="task-select-wrapper">
+        <label for="pomo-cat" class="task-select-label"><i class="ti ti-category"></i>关联分类</label>
+        <select id="pomo-cat" class="custom-select">
+          <option value="">-- 选择分类 (可选) --</option>
+        </select>
+      </div>
+      <div class="button-group">
+        <button class="btn primary" id="tog" type="button"><i class="ti ti-player-play"></i>开始</button>
+        <button class="btn" id="reset" type="button"><i class="ti ti-refresh"></i>重置</button>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="stats-group">
+        <span class="tag" id="pomo-round">第 1/4 轮</span>
+        <span class="tag tag-long" id="pomo-total">今日累计 0 次 · 0 分钟</span>
+      </div>
+      <div class="icon-group">
+        <button class="icon-btn" id="btn-show-pomo-guide" type="button" title="番茄工作法指南"><i class="ti ti-alert-circle"></i></button>
+        <button class="icon-btn" id="btn-open-pomo-settings" type="button" title="番茄钟设置"><i class="ti ti-settings"></i></button>
+      </div>
+    </div>
+    <div class="progress-bar-container"><i id="timer-fill"></i></div>
+  </div>
+  <div class="quote-bar" id="quote-bar">
+    <i class="ti ti-quote"></i>
+    <span id="quote-text">正在加载名言...</span>
+    <span id="quote-from"></span>
+    <div class="quote-actions">
+      <div class="quote-settings-inline">
+        <select id="quote-mode-select">
+          <option value="api">切换：网络接口</option>
+          <option value="custom">切换：自制金句</option>
+        </select>
+        <select id="quote-api-select">
+          <option value="https://v1.hitokoto.cn/?c=i">一言·励志诗词</option>
+          <option value="https://v1.hitokoto.cn/?c=d">一言·文学经典</option>
+          <option value="https://v1.hitokoto.cn/?c=h">一言·影视台词</option>
+        </select>
+        <button class="btn-xs" id="btn-manage-custom" type="button" style="display:none;">管理自制库</button>
+      </div>
+      <button id="btn-refresh-quote" type="button" title="换一句"><i class="ti ti-refresh"></i></button>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+  <aside class="col-left">
+    <section class="card timeline-card">
+      <div class="mod-head"><i class="ti ti-timeline" style="color:#8B5CF6;"></i><h3>时光轴</h3><button id="tl-lyu-btn" class="btn-xs" type="button" title="柳比歇夫时间管理法说明"><i class="ti ti-hourglass-high"></i></button><button id="tl-add-btn" class="btn-xs" type="button" title="手动增加时间块"><i class="ti ti-plus"></i></button><button id="btn-manage-cats" class="btn-xs" type="button" title="管理分类"><i class="ti ti-adjustments-horizontal"></i></button><button id="tl-cal-btn" class="btn-xs" type="button" title="按日期定位"><i class="ti ti-calendar"></i></button></div>
+      <div id="tl-calendar" class="tl-calendar"></div>
+      <div id="today-summary"></div>
+      <div class="mood-bar" id="mood-bar">
+        <div class="mood-title"><i class="ti ti-mood-smile"></i>此刻心情</div>
+        <div class="mood-icons" id="mood-icons">
+          <button type="button" class="mood-btn" data-mood="great" title="极佳/高效"><i class="ti ti-mood-smile-beam"></i></button>
+          <button type="button" class="mood-btn" data-mood="calm" title="平静/正常"><i class="ti ti-mood-smile"></i></button>
+          <button type="button" class="mood-btn" data-mood="energetic" title="充满干劲"><i class="ti ti-flame"></i></button>
+          <button type="button" class="mood-btn" data-mood="tired" title="疲惫/劳累"><i class="ti ti-mood-sad"></i></button>
+          <button type="button" class="mood-btn" data-mood="anxious" title="焦虑/低谷"><i class="ti ti-mood-empty"></i></button>
+        </div>
+        <div class="mood-input-row">
+          <input type="text" id="mood-text" class="mood-input" maxlength="200" placeholder="写点什么... (可选)">
+          <button type="button" id="mood-save" class="mood-save" title="保存心情记录"><i class="ti ti-plus"></i></button>
+        </div>
+        <div class="mood-hint">点图标即可快速记录（无需文字）；或选图标 + 填文字后点保存</div>
+      </div>
+      <div id="timeline-list"></div>
+    </section>
+  </aside>
+  <div class="col-right">
+    <main id="grid"></main>
+  </div>
+</div>
+
+<div class="mask" id="mask">
+  <div class="modal-box">
+    <p id="modal-text"></p>
+    <button class="btn primary" id="modal-ok" type="button">知道了</button>
+  </div>
+</div>
+
+<!-- 同步设置弹窗（IndexedDB 静默镜像同步，idb-backup.js） -->
+<div class="mask" id="sync-settings-mask">
+  <div class="modal-box modal-lg">
+    <div class="modal-head">
+      <h3>同步设置</h3>
+      <button class="btn-close" id="btn-close-sync-settings" type="button"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="modal-body">
+      <label class="sync-opt">
+        <input type="checkbox" id="idb-auto-backup">
+        <span>开启 5分钟/关页 自动实时镜像同步</span>
+      </label>
+      <div class="sync-sub-row">
+        <label class="sync-sub-label" for="idb-subfolder">镜像存放子目录</label>
+        <input type="text" id="idb-subfolder" class="sync-sub-input" placeholder="QN_Backups" autocomplete="off" spellcheck="false">
+      </div>
+      <div class="sync-actions">
+        <button class="btn primary" id="idb-backup-now" type="button"><i class="ti ti-database"></i>立即同步/覆写</button>
+        <button class="btn" id="idb-import" type="button"><i class="ti ti-upload"></i>导入备份</button>
+        <input type="file" id="idb-import-file" accept=".json,application/json" hidden>
+      </div>
+      <div class="sync-hint">后台沙盒（storage.local / 沙盒 IndexedDB）每 5 分钟、采集落库时静默覆写，保证冷启动与内部读取速度；关闭 / 刷新标签页时会自动将全量数据下载覆盖为「下载 / <span id="idb-subfolder-preview">QN_Backups</span> / qn_idb_sync_mirror.json」固定文件（直接覆盖、不堆积副本）。手动「立即同步/覆写」同时落本地文件与后台。<br><b>注：</b>本地运营工作台版无浏览器扩展沙盒，后台镜像同步不可用；完整数据备份请使用上方的「备份与导入」。</div>
+    </div>
+  </div>
+</div>
+
+<!-- 备份与导入弹窗（工作台全量数据备份/恢复） -->
+<div class="mask" id="backup-import-mask">
+  <div class="modal-box modal-lg">
+    <div class="modal-head">
+      <h3>备份与导入</h3>
+      <button class="btn-close" id="btn-close-backup-import" type="button"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="sync-actions">
+        <button class="btn primary" id="btn-export-data" type="button"><i class="ti ti-download"></i>导出全量备份</button>
+        <button class="btn" id="btn-import-data" type="button"><i class="ti ti-upload"></i>从备份恢复</button>
+        <input type="file" id="import-file" accept=".json,application/json" hidden>
+      </div>
+      <div class="sync-hint">导出：将四象限待办、便签、网址分类、番茄钟、金句库、时光轴等全部工作台数据打包下载为 JSON 文件。恢复：从该文件完整还原工作台数据（将覆盖当前数据）。</div>
+    </div>
+  </div>
+</div>
+
+<!-- 新建待办弹窗 -->
+<div class="mask" id="todo-modal-mask">
+  <div class="modal-box modal-lg">
+    <div class="modal-head">
+      <h3 id="todo-modal-title">新建待办事项</h3>
+      <button class="btn-close" id="btn-close-todo-modal" type="button"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>待办内容</label>
+        <input type="text" id="todo-input-text" placeholder="接下来准备做什么..." autocomplete="off">
+      </div>
+      <div class="form-group">
+        <label>四象限分类</label>
+        <div class="quad-selector">
+          <label class="quad-opt q1">
+            <input type="radio" name="todo-quad" value="q1" checked>
+            <span class="quad-dot"></span>
+            <span class="quad-badge">P1</span>
+            <span class="quad-label">重要且紧急</span>
+          </label>
+          <label class="quad-opt q2">
+            <input type="radio" name="todo-quad" value="q2">
+            <span class="quad-dot"></span>
+            <span class="quad-badge">P2</span>
+            <span class="quad-label">重要不紧急</span>
+          </label>
+          <label class="quad-opt q3">
+            <input type="radio" name="todo-quad" value="q3">
+            <span class="quad-dot"></span>
+            <span class="quad-badge">P3</span>
+            <span class="quad-label">紧急不重要</span>
+          </label>
+          <label class="quad-opt q4">
+            <input type="radio" name="todo-quad" value="q4">
+            <span class="quad-dot"></span>
+            <span class="quad-badge">P4</span>
+            <span class="quad-label">不紧急不重要</span>
+          </label>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>截止 / 提醒时间（可选）</label>
+        <input type="datetime-local" id="todo-input-time">
+      </div>
+      <div class="form-group">
+        <label>预计所需时间</label>
+        <select id="todo-estimate-hours" class="form-control">
+          <option value="0">不设预计用时</option>
+          <option value="0.5">0.5 小时 (30分钟)</option>
+          <option value="1">1 小时</option>
+          <option value="1.5">1.5 小时</option>
+          <option value="2">2 小时</option>
+          <option value="3">3 小时</option>
+          <option value="4">4 小时</option>
+          <option value="8">8 小时 (1天)</option>
+          <option value="16">16 小时 (2天)</option>
+          <option value="24">24 小时 (3天)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>任务便签 / 备注（可选）</label>
+        <textarea id="todo-input-note" class="form-control todo-modal-note" rows="2" placeholder="输入任务补充说明 / 便签..."></textarea>
+      </div>
+      <div class="form-group">
+        <label>重复规则</label>
+        <select id="todo-input-repeat" class="form-control">
+          <option value="none">不重复</option>
+          <option value="daily">每天</option>
+          <option value="workday">工作日 (周一至周五)</option>
+          <option value="weekly">每周</option>
+          <option value="monthly">每月</option>
+          <option value="yearly">每年</option>
+          <option value="custom">自定义重复...</option>
+        </select>
+      </div>
+      <div id="custom-repeat-panel" class="custom-repeat-box" style="display:none;">
+        <div class="custom-row">
+          <span class="custom-label">重复间隔：</span>
+          <div class="custom-inline">
+            每 <input type="number" id="custom-repeat-num" value="1" min="1" max="99" class="input-num">
+            <select id="custom-repeat-unit" class="select-sm">
+              <option value="day">天</option>
+              <option value="week" selected>周</option>
+              <option value="month">个月</option>
+              <option value="year">年</option>
+            </select>
+          </div>
+        </div>
+        <div class="custom-row" id="custom-week-days-row" style="display:flex;">
+          <span class="custom-label">重复时间：</span>
+          <div class="week-picker">
+            <label class="week-btn"><input type="checkbox" value="1"><span>一</span></label>
+            <label class="week-btn"><input type="checkbox" value="2"><span>二</span></label>
+            <label class="week-btn"><input type="checkbox" value="3"><span>三</span></label>
+            <label class="week-btn"><input type="checkbox" value="4"><span>四</span></label>
+            <label class="week-btn"><input type="checkbox" value="5"><span>五</span></label>
+            <label class="week-btn"><input type="checkbox" value="6"><span>六</span></label>
+            <label class="week-btn"><input type="checkbox" value="0"><span>日</span></label>
+          </div>
+        </div>
+        <div class="custom-row">
+          <span class="custom-label">结束条件：</span>
+          <select id="custom-end-type" class="form-control">
+            <option value="never">永不结束</option>
+            <option value="count">达到指定次数后结束</option>
+            <option value="date">到达指定日期后结束</option>
+          </select>
+        </div>
+        <div class="custom-row" id="end-val-row" style="display:none;">
+          <span class="custom-label"></span>
+          <div id="end-val-container"></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" id="btn-cancel-todo" type="button">取消</button>
+      <button class="btn primary" id="btn-save-todo" type="button">保存待办</button>
+    </div>
+  </div>
+</div>
+
+<!-- 四象限使用指南弹窗 -->
+<div class="mask" id="guide-modal-mask">
+  <div class="modal-box guide-modal">
+    <div class="modal-head">
+      <h3><i class="ti ti-chart-quadrant"></i> 如何高效使用四象限工作法？</h3>
+      <button class="btn-close" id="btn-close-guide-modal" type="button"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="modal-body guide-body">
+      <div class="guide-intro">
+        艾森豪威尔法则（Eisenhower Matrix）帮助我们摆脱“盲目忙碌”，将精力集中在真正产生价值的事情上。
+      </div>
+      <div class="quad-guide-grid">
+        <div class="guide-card q1-card">
+          <div class="card-tag">第一象限 (P1)</div>
+          <h4>重要 且 紧急</h4>
+          <div class="card-action">法则：立即去做 (Do First)</div>
+          <ul>
+            <li><strong>典型事项：</strong>突发危机、有严格截止日期的项目、设备故障。</li>
+            <li><strong>使用建议：</strong>保持在该象限事项不超过 20%。如果总是满载，说明缺乏前瞻性规划。</li>
+          </ul>
+        </div>
+        <div class="guide-card q2-card">
+          <div class="card-tag">第二象限 (P2)</div>
+          <h4>重要 不紧急</h4>
+          <div class="card-action">法则：制定计划 (Schedule)</div>
+          <ul>
+            <li><strong>典型事项：</strong>技能提升、战略规划、系统优化、健康管理。</li>
+            <li><strong>使用建议：</strong><strong>核心黄金区！</strong>投入 60%-70% 的精力。做好了 P2，P1 的危机就会大幅减少。</li>
+          </ul>
+        </div>
+        <div class="guide-card q3-card">
+          <div class="card-tag">第三象限 (P3)</div>
+          <h4>不重要 紧急</h4>
+          <div class="card-action">法则：授权/拒绝 (Delegate/Refuse)</div>
+          <ul>
+            <li><strong>典型事项：</strong>不必要的临时会议、频繁的即时消息打扰、他人求助。</li>
+            <li><strong>使用建议：</strong>学会拒绝或标准化流程，避免被“假的紧急感”牵着鼻子走。</li>
+          </ul>
+        </div>
+        <div class="guide-card q4-card">
+          <div class="card-tag">第四象限 (P4)</div>
+          <h4>不重要 不紧急</h4>
+          <div class="card-action">法则：尽量不做 (Eliminate)</div>
+          <ul>
+            <li><strong>典型事项：</strong>无目的刷社交媒体、无意义琐事、拖延时的避难所。</li>
+            <li><strong>使用建议：</strong>果断清除或严格限制时间，不要让它消耗你的核心精力。</li>
+          </ul>
+        </div>
+      </div>
+      <div class="guide-tips">
+        <h4><i class="ti ti-bulb"></i> 高效落地的 3 个黄金心法：</h4>
+        <ol>
+          <li><strong>每天优先规划 P2：</strong> 每天早晨或前一天晚上，强制自己安排 1-2 项 P2（重要不紧急）的任务。</li>
+          <li><strong>警惕 P3 伪装成 P1：</strong> 别人急着找你的事（P3），不等于对你的核心目标重要。</li>
+          <li><strong>控制整体数量：</strong> 每个象限同时进行的事项不宜过多，保持看板清晰简洁。</li>
+        </ol>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn primary" id="btn-know-guide" type="button">我知道了</button>
+    </div>
+  </div>
+</div>
+
+<!-- 番茄工作法指南弹窗 -->
+<div class="mask" id="pomo-guide-modal-mask">
+  <div class="modal-box pomo-guide-modal">
+    <div class="modal-head">
+      <h3><i class="ti ti-alarm"></i> 什么是番茄工作法？</h3>
+      <button class="btn-close" id="btn-close-pomo-modal" type="button"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="modal-body guide-body">
+      <div class="guide-intro pomo-intro">
+        番茄工作法（Pomodoro Technique）由弗朗西斯科·西里洛于1980年代后期发明。它是一种简单易行的时间管理方法，通过<strong>高强度专注 + 定期短暂休息</strong>，帮助我们战胜拖延、保持大脑清晰并减少疲劳。
+      </div>
+      <div class="pomo-rhythm-box">
+        <h4><i class="ti ti-flame"></i> 标准番茄节奏 (25 + 5 循环)</h4>
+        <div class="rhythm-steps">
+          <div class="rhythm-step">
+            <span class="step-num">1</span>
+            <span class="step-txt">选择 1 项待办任务</span>
+          </div>
+          <div class="rhythm-arrow"><i class="ti ti-arrow-right"></i></div>
+          <div class="rhythm-step active-work">
+            <span class="step-num">2</span>
+            <span class="step-txt">专注工作 <strong>25 分钟</strong></span>
+          </div>
+          <div class="rhythm-arrow"><i class="ti ti-arrow-right"></i></div>
+          <div class="rhythm-step active-rest">
+            <span class="step-num">3</span>
+            <span class="step-txt">短暂休息 <strong>5 分钟</strong></span>
+          </div>
+          <div class="rhythm-arrow"><i class="ti ti-arrow-right"></i></div>
+          <div class="rhythm-step">
+            <span class="step-num">4</span>
+            <span class="step-txt">完成4个番茄后，长休 <strong>15~30 分钟</strong></span>
+          </div>
+        </div>
+      </div>
+      <div class="pomo-guide-grid">
+        <div class="guide-card pomo-card-1">
+          <h4><i class="ti ti-shield-x"></i> 1. 番茄钟具有不可分割性</h4>
+          <p>一个番茄时间（25分钟）是最小的专注单元。如果中途被非紧急事务打断，该番茄钟作废，需要重新计时。</p>
+        </div>
+        <div class="guide-card pomo-card-2">
+          <h4><i class="ti ti-bell-off"></i> 2. 隔离外部干扰</h4>
+          <p>开启番茄钟前，关闭不必要的通知、静音手机。遇到突发想法时，先记录在待办列表，等番茄钟结束后再处理。</p>
+        </div>
+        <div class="guide-card pomo-card-3">
+          <h4><i class="ti ti-coffee"></i> 3. 严格执行休息</h4>
+          <p>5分钟休息时必须离开座位！远眺、喝水、伸展身体，<strong>不要刷社交媒体或看复杂邮件</strong>，让大脑得到真正的放松。</p>
+        </div>
+        <div class="guide-card pomo-card-4">
+          <h4><i class="ti ti-chart-arrows"></i> 4. 结合四象限待办</h4>
+          <p>优先选择四象限中<strong>第二象限（重要不紧急）</strong>或<strong>第一象限（重要紧急）</strong>的任务来使用番茄钟。</p>
+        </div>
+      </div>
+      <div class="guide-tips">
+        <h4><i class="ti ti-bulb"></i> 番茄工作法避坑心法：</h4>
+        <ol>
+          <li><strong>不要过度追求数量：</strong> 每天能高质量完成 6~8 个有效番茄钟就已经非常优秀，不要为了凑数而忽视质量。</li>
+          <li><strong>根据个人节奏微调：</strong> 如果 25 分钟太短（如写代码或深度写作），可调整为 45分钟工作 + 10分钟休息（根据系统设置自定义）。</li>
+        </ol>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn primary" id="btn-know-pomo-guide" type="button">我知道了</button>
+    </div>
+  </div>
+</div>
+
+<!-- 番茄钟设置弹窗 -->
+<div class="mask" id="pomo-settings-modal-mask">
+  <div class="modal-box modal-lg" style="max-width:400px;">
+    <div class="modal-head">
+      <h3><i class="ti ti-adjustments"></i> 番茄钟设置</h3>
+      <button class="btn-close" id="btn-close-pomo-settings" type="button"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>专注时长（分钟）</label>
+        <input type="number" id="pomo-set-work" class="form-control" min="1" max="120" value="25">
+      </div>
+      <div class="form-group">
+        <label>短休时长（分钟）</label>
+        <input type="number" id="pomo-set-break" class="form-control" min="1" max="60" value="5">
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" id="btn-cancel-pomo-settings" type="button">取消</button>
+      <button class="btn primary" id="btn-save-pomo-settings" type="button">保存设置</button>
+    </div>
+  </div>
+</div>
+
+<!-- 柳比歇夫时间管理法说明弹窗 -->
+<div class="mask" id="lyu-modal-mask">
+  <div class="modal-box lyu-modal">
+    <div class="modal-head">
+      <h3><i class="ti ti-hourglass-high" style="color:#EA580C;"></i> 柳比歇夫时间管理法</h3>
+      <button class="btn-close" id="btn-close-lyu-modal" type="button"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="modal-body guide-body">
+      <div class="lyu-intro">
+        亚历山大·柳比歇夫用 56 年时间记录每一段时间的去向，把时间当成可量化的「资产」。我们不关注「做了什么待办」，而关注<strong>「实际消耗了多少时间段、各类别占比多少」</strong>。
+      </div>
+      <div class="lyu-steps">
+        <div class="lyu-step-item">
+          <span class="step-num">1</span>
+          <div class="lyu-step-body">
+            <strong><i class="ti ti-category"></i> 选择类别（专注前）</strong>
+            <p>开启番茄钟前，从下拉框选定本次时间归类（学习 / 沟通 / 办公……具体类别可在管理模式下增删）。</p>
+          </div>
+        </div>
+        <div class="lyu-step-item">
+          <span class="step-num">2</span>
+          <div class="lyu-step-body">
+            <strong><i class="ti ti-player-record"></i> 自动捕获（专注时）</strong>
+            <p>正常走完番茄钟即可，倒计时结束后系统自动记录起止时刻与精准耗时，休息时段也会自动记为「休息」，无需手动记账。</p>
+          </div>
+        </div>
+        <div class="lyu-step-item">
+          <span class="step-num">3</span>
+          <div class="lyu-step-body">
+            <strong><i class="ti ti-chart-pie"></i> 日结盘点（时光轴）</strong>
+            <p>时光轴顶部自动生成「今日时间统计」，按类别累加当天消耗；点击「+」还可手动补记漏算的时间块，助你复盘校准时间预算。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn primary" id="btn-know-lyu" type="button">我知道了</button>
+    </div>
+  </div>
+</div>
+
+<!-- 自制金句管理弹窗 -->
+<div class="mask" id="quote-modal-mask">
+  <div class="modal-box modal-lg">
+    <div class="modal-head">
+      <h3>自制金句库管理</h3>
+      <button class="btn-close" id="btn-close-quote-modal" type="button"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="quote-add-box">
+        <input type="text" id="custom-quote-text" placeholder="输入金句/格言内容..." autocomplete="off">
+        <input type="text" id="custom-quote-from" placeholder="出处/作者 (可选)" autocomplete="off">
+        <button class="btn primary" id="btn-add-custom-quote" type="button"><i class="ti ti-plus"></i>添加</button>
+      </div>
+      <div class="quote-batch-actions">
+        <button class="btn-xs" id="btn-download-quote-tpl" type="button"><i class="ti ti-download"></i>下载导入模板</button>
+        <button class="btn-xs" id="btn-import-quotes" type="button"><i class="ti ti-upload"></i>批量导入金句</button>
+        <input type="file" id="quote-import-file" accept=".csv" hidden>
+      </div>
+      <div class="quote-list-wrap">
+        <ul id="custom-quote-list"></ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 手动增加时间块弹窗 -->
+<div class="mask" id="tl-add-modal-mask">
+  <div class="modal-box modal-lg" style="max-width:400px;">
+    <div class="modal-head">
+      <h3><i class="ti ti-plus"></i> 手动增加时间块</h3>
+      <button class="btn-close" id="btn-close-tl-add-modal" type="button"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>分类</label>
+        <select id="tl-add-cat" class="form-control"></select>
+      </div>
+      <div class="form-group">
+        <label>时长（分钟）</label>
+        <input type="number" id="tl-add-min" class="form-control" min="1" max="1440" value="25">
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" id="btn-cancel-tl-add" type="button">取消</button>
+      <button class="btn primary" id="btn-save-tl-add" type="button">添加</button>
+    </div>
+  </div>
+</div>
+
+<!-- 分类管理弹窗 -->
+<div class="mask" id="cats-modal-mask">
+  <div class="modal-box modal-lg" style="max-width:420px;">
+    <div class="modal-head">
+      <h3><i class="ti ti-adjustments-horizontal"></i> 分类管理</h3>
+      <button class="btn-close" id="btn-close-cats-modal" type="button"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="quote-add-box">
+        <input type="text" id="cats-input" placeholder="新分类名称..." autocomplete="off">
+        <button class="btn primary" id="btn-add-cat" type="button"><i class="ti ti-plus"></i>添加分类</button>
+      </div>
+      <div class="quote-list-wrap">
+        <ul id="cats-list"></ul>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn primary" id="btn-close-cats-modal-foot" type="button">完成</button>
+    </div>
+  </div>
+</div>
+
+<script src="db.js"></script>
+<script src="workbench-utils.js"></script>
+<script src="workbench-store.js"></script>
+<script src="workbench-timeline.js"></script>
+<script src="workbench-pomodoro.js"></script>
+<script src="workbench-modal.js"></script>
+<script src="workbench-todos.js"></script>
+<script src="workbench-quote.js"></script>
+<script src="idb-backup.js"></script>
+<script src="workbench.js"></script>
+</body>
+</html>

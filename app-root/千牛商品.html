@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="mobile-ui.css">
+<script src="mobile-adapter.js"></script>
+<title>商品管理 · 运营工作台</title>
+<style>
+  :root[data-theme="eye"]{
+    --bg:#F5F1E8; --panel:#FBF8F1; --panel2:#F0EADC;
+    --line:#E5DCCB; --line2:#D5C9B4;
+    --ink:#3C3229; --muted:#7A6E5F; --muted2:#A2957F;
+    --accent:#F97316; --accent-d:#EA580C; --accent-soft:rgba(249,115,10,0.12);
+    --ok:#16A34A; --danger:#EF4444;
+    --shadow:0 6px 24px rgba(60,50,41,.08);
+    --radius:14px;
+  }
+  :root{
+    --bg:#100E0C; --panel:#171412; --panel2:#221C18;
+    --line:#2A231E; --line2:#3D332C;
+    --ink:#F1F5F9; --muted:#94A3B8; --muted2:#64748B;
+    --accent:#F97316; --accent-d:#EA580C; --accent-soft:rgba(249,115,10,0.12);
+    --ok:#34D399; --danger:#F87171;
+    --shadow:0 8px 28px rgba(0,0,0,.40);
+    --radius:14px;
+  }
+  /* 暗色主题：显式声明，不再依赖 :root 默认值（防止默认值变更后暗色失效） */
+  :root[data-theme="dark"]{
+    --bg:#100E0C; --panel:#171412; --panel2:#221C18;
+    --line:#2A231E; --line2:#3D332C;
+    --ink:#F5EFEA; --muted:#B4A49A; --muted2:#8A7A70;
+    --accent:#FB923C; --accent-d:#F97316; --accent-soft:rgba(251,146,60,0.14);
+    --ok:#34D399; --danger:#F87171;
+    --shadow:0 8px 28px rgba(0,0,0,.40);
+    --radius:14px;
+  }
+  :root[data-theme="light"]{
+    --bg:#FAF7F5; --panel:#FFFFFF; --panel2:#F3EDE8;
+    --line:#EFE6DE; --line2:#DCD2C9;
+    --ink:#111827; --muted:#475569; --muted2:#94A3B8;
+    --accent:#F97316; --accent-d:#EA580C; --accent-soft:rgba(249,115,10,0.12);
+    --ok:#16A34A; --danger:#EF4444;
+    --shadow:0 6px 24px rgba(15,23,42,.10);
+    --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;margin:0;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    background:var(--bg); color:var(--ink);
+    display:flex; flex-direction:column; min-height:100vh;
+  }
+
+  header{
+    padding:16px 24px; border-bottom:1px solid var(--line);
+    display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+    background:linear-gradient(180deg, rgba(249,115,10,0.06), transparent);
+  }
+  header h1{font-size:19px; margin:0; font-weight:700; display:flex; align-items:center; gap:10px;}
+  header .dot{width:10px; height:10px; border-radius:50%; background:var(--accent); box-shadow:0 0 0 4px rgba(249,115,10,0.15);}
+  header .sub{font-size:12px; color:var(--muted);}
+  header .spacer{flex:1;}
+  .refresh-btn{
+    padding:8px 16px; border-radius:9px; border:1px solid var(--line2);
+    background:var(--panel2); color:var(--ink); cursor:pointer; font-size:13px; transition:.15s;
+  }
+  .refresh-btn:hover{border-color:var(--accent); color:var(--accent);}
+
+  .summary{display:flex; gap:12px; padding:14px 24px; flex-wrap:wrap; align-items:stretch;}
+  .stat{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:12px 18px; min-width:118px;}
+  .stat .k{font-size:12px; color:var(--muted); margin-bottom:6px;}
+  .stat .v{font-size:20px; font-weight:700; color:var(--accent);}
+  .sum-scope{
+    align-self:center; font-size:12px; color:var(--muted); margin-left:auto;
+    display:flex; align-items:center; gap:6px; white-space:nowrap;
+  }
+  .sum-scope .chip{
+    background:var(--panel); border:1px solid var(--line2); border-radius:999px;
+    padding:4px 12px; color:var(--muted);
+  }
+  .sum-scope.filtered .chip{
+    background:var(--accent-soft);
+    border-color:var(--accent); color:var(--accent); font-weight:600;
+  }
+  .sum-scope button{
+    background:none; border:none; color:var(--accent); cursor:pointer;
+    font-size:12px; font-family:inherit; text-decoration:underline; padding:0 2px;
+  }
+
+  .toolbar{display:flex; gap:10px; padding:0 24px 14px; flex-wrap:wrap; align-items:center;}
+  .toolbar input, .toolbar select{
+    background:var(--panel2); border:1px solid var(--line2); color:var(--ink);
+    border-radius:9px; padding:8px 12px; font-size:13px; outline:none; transition:.15s;
+  }
+  .toolbar input:focus, .toolbar select:focus{border-color:var(--accent);}
+  .toolbar input[type="text"]{min-width:240px;}
+  .toolbar .btn{
+    padding:8px 16px; border-radius:9px; border:1px solid var(--line2);
+    background:var(--panel2); color:var(--ink); cursor:pointer; font-size:13px; transition:.15s; white-space:nowrap;
+  }
+  .toolbar .btn:hover{border-color:var(--accent); color:var(--accent);}
+  .toolbar .btn.primary{background:var(--accent); border-color:var(--accent); color:#1a1206; font-weight:600;}
+  .toolbar .btn.primary:hover{background:var(--accent-d); border-color:var(--accent-d); color:#fff;}
+
+  /* 快捷筛选（2026-09-14 从「店铺分析 → 店铺商品总览」对齐过来）
+     口径与该页完全一致：新品超7天无动销 = 创建 7–30 天且累计销量 0；
+     常品超30天无动销 = 创建 >30 天且 30 日销量 0；销量TOP10 = 累计销量前 10。 */
+  .quickbar{display:flex; gap:8px; padding:0 24px 12px; flex-wrap:wrap; align-items:center;}
+  .quickbar .qlabel{font-size:12px; color:var(--muted);}
+  .quickbar .qbtn{
+    padding:6px 13px; border-radius:999px; border:1px solid var(--line2);
+    background:var(--panel2); color:var(--muted); cursor:pointer; font-size:12.5px;
+    font-family:inherit; transition:.15s; white-space:nowrap;
+  }
+  .quickbar .qbtn:hover{border-color:var(--accent); color:var(--accent);}
+  .quickbar .qbtn.active{
+    background:var(--accent-soft); border-color:var(--accent); color:var(--accent); font-weight:600;
+  }
+  .quickbar .qhint{font-size:12px; color:var(--muted2); margin-left:auto;}
+
+  .table-wrap{flex:1; padding:0 24px; overflow:auto; min-height:0;}
+  table{width:100%; border-collapse:collapse; font-size:13px; min-width:1700px;}
+  thead th{
+    position:sticky; top:0; background:var(--panel2); color:var(--muted);
+    text-align:left; padding:11px 12px; border-bottom:1px solid var(--line2);
+    font-weight:600; white-space:nowrap; z-index:2;
+  }
+  tbody td{padding:10px 12px; border-bottom:1px solid var(--line); vertical-align:middle; color:var(--ink); word-break:break-word; line-height:1.5;}
+  td.nowrap{white-space:nowrap;}
+  .mono{font-family:monospace; font-size:12px;}
+  tbody tr:hover{background:var(--panel);}
+  .num{text-align:right; font-variant-numeric:tabular-nums;}
+  thead th.num{text-align:right;}
+
+  /* 主图列（第 1 列，与插件导出 CSV 同序） */
+  .pic-cell{padding:8px 10px !important;}
+  .pic-cell a{display:inline-block; line-height:0; border-radius:7px; overflow:hidden; border:1px solid var(--line2);}
+  .pic-cell img{width:52px; height:52px; object-fit:cover; display:block; cursor:zoom-in; transition:.15s; background:var(--panel2);}
+  .pic-cell a:hover img{transform:scale(1.06); border-color:var(--accent);}
+  .pic-fallback{
+    display:inline-block; width:52px; height:52px; border-radius:7px;
+    border:1px dashed var(--line2); color:var(--muted2); font-size:10px;
+    text-align:center; line-height:52px; overflow:hidden;
+  }
+  /* 商品名称列：给足宽度（这一页的主视觉） */
+  td.name-cell{font-weight:600; min-width:260px; max-width:420px;}
+  thead th:nth-child(2), tbody td:nth-child(2){min-width:260px;}
+  /* 商品名称这一处的超链接（2026-09-14 加）—— 指向买家侧商品详情页。
+     2026-09-15 起「商品链接」列已删除，详情页只从标题进。 */
+  a.title-link{color:var(--ink); text-decoration:none; border-bottom:1px dashed transparent; transition:.15s;}
+  a.title-link:hover{color:var(--accent); border-bottom-color:var(--accent);}
+
+  .empty{text-align:center; color:var(--muted); padding:48px 0; font-size:14px;}
+  .tag{display:inline-block; padding:1px 8px; border-radius:999px; font-size:12px; font-weight:600;}
+  .tag-good{background:rgba(52,211,153,.15); color:#34D399;}
+  .tag-mid{background:rgba(249,115,10,.15); color:#F97316;}
+  .tag-bad{background:rgba(248,113,113,.15); color:#F87171;}
+  .muted2{color:var(--muted2);}
+  .na{
+    display:inline-block; font-size:11px; line-height:1.6;
+    color:var(--muted2); border:1px dashed var(--line2);
+    border-radius:6px; padding:0 6px; white-space:nowrap;
+  }
+  .store-type{
+    display:inline-block; font-size:11px; font-weight:600; line-height:1.7;
+    padding:0 6px; border-radius:5px; margin-left:6px; vertical-align:1px;
+    border:1px solid transparent;
+  }
+  .store-type.tmall{ background:rgba(239,68,68,.12); color:#DC2626; border-color:rgba(239,68,68,.28); }
+  .store-type.taobao{ background:rgba(249,115,10,.12); color:#EA580C; border-color:rgba(249,115,10,.28); }
+
+  .pagination{display:flex; align-items:center; gap:10px; padding:14px 24px; border-top:1px solid var(--line); flex-wrap:wrap;}
+  .pagination .info{font-size:12px; color:var(--muted);}
+  .pagination button{
+    padding:7px 14px; border-radius:8px; border:1px solid var(--line2);
+    background:var(--panel2); color:var(--ink); cursor:pointer; font-size:13px; transition:.15s;
+  }
+  .pagination button:disabled{opacity:.4; cursor:not-allowed;}
+  .pagination button:not(:disabled):hover{border-color:var(--accent); color:var(--accent);}
+  .pagination .pages{font-size:13px; color:var(--muted);}
+
+  .banner{
+    margin:14px 24px 0; padding:12px 16px; border-radius:10px;
+    background:rgba(248,113,113,0.12); border:1px solid rgba(248,113,113,0.35);
+    color:#FECACA; font-size:13px; display:none;
+  }
+  .banner.show{display:block;}
+</style>
+<script>
+(function(){
+  var WP='wb_theme', WS='wb_theme_auto_start', WE='wb_theme_auto_end';
+  function mins(t){ var p=String(t||'00:00').split(':'); return (parseInt(p[0],10)||0)*60+(parseInt(p[1],10)||0); }
+  function resolve(mode){
+    if(mode==='light'||mode==='dark'||mode==='eye') return mode;
+    if(mode!=='auto') return 'light';
+    var d=new Date(), m=d.getHours()*60+d.getMinutes(), s=1080, e=360;
+    try{ s=mins(localStorage.getItem(WS)||'18:00'); e=mins(localStorage.getItem(WE)||'06:00'); }catch(x){}
+    var dark=(s<e)?(m>=s&&m<e):(m>=s||m<e);
+    return dark?'dark':'light';
+  }
+  window.__wbResolveTheme = resolve;
+  function apply(){
+    var mode='light'; try{ mode=localStorage.getItem(WP)||'light'; }catch(e){}
+    document.documentElement.setAttribute('data-theme', resolve(mode));
+  }
+  apply();
+  window.addEventListener('message', function(e){
+    if(e.data && e.data.type==='wb-theme'){
+      var t=e.data.theme||e.data.mode;
+      if(t) document.documentElement.setAttribute('data-theme', resolve(t));
+      else apply();
+    }
+  });
+  try{ window.addEventListener('storage', function(e){ if(!e.key||e.key===WP||e.key===WS||e.key===WE) apply(); }); }catch(e){}
+})();
+</script>
+<script>var APP_VERSION='v1.0.8';</script>
+<link rel="stylesheet" href="scrollbar.css?v=1">
+</head>
+<body>
+  <header>
+    <h1><span class="dot"></span>商品管理</h1>
+    <span class="sub">来自浏览器扩展导入的「商品」数据 · 本地存储 · 含在线时间与无动销分析</span>
+    <span class="spacer"></span>
+    <button class="refresh-btn" id="btnRefresh">↻ 刷新数据</button>
+  </header>
+
+  <div class="summary" id="summary">
+    <div class="stat"><div class="k">商品总数</div><div class="v" id="statTotal">0</div></div>
+    <div class="stat"><div class="k">店铺数</div><div class="v" id="statStore">0</div></div>
+    <div class="stat" title="按「商家编码」去重统计（缺失商家编码的记录不计数）">
+      <div class="k">商家编码数</div><div class="v" id="statCode">0</div>
+    </div>
+    <div class="stat" title="有商品主图（imgUrl）的记录数"><div class="k">有主图</div><div class="v" id="statImg" style="color:var(--ok)">0</div></div>
+    <div class="stat" title="页面未提供主图的记录数"><div class="k">缺主图</div><div class="v" id="statNoImg" style="color:var(--muted2)">0</div></div>
+    <div class="stat" title="所有商品库存之和"><div class="k">库存合计</div><div class="v" id="statStock">0</div></div>
+    <div class="stat" title="所有商品 30 日销量之和"><div class="k">30日销量</div><div class="v" id="statSales30">0</div></div>
+    <div class="stat" title="所有商品累计销量之和"><div class="k">累计销量</div><div class="v" id="statSalesAll">0</div></div>
+    <div class="stat" title="创建 7–30 天（含），且累计销量为 0 的商品数"><div class="k">新品超7天无动销</div><div class="v" id="statNewDead" style="color:var(--danger)">0</div></div>
+    <div class="stat" title="创建超过 30 天，且 30 日销量为 0 的商品数"><div class="k">常品超30天无动销</div><div class="v" id="statOldDead" style="color:var(--danger)">0</div></div>
+    <div class="sum-scope" id="sumScope">
+      <span class="chip" id="sumScopeChip">全部数据</span>
+      <button type="button" id="sumScopeClear" style="display:none">清空筛选</button>
+    </div>
+  </div>
+
+  <div class="banner" id="banner">无法连接运营工作台服务，请先双击「启动工作台.bat」启动本地服务。</div>
+  <div class="banner" id="fieldNote" style="background:rgba(249,115,10,.10); border-color:rgba(249,115,10,.30); color:var(--muted);"></div>
+
+  <div class="toolbar" id="toolbar">
+    <input type="text" id="kw" placeholder="搜索：商品名称 / 商品ID / 商家编码">
+    <select id="selStore"><option value="">全部店铺</option></select>
+    <select id="selStatus">
+      <option value="">全部状态</option>
+      <option value="img">有主图</option>
+      <option value="noimg">缺主图</option>
+      <option value="nocode">缺商家编码</option>
+      <option value="stock0">零库存</option>
+    </select>
+    <select id="selSort">
+      <option value="">默认排序</option>
+      <option value="sales30d">30日销量 ↓</option>
+      <option value="totalSales">累计销量 ↓</option>
+      <option value="onlineDays">在线时间 ↓</option>
+      <option value="stock">库存 ↓</option>
+      <option value="price">价格 ↓</option>
+      <option value="priceAsc">价格 ↑</option>
+    </select>
+    <button class="btn" id="btnClearFilter">清空筛选</button>
+    <span class="spacer" style="flex:1"></span>
+    <button class="btn" id="btnCsv">导出 CSV</button>
+    <button class="btn" id="btnJson">导出 JSON</button>
+  </div>
+
+  <div class="quickbar" id="quickbar">
+    <span class="qlabel">快捷筛选</span>
+    <button type="button" class="qbtn active" data-qf="all">全部</button>
+    <button type="button" class="qbtn" data-qf="new" title="创建 30 天内（含）的商品">新品</button>
+    <button type="button" class="qbtn" data-qf="newDead" title="创建 7–30 天，且累计销量为 0">新品超7天无动销</button>
+    <button type="button" class="qbtn" data-qf="oldDead" title="创建超过 30 天，且 30 日销量为 0">常品超30天无动销</button>
+    <button type="button" class="qbtn" data-qf="top10" title="按累计销量取前 10 名">销量TOP10</button>
+    <span class="qhint" id="qHint"></span>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr id="theadRow">
+          <!-- 列序**严格对齐插件「商品导出」CSV**（主图在第 1 列）：
+               主图 | 名称 | 商品ID | 商家编码 | 价格 | 库存 | 累计销量 | 30日销量 | 基础分 | 扶优分 | 创建时间 | 发布时间
+               其后追加工作台自有列：在线时间 / 状态 / 类目 / 店铺
+               （在线时间是页面算出来的派生列，放在插件列之后，保证插件 12 列仍然连续同序）
+               ⚠️ 2026-09-15 删除了「商品链接」列：商品名称本身就是超链接（点标题即可打开详情页），
+                  单独再放一列既占宽度又重复。详情页 URL 仍保留在 CSV 的商品名称列（HYPERLINK）。 -->
+          <th>商品主图</th>
+          <th>商品名称</th>
+          <th>商品ID</th>
+          <th>商家编码</th>
+          <th class="num">价格</th>
+          <th class="num">库存</th>
+          <th class="num">累计销量</th>
+          <th class="num">30日销量</th>
+          <th class="num">基础分</th>
+          <th class="num">扶优分</th>
+          <th>创建时间</th>
+          <th>发布时间</th>
+          <th class="num" title="今天 − 创建时间（天）。与「创建时间」同源，创建时间缺失则显示未采集">在线时间</th>
+          <th>状态</th>
+          <th>类目</th>
+          <th>店铺</th>
+        </tr>
+      </thead>
+      <tbody id="tbody">
+        <tr><td colspan="16" class="empty">正在加载数据…</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="pagination">
+    <span class="info" id="pageInfo">共 0 条</span>
+    <button id="btnPrev">‹ 上一页</button>
+    <span class="pages" id="pageLabel">第 1 / 1 页</span>
+    <button id="btnNext">下一页 ›</button>
+    <span class="spacer" style="flex:1"></span>
+    <span class="info">每页 <select id="pageSize" style="background:var(--panel2);color:var(--ink);border:1px solid var(--line2);border-radius:7px;padding:4px 6px;">
+      <option value="50">50</option><option value="100" selected>100</option><option value="200">200</option><option value="500">500</option>
+    </select> 条</span>
+  </div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ★ 列序与插件「商品导出」CSV 严格一致（主图在第 1 列、商品链接在插件 12 列之后）。
+     改列序时：这里、thead、buildCsv 的 headers、以及 cells 数组必须一起改，
+     否则会「静默串位」——不报错，只是每一列都错到隔壁。
+     16 = 插件 12 列（主图…发布时间）+ 工作台自有 4 列（在线时间/状态/类目/店铺）
+     ⚠️ 原来还有插件的第 13 列「商品链接」，2026-09-15 删掉了：
+        商品名称本身已是超链接（点标题即开详情页），再放一列纯属重复 + 占宽度。
+        详情页 URL 仍然保留在 CSV 的「商品名称」列里（=HYPERLINK）。 */
+  var COLS = 16;
+
+  /* 当前快捷筛选：all | newDead | oldDead | top10（对齐「店铺分析 → 店铺商品总览」） */
+  var currentQuick = 'all';
+
+  var allRecords = [];
+  var filtered = [];
+  var page = 1;
+  var pageSize = 100;
+
+  var $ = function (id) { return document.getElementById(id); };
+  function esc(s) { return (s == null) ? '' : String(s); }
+  function na(text) { return '<span class="na">' + (text || '未采集') + '</span>'; }
+
+  /* ===== 图片 URL 归一化 =====
+     与插件侧同一口径：// 开头补 https:；只认阿里系图床（挡第三方插件图标 / 伪装域名）。 */
+  var ALI_IMG_HOST = /(^|\/\/|\.)(alicdn\.com|taobaocdn\.com|tbcdn\.cn|aliimg\.com)\//i;
+  function normImgUrl(u) {
+    var s = String(u == null ? '' : u).trim();
+    if (!s) return '';
+    if (s.indexOf('//') === 0) s = 'https:' + s;
+    if (!/^https?:\/\//i.test(s)) return '';
+    return ALI_IMG_HOST.test(s) ? s : '';
+  }
+
+  /* ===== 商品详情页链接（2026-09-14 XZX 要求）=====
+     优先用插件传来的 itemUrl（页面真实 href 归一化后的结果），
+     取不到就用商品ID 拼买家详情页 —— 与插件侧 buildItemUrl 同一口径，两处必须一致。
+     ⚠️ 天猫商品的 id 走 item.taobao.com 会自动跳到 detail.tmall.com，所以这条兜底通用。
+     ⚠️ 只认买家侧详情页；别的域名一律丢弃（防止把卖家后台/第三方插件链接当商品页）。 */
+  function detailUrl(r) {
+    var u = String((r && r.itemUrl) || '').trim();
+    if (/^https?:\/\/(item\.taobao\.com|detail\.tmall\.com)\/item\.htm\?/i.test(u)) return u;
+    var id = String((r && r.productId) || '').trim();
+    return /^\d{6,}$/.test(id) ? ('https://item.taobao.com/item.htm?id=' + id) : '';
+  }
+  /* 商品名称列用的超链接渲染（无 URL 时退化成纯文本） */
+  function linkCell(url, text, cls) {
+    var t = String(text == null ? '' : text);
+    if (!url) return esc(t) || na('—');
+    return '<a class="' + (cls || '') + '" href="' + esc(url) + '" target="_blank" rel="noopener" ' +
+      'title="打开商品详情页">' + esc(t) + '</a>';
+  }
+
+  /* ===== 数值 ===== */
+  function num(v) { var n = Number(v); return isFinite(n) ? n : 0; }
+  function fmtInt(v) { return num(v).toLocaleString('zh-CN'); }
+  function fmtPrice(v) { return num(v) ? '¥ ' + num(v).toFixed(2) : '<span class="muted2">—</span>'; }
+
+  /* ===== 在线时间 / 无动销判定（2026-09-14 从「店铺分析 → 店铺商品总览」对齐过来）=====
+     在线时间（天）= floor((今天 − 创建时间) / 86400000)。
+     ⚠️ 口径必须与店铺分析页逐字一致：两边都用 new Date(item.createTime) + Math.floor，
+        否则同一个商品在两页会显示不同的天数。创建时间缺失 → 返回 null（不参与无动销判定）。 */
+  function onlineDays(r) {
+    var s = String((r && r.createTime) || '').trim();
+    if (!s) return null;
+    var d = new Date(s);
+    if (isNaN(d.getTime())) return null;
+    return Math.floor((Date.now() - d.getTime()) / 86400000);
+  }
+  function fmtOnlineDays(r) {
+    var d = onlineDays(r);
+    if (d == null) return na('未采集');
+    return '<span class="num">' + d + ' 天</span>';
+  }
+  /* 新品：创建 30 天内（含）。口径沿用原「店铺商品总览」的「新品数量」（days <= 30），
+     所以「新品」与「常品超30天无动销」在天数上刚好互补（都要求创建时间可解析）。 */
+  function isNewItem(r) {
+    var d = onlineDays(r);
+    return d != null && d <= 30;
+  }
+  /* 新品超7天无动销：创建 7–30 天（含）且累计销量为 0 */
+  function isNewDead(r) {
+    var d = onlineDays(r);
+    return d != null && d >= 7 && d <= 30 && num(r.totalSales) === 0;
+  }
+  /* 常品超30天无动销：创建超过 30 天且 30 日销量为 0 */
+  function isOldDead(r) {
+    var d = onlineDays(r);
+    return d != null && d > 30 && num(r.sales30d) === 0;
+  }
+
+  /* ===== 店铺类型推断（与评价页 / 问大家页同一口径）===== */
+  function storeType(store) {
+    var s = String(store || '');
+    if (/旗舰店|专卖店|专营店|天猫/i.test(s)) return 'tmall';
+    return 'taobao';
+  }
+  function storeTypeLabel(t) {
+    if (t === 'tmall') return '天猫';
+    if (t === 'taobao') return '淘宝';
+    return '';
+  }
+  function storeBadge(store) {
+    var t = storeType(store);
+    var lb = storeTypeLabel(t);
+    if (!lb) return '';
+    return '<span class="store-type ' + t + '" title="依据店铺名推断，仅供区分来源">' + lb + '</span>';
+  }
+
+  function uniq(arr) {
+    var seen = {}, out = [];
+    (arr || []).forEach(function (x) {
+      var k = String(x == null ? '' : x).trim();
+      if (k && !seen[k]) { seen[k] = true; out.push(k); }
+    });
+    return out.sort(function (a, b) { return a.localeCompare(b, 'zh'); });
+  }
+
+  /* ===== 主图单元格 ===== */
+  function picCell(r) {
+    var u = normImgUrl(r && r.imgUrl);
+    if (!u) return '<span class="pic-fallback" title="未采集到主图">无图</span>';
+    return '<a href="' + esc(u) + '" target="_blank" rel="noopener" title="点击查看原图">' +
+      '<img loading="lazy" src="' + esc(u) + '" alt="商品主图" ' +
+      'onerror="this.parentNode.parentNode.innerHTML=\'<span class=&quot;pic-fallback&quot;>加载失败</span>\'"></a>';
+  }
+
+  function buildSelects() {
+    var stores = uniq(allRecords.map(function (r) { return r.store || '默认店铺'; }));
+    var curS = $('selStore').value;
+    var htmlS = '<option value="">全部店铺</option>';
+    stores.forEach(function (s) {
+      var badge = storeType(s) === 'tmall' ? '（天猫）' : '（淘宝）';
+      htmlS += '<option value="' + s.replace(/"/g, '&quot;') + '">' + esc(s) + badge + '</option>';
+    });
+    $('selStore').innerHTML = htmlS;
+    $('selStore').value = curS;
+    renderFieldNote();
+  }
+
+  /* 字段缺失提示：让用户一眼看出「是数据源没给，不是页面算不出」 */
+  function renderFieldNote() {
+    var el = $('fieldNote');
+    if (!el) return;
+    if (!allRecords.length) { el.classList.remove('show'); el.textContent = ''; return; }
+    var noImg = allRecords.filter(function (r) { return !normImgUrl(r.imgUrl); }).length;
+    var noCat = allRecords.filter(function (r) { return !String(r.category || '').trim(); }).length;
+    var noCode = allRecords.filter(function (r) { return !String(r.merchantCode || '').trim(); }).length;
+    var parts = [];
+    if (noImg) parts.push('有 <b>' + noImg + '</b> 个商品没采到主图：千牛列表页该行没渲染出图片，' +
+      '或采集时图片还没加载出来（插件抓到的是空值，不是被过滤掉）。' +
+      '用上方「全部状态 → 缺主图」可筛出是哪些，回千牛重新采集那几行即可补上。');
+    if (noCat === allRecords.length) {
+      parts.push('「类目」列目前<b>全部为空</b>：千牛「出售中的宝贝」列表页没有类目列，' +
+        '插件无法从列表页拿到类目（需要逐个进商品编辑页，不现实）。此列保留占位，等后续接入其它数据源。');
+    }
+    if (noCode) parts.push('有 <b>' + noCode + '</b> 个商品缺「商家编码」。');
+    if (!parts.length) { el.classList.remove('show'); el.textContent = ''; return; }
+    el.innerHTML = '⚠ ' + parts.join('<br>⚠ ');
+    el.classList.add('show');
+  }
+
+  function applyFilters() {
+    var kw = ($('kw').value || '').trim().toLowerCase();
+    var s = $('selStore').value;
+    var st = $('selStatus').value;
+
+    filtered = allRecords.filter(function (r) {
+      if (kw) {
+        var hay = [r.title, r.productId, r.merchantCode, r.store, r.category];
+        if (hay.join('\u0001').toLowerCase().indexOf(kw) < 0) return false;
+      }
+      if (s && ((r.store || '默认店铺').trim() !== s)) return false;
+      if (st === 'img' && !normImgUrl(r.imgUrl)) return false;
+      if (st === 'noimg' && normImgUrl(r.imgUrl)) return false;
+      if (st === 'nocode' && String(r.merchantCode || '').trim()) return false;
+      if (st === 'stock0' && num(r.stock) !== 0) return false;
+      return true;
+    });
+
+    /* 快捷筛选（新品 / 无动销 / TOP10）—— 在店铺、搜索、状态之后生效 */
+    if (currentQuick === 'new') {
+      filtered = filtered.filter(isNewItem);
+    } else if (currentQuick === 'newDead') {
+      filtered = filtered.filter(isNewDead);
+    } else if (currentQuick === 'oldDead') {
+      filtered = filtered.filter(isOldDead);
+    } else if (currentQuick === 'top10') {
+      /* TOP10 的排名基准 = 当前其它筛选命中的集合（而不是全量），
+         这样「某店铺的销量 TOP10」才是用户想要的。 */
+      filtered.sort(function (a, b) { return num(b.totalSales) - num(a.totalSales); });
+      filtered = filtered.slice(0, 10);
+    }
+
+    var sort = $('selSort').value;
+    if (sort === 'onlineDays') {
+      filtered.sort(function (a, b) {
+        var da = onlineDays(a), db = onlineDays(b);
+        /* 创建时间缺失的一律沉到末尾（升序降序都沉底，避免它们抢占榜首） */
+        if (da == null && db == null) return 0;
+        if (da == null) return 1;
+        if (db == null) return -1;
+        return db - da;
+      });
+    } else if (sort) {
+      filtered.sort(function (a, b) {
+        if (sort === 'priceAsc') return num(a.price) - num(b.price);
+        return num(b[sort]) - num(a[sort]);
+      });
+    }
+
+    page = 1;
+    renderQuickHint();
+    renderStats();
+    render();
+  }
+
+  function render() {
+    var total = filtered.length;
+    var totalPages = Math.max(1, Math.ceil(total / pageSize));
+    if (page > totalPages) page = totalPages;
+    var start = (page - 1) * pageSize;
+    var slice = filtered.slice(start, start + pageSize);
+
+    var tbody = $('tbody');
+    tbody.innerHTML = '';
+    if (!slice.length) {
+      var tr0 = document.createElement('tr');
+      var td0 = document.createElement('td');
+      td0.colSpan = COLS; td0.className = 'empty';
+      td0.textContent = allRecords.length
+        ? '没有符合筛选条件的商品'
+        : '暂无数据，请先用浏览器扩展在千牛「出售中的宝贝」页采集，并点「发送到运营工作台」';
+      tr0.appendChild(td0); tbody.appendChild(tr0);
+    } else {
+      slice.forEach(function (r) {
+        var tr = document.createElement('tr');
+        var durl = detailUrl(r);
+        var cells = [
+          picCell(r),
+          linkCell(durl, r.title || '', 'title-link'),
+          r.productId ? '<span class="nowrap mono">' + esc(r.productId) + '</span>' : na('未采集'),
+          String(r.merchantCode || '').trim() ? esc(r.merchantCode) : na('无编码'),
+          '<span class="num">' + fmtPrice(r.price) + '</span>',
+          '<span class="num">' + fmtInt(r.stock) + '</span>',
+          '<span class="num">' + fmtInt(r.totalSales) + '</span>',
+          '<span class="num">' + fmtInt(r.sales30d) + '</span>',
+          '<span class="num">' + (num(r.baseScore) ? num(r.baseScore) : '<span class="muted2">—</span>') + '</span>',
+          '<span class="num">' + (num(r.qualityScore) ? num(r.qualityScore) : '<span class="muted2">—</span>') + '</span>',
+          esc(r.createTime) || na('—'),
+          esc(r.publishTime) || na('—'),
+          fmtOnlineDays(r),
+          String(r.status || '').trim() ? esc(r.status) : na('未采集'),
+          String(r.category || '').trim() ? esc(r.category) : na('未采集'),
+          esc(r.store || '默认店铺') + storeBadge(r.store)
+        ];
+        cells.forEach(function (v, i) {
+          var td = document.createElement('td');
+          if (i === 0) td.className = 'pic-cell';
+          if (i === 1) td.className = 'name-cell';
+          if (i >= 2 && i <= 3) td.className = 'nowrap';
+          if (i === 12) td.className = 'nowrap';   /* 在线时间 */
+          td.innerHTML = v;
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
+    }
+
+    $('pageInfo').textContent = '共 ' + total + ' 条';
+    $('pageLabel').textContent = '第 ' + page + ' / ' + totalPages + ' 页';
+    $('btnPrev').disabled = page <= 1;
+    $('btnNext').disabled = page >= totalPages;
+  }
+
+  /* ★ 统计卡跟随筛选（2026-09-14）：加新筛选条件时别忘了这里 —— 老 bug 是卡片永远按全量算。 */
+  function renderStats() {
+    var rows = Array.isArray(filtered) ? filtered : allRecords;
+    var scoped = hasActiveFilter();
+
+    $('statTotal').textContent = rows.length;
+    $('statStore').textContent = uniq(rows.map(function (r) { return r.store || '默认店铺'; })).length;
+    $('statCode').textContent = uniq(rows.map(function (r) { return r.merchantCode; })).length;
+
+    var withImg = 0, stock = 0, s30 = 0, sAll = 0;
+    rows.forEach(function (r) {
+      if (normImgUrl(r.imgUrl)) withImg++;
+      stock += num(r.stock);
+      s30 += num(r.sales30d);
+      sAll += num(r.totalSales);
+    });
+    $('statImg').textContent = withImg;
+    $('statNoImg').textContent = rows.length - withImg;
+    $('statStock').textContent = fmtInt(stock);
+    $('statSales30').textContent = fmtInt(s30);
+    $('statSalesAll').textContent = fmtInt(sAll);
+
+    /* 无动销两项也跟随筛选（与上面 6 张卡同一口径）：
+       先按当前筛选结果算，所以选中「新品超7天无动销」后另一项自然归零，属预期。 */
+    var nd = 0, od = 0;
+    rows.forEach(function (r) { if (isNewDead(r)) nd++; if (isOldDead(r)) od++; });
+    $('statNewDead').textContent = nd;
+    $('statOldDead').textContent = od;
+
+    renderScope(scoped, rows);
+  }
+
+  function hasActiveFilter() {
+    var kw = ($('kw') && $('kw').value || '').trim();
+    var s = $('selStore') && $('selStore').value;
+    var st = $('selStatus') && $('selStatus').value;
+    var so = $('selSort') && $('selSort').value;
+    return !!(kw || s || st || so || currentQuick !== 'all');
+  }
+
+  function renderScope(isScoped, rows) {
+    var wrap = $('sumScope');
+    if (!wrap) return;
+    var chip = $('sumScopeChip');
+    var btn = $('sumScopeClear');
+    if (isScoped) {
+      chip.textContent = describeFilter() + ' · ' + rows.length + ' 条';
+      wrap.classList.add('filtered');
+      if (btn) btn.style.display = '';
+    } else {
+      chip.textContent = '全部数据';
+      wrap.classList.remove('filtered');
+      if (btn) btn.style.display = 'none';
+    }
+  }
+
+  function describeFilter() {
+    var parts = [];
+    var s = $('selStore') && $('selStore').value;
+    if (s) parts.push('店铺：' + s);
+    if (currentQuick !== 'all') {
+      var qmap = { new: '新品', newDead: '新品超7天无动销', oldDead: '常品超30天无动销', top10: '销量TOP10' };
+      parts.push(qmap[currentQuick] || currentQuick);
+    }
+    var st = $('selStatus') && $('selStatus').value;
+    if (st) {
+      var map = { img: '有主图', noimg: '缺主图', nocode: '缺商家编码', stock0: '零库存' };
+      parts.push(map[st] || st);
+    }
+    var so = $('selSort') && $('selSort').value;
+    if (so) {
+      var smap = { sales30d: '按30日销量', totalSales: '按累计销量', stock: '按库存', price: '按价格↓', priceAsc: '按价格↑', onlineDays: '按在线时间' };
+      parts.push(smap[so] || so);
+    }
+    var kw = ($('kw') && $('kw').value || '').trim();
+    if (kw) parts.push('搜索「' + kw + '」');
+    return parts.length ? parts.join(' · ') : '筛选结果';
+  }
+
+  /* 快捷筛选按钮的高亮 + 右侧提示（TOP10 会说明排名基准） */
+  function renderQuickHint() {
+    var btns = document.querySelectorAll('#quickbar .qbtn');
+    for (var i = 0; i < btns.length; i++) {
+      btns[i].classList.toggle('active', btns[i].dataset.qf === currentQuick);
+    }
+    var hint = $('qHint');
+    if (!hint) return;
+    if (currentQuick === 'top10') {
+      hint.textContent = '排名基准：当前店铺 / 搜索 / 状态命中的商品，按累计销量取前 10';
+    } else if (currentQuick === 'new') {
+      hint.textContent = '口径：今天 − 创建时间 ≤ 30 天（含）';
+    } else if (currentQuick === 'newDead') {
+      hint.textContent = '口径：今天 − 创建时间 在 7–30 天（含），且累计销量为 0';
+    } else if (currentQuick === 'oldDead') {
+      hint.textContent = '口径：今天 − 创建时间 超过 30 天，且 30 日销量为 0';
+    } else {
+      hint.textContent = '';
+    }
+  }
+
+  function loadData() {
+    $('banner').classList.remove('show');
+    $('tbody').innerHTML = '<tr><td colspan="' + COLS + '" class="empty">正在加载数据…</td></tr>';
+    fetch('/api/store')
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        if (!j || !j.ok) { showError((j && j.error) || '数据读取失败'); return; }
+        /* /api/store 返回 { ok, stores:[{ name, items }] } —— 展平成记录，把店铺名挂到每条上 */
+        var out = [];
+        (Array.isArray(j.stores) ? j.stores : []).forEach(function (s) {
+          (Array.isArray(s && s.items) ? s.items : []).forEach(function (it) {
+            if (!it || typeof it !== 'object') return;
+            out.push({
+              store: (s && s.name) || '默认店铺',
+              title: it.title || '',
+              productId: it.productId == null ? '' : String(it.productId),
+              merchantCode: it.merchantCode || '',
+              category: it.category || '',
+              price: it.price, baseScore: it.baseScore, qualityScore: it.qualityScore,
+              stock: it.stock, totalSales: it.totalSales, sales30d: it.sales30d,
+              createTime: it.createTime || '', status: it.status || '',
+              publishTime: it.publishTime || '', imgUrl: it.imgUrl || '',
+              /* 插件侧 buildItemUrl 归一化后的买家详情页链接；老数据可能没有 → detailUrl() 会用 productId 兜底 */
+              itemUrl: it.itemUrl || ''
+            });
+          });
+        });
+        allRecords = out;
+        buildSelects();
+        /* ★ 渲染整体包一层 try/catch：任何一条记录结构异常都要能显示出来，
+           而不是「整表空白 + 只有控制台有报错」。 */
+        try {
+          applyFilters();
+        } catch (e) {
+          showError('数据渲染出错：' + (e && e.message ? e.message : String(e)) +
+            '（共读到 ' + allRecords.length + ' 条记录，请把这条提示反馈给开发者）');
+          if (window.console && console.error) console.error('[商品] 渲染异常', e, allRecords[0]);
+        }
+      })
+      .catch(function () {
+        if (location.protocol === 'file:') {
+          showError('当前是通过本地文件方式打开的，无法读取数据。请在浏览器地址栏输入并访问：http://127.0.0.1:8787/千牛商品.html');
+        } else {
+          showError('无法连接运营工作台服务，请先双击「启动工作台.bat」启动本地服务。');
+        }
+      });
+  }
+
+  function showError(msg) {
+    $('banner').textContent = msg;
+    $('banner').classList.add('show');
+    allRecords = [];
+    filtered = [];
+    applyFilters();
+  }
+
+  function downloadBlob(blob, name) {
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = name;
+    document.body.appendChild(a); a.click();
+    setTimeout(function () { URL.revokeObjectURL(url); a.remove(); }, 100);
+  }
+
+  function buildCsv(records) {
+    /* CSV 约定与插件 / 评价页 / 问大家页完全一致：
+       · 换行压成空格、含逗号或引号时用 "..." 包裹、内部引号翻倍
+       · 商品ID 用 ="..." 防 Excel 科学计数法
+       · 主图列 =HYPERLINK("url","点击看大图")
+       · 商品名称列 =HYPERLINK("详情页url", 标题)  ← 详情页链接只保留在这里
+       · 首行 BOM 防中文乱码
+       列序与页面表格、插件「商品导出」CSV 严格同序（主图在第 1 列）。
+       ⚠️ 「商品链接」列 2026-09-15 已从页面表格移除（标题本身是超链接），CSV 里同步移除，
+          详情页 URL 仍挂在「商品名称」列的 HYPERLINK 上，导出的可点性没有损失。 */
+    var headers = ['商品主图', '商品名称', '商品ID', '商家编码', '价格', '库存', '累计销量', '30日销量',
+      '基础分', '扶优分', '创建时间', '发布时间', '在线时间(天)', '状态', '类目', '店铺', '店铺类型'];
+
+    function q(v) {
+      var s = String(v == null ? '' : v).replace(/\r\n/g, '\n').replace(/\r/g, '\n').replace(/\n+/g, ' ').trim();
+      return /[",]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+    }
+    /* 没有 URL 时**退化成纯文本**，绝不留一个空链接（点开是空白页比不可点更糟） */
+    function link(url, text) {
+      var u = String(url == null ? '' : url).trim();
+      if (!u) return q(text);
+      return q('=HYPERLINK("' + u + '","' + String(text == null ? '' : text) + '")');
+    }
+
+    var lines = [headers.join(',')];
+    records.forEach(function (r) {
+      var u = normImgUrl(r.imgUrl);
+      var durl = detailUrl(r);
+      lines.push([
+        u ? q('=HYPERLINK("' + u + '","点击看大图")') : '""',
+        link(durl, r.title),
+        '="' + String(r.productId == null ? '' : r.productId) + '"',
+        q(r.merchantCode),
+        q(num(r.price) || ''),
+        q(num(r.stock)),
+        q(num(r.totalSales)),
+        q(num(r.sales30d)),
+        q(num(r.baseScore) || ''),
+        q(num(r.qualityScore) || ''),
+        q(r.createTime),
+        q(r.publishTime),
+        q(onlineDays(r) == null ? '' : onlineDays(r)),
+        q(r.status),
+        q(r.category),
+        q(r.store),
+        storeTypeLabel(storeType(r.store))
+      ].join(','));
+    });
+    return '\ufeff' + lines.join('\r\n');
+  }
+
+  function pad(n) { return String(n).padStart(2, '0'); }
+  function stamp() { var d = new Date(); return d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate()) + '_' + pad(d.getHours()) + pad(d.getMinutes()); }
+
+  function clearFilters() {
+    $('kw').value = '';
+    $('selStore').value = '';
+    $('selStatus').value = '';
+    $('selSort').value = '';
+    currentQuick = 'all';
+    applyFilters();
+  }
+
+  function exportCsv() {
+    if (!filtered.length) { alert('没有可导出的记录'); return; }
+    downloadBlob(new Blob([buildCsv(filtered)], { type: 'text/csv;charset=utf-8;' }), '商品_' + stamp() + '.csv');
+  }
+
+  function exportJson() {
+    if (!filtered.length) { alert('没有可导出的记录'); return; }
+    downloadBlob(new Blob(['\ufeff' + JSON.stringify(filtered, null, 2)], { type: 'application/json;charset=utf-8;' }), '商品_' + stamp() + '.json');
+  }
+
+  function bind() {
+    $('btnRefresh').addEventListener('click', loadData);
+
+    var t = null;
+    $('kw').addEventListener('input', function () { clearTimeout(t); t = setTimeout(applyFilters, 250); });
+    $('selStore').addEventListener('change', applyFilters);
+    $('selStatus').addEventListener('change', applyFilters);
+    $('selSort').addEventListener('change', applyFilters);
+
+    /* 快捷筛选：点同一个按钮再点一次 = 取消（回到「全部」） */
+    var qbar = $('quickbar');
+    if (qbar) qbar.addEventListener('click', function (e) {
+      var b = e.target.closest('.qbtn');
+      if (!b) return;
+      currentQuick = (b.dataset.qf === currentQuick) ? 'all' : b.dataset.qf;
+      applyFilters();
+    });
+
+    $('btnClearFilter').addEventListener('click', clearFilters);
+    var sc = $('sumScopeClear');
+    if (sc) sc.addEventListener('click', clearFilters);
+
+    $('btnPrev').addEventListener('click', function () { if (page > 1) { page--; render(); } });
+    $('btnNext').addEventListener('click', function () {
+      var totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+      if (page < totalPages) { page++; render(); }
+    });
+    $('pageSize').addEventListener('change', function () {
+      pageSize = parseInt(this.value, 10) || 100;
+      page = 1;
+      render();
+    });
+
+    $('btnCsv').addEventListener('click', exportCsv);
+    $('btnJson').addEventListener('click', exportJson);
+  }
+
+  bind();
+  loadData();
+})();
+</script>
+</body>
+</html>
