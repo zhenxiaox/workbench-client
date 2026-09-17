@@ -823,6 +823,27 @@
   .set-modal-close{margin-left:auto; flex:0 0 auto; width:30px; height:30px; border-radius:9px; border:1px solid var(--line2); background:var(--panel2); color:var(--muted); font-size:13px; line-height:1; cursor:pointer; font-family:inherit; transition:.15s;}
   .set-modal-close:hover{color:var(--accent); border-color:var(--accent);}
   .set-panel[hidden]{display:none;}
+  /* ===== 软件更新面板 ===== */
+  .upd-cur{ color:var(--accent); font-weight:700; }
+  .upd-area{ margin-top:6px; border-top:1px dashed var(--line2); padding-top:14px; }
+  .upd-placeholder{ color:var(--muted2); font-size:13px; padding:6px 0; }
+  .upd-box{ display:flex; flex-direction:column; gap:10px; }
+  .upd-row{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .upd-badge{ flex:0 0 auto; padding:2px 10px; border-radius:999px; font-size:12px; font-weight:600; }
+  .upd-badge.new{ background:var(--accent-soft); color:var(--accent); border:1px solid var(--accent); }
+  .upd-badge.ok{ background:rgba(16,185,129,.14); color:#10B981; border:1px solid #10B981; }
+  .upd-badge.err{ background:var(--danger-soft); color:var(--danger); border:1px solid var(--danger); }
+  .upd-note{ color:var(--muted); font-size:13px; line-height:1.7; white-space:pre-wrap; max-height:160px; overflow:auto; }
+  .upd-progress{ display:flex; align-items:center; gap:10px; }
+  .upd-progress-bar{ position:relative; flex:1 1 auto; height:8px; border-radius:999px; background:var(--panel2); overflow:hidden; }
+  .upd-progress-bar i{ position:absolute; left:0; top:0; bottom:0; width:0; background:var(--accent); transition:width .15s ease; }
+  .upd-progress-txt{ flex:0 0 auto; font-size:12.5px; color:var(--muted); min-width:64px; text-align:right; }
+  .upd-actions{ display:flex; gap:8px; flex-wrap:wrap; }
+  .tb-btn.upd-primary{ background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600; }
+  .tb-btn.upd-link{ background:transparent; border-color:transparent; color:var(--muted); text-decoration:underline; }
+  .upd-toast{ position:fixed; right:16px; bottom:84px; z-index:500; display:flex; align-items:center; gap:10px;
+    max-width:420px; padding:12px 14px; border-radius:12px; background:var(--panel2); border:1px solid var(--line2);
+    box-shadow:0 8px 30px rgba(0,0,0,.38); cursor:pointer; transition:opacity .25s ease, transform .25s ease; }
   /* 分区小标题（常规 / 权限 这种） */
   .set-sec{font-size:11.5px; color:var(--muted2); margin:16px 0 8px; letter-spacing:.03em;}
   .set-panel > .set-sec:first-child{margin-top:0;}
@@ -1756,6 +1777,10 @@
                 <span class="sv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.4 9a2.6 2.6 0 1 1 3.6 2.4c-.8.4-1 .9-1 1.7"/><circle cx="11.6" cy="16.6" r="1" fill="currentColor" stroke="none"/></svg></span>
                 <span>使用说明</span>
               </button>
+              <button class="set-nav-item" data-tab="update" data-title="软件更新" type="button">
+                <span class="sv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg></span>
+                <span>软件更新</span>
+              </button>
               <button class="set-nav-item" data-tab="about" data-title="关于" type="button">
                 <span class="sv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><circle cx="12" cy="7.6" r="1" fill="currentColor" stroke="none"/></svg></span>
                 <span>关于</span>
@@ -2010,6 +2035,23 @@
               <li>有任何报错，请联系微信 zhenxiaox 及时修复解决。</li>
             </ul>
             <p class="help-end">— 以上为本工作台完整使用说明 —</p>
+          </div>
+        </div>
+
+        <!-- 软件更新 -->
+        <div class="set-panel" data-panel="update" hidden>
+          <div class="set-sec">软件更新</div>
+          <div class="set-card">
+            <div class="set-frow">
+              <div class="set-frow-main">
+                <div class="set-frow-t">当前版本 <span class="upd-cur" id="updCurrent"></span></div>
+                <div class="set-frow-d">更新由 GitHub Releases 发布，自动检测最新版本。</div>
+              </div>
+              <div class="set-frow-ctl"><button type="button" id="updCheckBtn" class="tb-btn">检查更新</button></div>
+            </div>
+            <div class="upd-area" id="updArea">
+              <div class="upd-placeholder">点击「检查更新」查看是否有新版本。</div>
+            </div>
           </div>
         </div>
 
@@ -5181,6 +5223,136 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
         }
       }catch(err){}
     });
+  })();
+
+  /* ===== 软件更新（Tauri 端）=====
+     检查更新(check_update) / 下载并安装(download_update) / 忽略本版本(ignore_update)
+     三个 Rust 命令 + 两个事件：后台发现新版本 wb-update-available、下载进度 wb-update-progress。
+     纯网页版没有 Tauri，自动降级为「提示使用桌面客户端」。 */
+  (function(){
+    var upd = {
+      get tauri(){ return !!(window.__TAURI__ && window.__TAURI__.core && window.__TAURI__.core.invoke); },
+      get area(){ return document.getElementById('updArea'); },
+      get cur(){ return document.getElementById('updCurrent'); },
+      render: function(){},
+      state: {}
+    };
+    function escU(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+    function fmtBytes(b){
+      if(b==null || isNaN(b)) return '';
+      if(b < 1024) return b + ' B';
+      if(b < 1048576) return (b/1024).toFixed(1) + ' KB';
+      return (b/1048576).toFixed(1) + ' MB';
+    }
+    function fmtDate(ts){
+      if(!ts) return '';
+      try{ var d = new Date(ts*1000); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
+      catch(e){ return ''; }
+    }
+    upd.render = function(html){ var a = upd.area; if(a) a.innerHTML = html; };
+    upd.showIdle = function(){ upd.render('<div class="upd-placeholder">点击「检查更新」查看是否有新版本。</div>'); };
+    upd.showChecking = function(){ upd.render('<div class="upd-placeholder">正在检查更新…</div>'); };
+    upd.showNone = function(){ upd.render('<div class="upd-box"><div class="upd-row"><span class="upd-badge ok">已是最新版本</span></div></div>'); };
+    upd.showError = function(msg){ upd.render('<div class="upd-box"><div class="upd-row"><span class="upd-badge err">检查失败</span></div><div class="upd-note">' + escU(msg) + '</div></div>'); };
+    upd.showNew = function(info){
+      var body = info.body ? escU(info.body) : '';
+      upd.state.current = info;
+      upd.render(
+        '<div class="upd-box">'
+        + '<div class="upd-row"><span class="upd-badge new">发现新版本 v' + escU(info.version) + '</span><span style="color:var(--muted);font-size:12.5px;">当前 v' + escU(info.current_version) + (info.date ? ' · 发布于 ' + fmtDate(info.date) : '') + '</span></div>'
+        + (body ? '<div class="upd-note">' + body + '</div>' : '')
+        + '<div class="upd-row upd-actions" id="updActions">'
+        + '<button type="button" class="tb-btn upd-primary" data-upd-act="go">立即下载并升级</button>'
+        + '<button type="button" class="tb-btn" data-upd-act="later">稍后</button>'
+        + '<button type="button" class="tb-btn upd-link" data-upd-act="ignore">忽略这个版本</button>'
+        + '</div>'
+        + '<div class="upd-progress" id="updProgress" style="display:none;">'
+        + '<div class="upd-progress-bar"><i></i></div>'
+        + '<div class="upd-progress-txt"></div>'
+        + '</div>'
+        + '</div>'
+      );
+    };
+    upd.showDownloading = function(down, total){
+      var bar = document.getElementById('updProgress');
+      var fill, txt;
+      if(bar){ bar.style.display='flex'; fill = bar.querySelector('i'); txt = bar.querySelector('.upd-progress-txt'); }
+      var pct = (total && total>0) ? Math.min(100, Math.round(down*100/total)) : 0;
+      if(fill) fill.style.width = pct + '%';
+      if(txt) txt.textContent = fmtBytes(down) + (total ? ' / ' + fmtBytes(total) : '');
+      var go = document.querySelector('[data-upd-act="go"]');
+      if(go) go.disabled = true;
+      var later = document.querySelector('[data-upd-act="later"]');
+      if(later) later.disabled = true;
+    };
+    upd.check = function(){
+      if(!upd.tauri){
+        upd.render('<div class="upd-box"><div class="upd-row"><span class="upd-badge err">需在客户端内使用</span></div><div class="upd-note">自动更新只在 Tauri 桌面客户端内可用。请下载并运行「运营工作台」客户端。</div></div>');
+        return;
+      }
+      upd.showChecking();
+      window.__TAURI__.core.invoke('check_update')
+        .then(function(r){
+          if(upd.cur) upd.cur.textContent = 'v' + (r.current_version || '');
+          if(r && r.available) upd.showNew(r);
+          else if(r && r.ignored) upd.render('<div class="upd-box"><div class="upd-row"><span class="upd-badge ok">已忽略此版本</span></div><div class="upd-note">你已忽略 v' + escU(r.version) + '。后续版本检查将不再提示它。</div></div>');
+          else upd.showNone();
+        })
+        .catch(function(e){ upd.showError(String(e && e.message ? e.message : e)); });
+    };
+    function onUpdAction(act, info){
+      if(act === 'go'){
+        upd.render(
+          '<div class="upd-box"><div class="upd-row"><span class="upd-badge new">正在下载并升级</span></div>'
+          + '<div class="upd-progress" id="updProgress"><div class="upd-progress-bar"><i></i></div><div class="upd-progress-txt">0%</div></div>'
+          + '<div class="upd-note" id="updDownloadNote">正在下载 v' + escU(info.version) + ' 安装包…</div></div>'
+        );
+        window.__TAURI__.core.invoke('download_update')
+          .then(function(){})
+          .catch(function(e){ upd.showError(String(e && e.message ? e.message : e)); });
+      } else if(act === 'later'){
+        upd.showIdle();
+      } else if(act === 'ignore'){
+        window.__TAURI__.core.invoke('ignore_update', { version: info.version }).then(function(){ upd.showIdle(); }).catch(function(){});
+      }
+    }
+    document.addEventListener('click', function(e){
+      var btn = e.target.closest('[data-upd-act]');
+      if(!btn) return;
+      var act = btn.getAttribute('data-upd-act');
+      if(upd.state.current){ onUpdAction(act, upd.state.current); e.stopPropagation(); }
+    });
+    if(window.__TAURI__ && window.__TAURI__.event && window.__TAURI__.event.listen){
+      window.__TAURI__.event.listen('wb-update-available', function(ee){
+        var v = ee && ee.payload && ee.payload.version;
+        if(!v) return;
+        var n = document.createElement('div');
+        n.className = 'upd-toast';
+        n.innerHTML = '<div style="display:flex;align-items:center;gap:10px;flex:1;">'
+          + '<span class="upd-badge new">新版本 v' + escU(v) + '</span>'
+          + '<span style="font-size:13px;color:var(--muted);flex:1;">点击前往「软件更新」升级</span></div>'
+          + '<button type="button" class="tb-btn upd-primary" style="margin-left:auto;">查看</button>';
+        n.addEventListener('click', function(ev){
+          if(ev.target.closest('button')){
+            n.remove();
+            openSettingsModal('update');
+            var chk = document.getElementById('updCheckBtn');
+            if(chk) upd.check();
+          }
+        });
+        document.body.appendChild(n);
+        setTimeout(function(){ if(n.parentNode) n.remove(); }, 10000);
+      });
+      window.__TAURI__.event.listen('wb-update-progress', function(ee){
+        var p = ee && ee.payload || {};
+        upd.showDownloading(p.downloaded||0, p.total||0);
+      });
+    }
+    var chkBtn = document.getElementById('updCheckBtn');
+    if(chkBtn) chkBtn.addEventListener('click', upd.check);
+    if(upd.cur && upd.tauri){
+      window.__TAURI__.core.invoke('check_update').then(function(r){ if(r && r.current_version) upd.cur.textContent = 'v' + r.current_version; }).catch(function(){});
+    }
   })();
 
   (function todoFabInit(){
