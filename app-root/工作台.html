@@ -5040,8 +5040,11 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
   function wbApplyFabs(){
     var aiOn = wbFabOn(FAB_AI_KEY), todoOn = wbFabOn(FAB_TODO_KEY);
     var af = document.getElementById('aiFab'), tf = document.getElementById('todoFab');
-    if(af) af.hidden = !aiOn;
-    if(tf) tf.hidden = !todoOn;
+    /* 客户端内：页面悬浮球永远隐藏（两套球只保留桌面的），开关只控制桌面窗口；
+       纯网页版没有桌面球，才靠开关控制页面球显隐，避免开关切换时把已隐藏的球又放出来。 */
+    var isClient = wbIsClient();
+    if(af) af.hidden = isClient || !aiOn;
+    if(tf) tf.hidden = isClient || !todoOn;
     /* AI 球被关掉时顺手把面板收起：球没了面板还开着的话，用户找不到关闭入口 */
     if(!aiOn && document.body.classList.contains('ai-open')){
       document.body.classList.remove('ai-open');

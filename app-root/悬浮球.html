@@ -14,6 +14,9 @@
     --orange:#F97316; --blue:#3B82F6; --red:#EF4444;
   }
   *{ box-sizing:border-box; }
+  /* hidden 必须显式 !important：.ball/.badge 等作者样式设了 display:flex/inline，
+     会盖掉 UA 默认的 [hidden]{display:none}，把一个球 hidden 后仍会显示（两个球挤在 80px 窗口里被压成椭圆）。 */
+  [hidden]{ display:none !important; }
   html,body{ margin:0; padding:0; background:transparent; overflow:hidden; }
   body{ width:100vw; height:100vh; }
   .wrap{
