@@ -177,6 +177,12 @@
       "description": "Permission identifier",
       "oneOf": [
         {
+          "description": "允许前端调用工作台自定义命令（fab_action/fab_menu/更新相关）",
+          "type": "string",
+          "const": "allow-workbench-commands",
+          "markdownDescription": "允许前端调用工作台自定义命令（fab_action/fab_menu/更新相关）"
+        },
+        {
           "description": "Default core plugins set.\n#### This default permission set includes:\n\n- `core:path:default`\n- `core:event:default`\n- `core:window:default`\n- `core:webview:default`\n- `core:app:default`\n- `core:image:default`\n- `core:resources:default`\n- `core:menu:default`\n- `core:tray:default`",
           "type": "string",
           "const": "core:default",

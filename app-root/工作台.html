@@ -5093,7 +5093,16 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
     });
   }
   window.__wbApplyFabs = wbApplyFabs;
+  /* 桌面悬浮球已独立（Tauri 客户端）：窗口内不再显示页面悬浮球，避免两套球重复。
+      仅客户端环境生效，纯网页版不受影响；桌面球的点击经 fab_action 唤起并跳转。 */
+  var IS_CLIENT = !!(window.__TAURI__ && window.__TAURI__.core);
+  function wbClientHideFabs(){
+    var af = document.getElementById('aiFab'), tf = document.getElementById('todoFab');
+    if(af && !af.hidden) af.hidden = true;
+    if(tf && !tf.hidden) tf.hidden = true;
+  }
   wbApplyFabs();
+  if(IS_CLIENT) wbClientHideFabs();
   [['setSwAiFab', FAB_AI_KEY], ['setSwTodoFab', FAB_TODO_KEY]].forEach(function(x){
     var el = document.getElementById(x[0]);
     if(!el) return;
