@@ -22,8 +22,16 @@ use url::Url;
 
 const PORT: u16 = 8787;
 const MAIN_LABEL: &str = "main";
-const FAB_LABEL: &str = "fab";
+const FAB_AI_LABEL: &str = "fab_ai";
+const FAB_TODO_LABEL: &str = "fab_todo";
 const FAB_ACTION_EVENT: &str = "wb-fab-action";
+
+/// 桌面上两个悬浮球窗口的元数据（独立拖动、独立记忆位置）。
+const FABS: &[(&str, &str, &str)] = &[
+    // (label, 悬浮球.html 的 which 参数, 位置存档文件名)
+    (FAB_AI_LABEL, "ai", "fab-ai-pos.json"),
+    (FAB_TODO_LABEL, "todo", "fab-todo-pos.json"),
+];
 
 /// 持有 sidecar 子进程句柄，便于退出时回收。
 struct ServerProcess(Mutex<Option<Child>>);
@@ -96,22 +104,24 @@ struct FabPos {
     y: i32,
 }
 
-fn load_fab_pos(data_dir: &Path) -> Option<(i32, i32)> {
-    let p = data_dir.join("fab-pos.json");
+fn load_fab_pos(data_dir: &Path, pos_file: &str) -> Option<(i32, i32)> {
+    let p = data_dir.join(pos_file);
     let s = std::fs::read_to_string(p).ok()?;
     let v: FabPos = serde_json::from_str(&s).ok()?;
     Some((v.x, v.y))
 }
 
 fn save_fab_pos(app: &tauri::AppHandle, data_dir: &Path) {
-    if let Some(w) = app.get_webview_window(FAB_LABEL) {
-        if let Ok(pos) = w.outer_position() {
-            let json = serde_json::to_string(&FabPos {
-                x: pos.x,
-                y: pos.y,
-            })
-            .unwrap_or_default();
-            let _ = std::fs::write(data_dir.join("fab-pos.json"), json);
+    for (label, _, pos_file) in FABS {
+        if let Some(w) = app.get_webview_window(label) {
+            if let Ok(pos) = w.outer_position() {
+                let json = serde_json::to_string(&FabPos {
+                    x: pos.x,
+                    y: pos.y,
+                })
+                .unwrap_or_default();
+                let _ = std::fs::write(data_dir.join(pos_file), json);
+            }
         }
     }
 }
@@ -139,13 +149,14 @@ fn open_main_window(app: &tauri::AppHandle) {
     }
 }
 
-fn open_fab_window(app: &tauri::AppHandle, data_dir: &Path) {
-    let target = Url::parse(&format!("http://127.0.0.1:{}/悬浮球.html", PORT))
+fn open_fab_window(app: &tauri::AppHandle, data_dir: &Path, label: &str, which: &str, pos_file: &str) {
+    let target = Url::parse(&format!("http://127.0.0.1:{}/悬浮球.html?which={}", PORT, which))
         .expect("悬浮球 URL 解析失败");
 
-    let res = WebviewWindowBuilder::new(app, FAB_LABEL, WebviewUrl::External(target))
+    // 单个球窗口：56px 球 + 四周留 12px 边距 → 80×80。
+    let res = WebviewWindowBuilder::new(app, label, WebviewUrl::External(target))
         .title("运营工作台悬浮球")
-        .inner_size(108.0, 188.0)
+        .inner_size(80.0, 80.0)
         .decorations(false)
         .transparent(true)
         .always_on_top(true)
@@ -156,20 +167,35 @@ fn open_fab_window(app: &tauri::AppHandle, data_dir: &Path) {
         .build();
 
     if let Ok(w) = res {
-        if let Some((x, y)) = load_fab_pos(data_dir) {
+        if let Some((x, y)) = load_fab_pos(data_dir, pos_file) {
             let _ = w.set_position(tauri::PhysicalPosition::new(x, y));
         } else if let Ok(Some(mon)) = app.primary_monitor() {
-            // 首次启动：默认贴屏幕右缘、垂直居中。
+            // 首次启动：两个球纵向排列贴屏幕右缘、垂直居中。
             let size = mon.size();
             let pos = mon.position();
-            let ww = w.outer_size().map(|s| s.width as i32).unwrap_or(108);
-            let wh = w.outer_size().map(|s| s.height as i32).unwrap_or(188);
+            let ww = w.outer_size().map(|s| s.width as i32).unwrap_or(80);
+            let wh = w.outer_size().map(|s| s.height as i32).unwrap_or(80);
             let x = (pos.x + size.width as i32 - ww - 16).max(0);
-            let y = (pos.y + (size.height as i32 - wh) / 2).max(0);
+            let base_y = pos.y + (size.height as i32 - wh) / 2;
+            let offset = if which == "ai" { -52 } else { 52 };
+            let y = (base_y + offset).max(0);
             let _ = w.set_position(tauri::PhysicalPosition::new(x, y));
         }
     } else if let Err(e) = res {
-        eprintln!("创建悬浮球窗口失败：{}", e);
+        eprintln!("创建悬浮球窗口（{}）失败：{}", which, e);
+    }
+}
+
+/// 显示或隐藏某个桌面悬浮球窗口（which: "ai" / "todo"）。
+#[tauri::command]
+fn fab_set_visible(app: tauri::AppHandle, which: String, visible: bool) {
+    let label = if which == "todo" { FAB_TODO_LABEL } else { FAB_AI_LABEL };
+    if let Some(w) = app.get_webview_window(label) {
+        if visible {
+            let _ = w.show();
+        } else {
+            let _ = w.hide();
+        }
     }
 }
 
@@ -202,8 +228,9 @@ fn fab_action(app: tauri::AppHandle, action: String) {
 
 /// 悬浮球右键：弹出原生菜单（打开工作台 / 退出客户端）。
 #[tauri::command]
-fn fab_menu(app: tauri::AppHandle) {
-    if let Some(w) = app.get_webview_window(FAB_LABEL) {
+fn fab_menu(app: tauri::AppHandle, which: String) {
+    let label = if which == "todo" { FAB_TODO_LABEL } else { FAB_AI_LABEL };
+    if let Some(w) = app.get_webview_window(label) {
         let open = MenuItem::with_id(&app, "open", "打开工作台", true, None::<&str>);
         let quit = MenuItem::with_id(&app, "quit", "退出客户端", true, None::<&str>);
         if let (Ok(open), Ok(quit)) = (open, quit) {
@@ -359,7 +386,9 @@ pub fn run() {
             }
 
             open_main_window(app.handle());
-            open_fab_window(app.handle(), &data_dir);
+            for (label, which, pos_file) in FABS {
+                open_fab_window(app.handle(), &data_dir, label, which, pos_file);
+            }
             if let Err(e) = setup_tray(app) {
                 eprintln!("创建系统托盘失败：{}", e);
             }
@@ -369,6 +398,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             fab_action,
             fab_menu,
+            fab_set_visible,
             check_update,
             ignore_update,
             download_update

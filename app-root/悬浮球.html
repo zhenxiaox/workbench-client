@@ -60,32 +60,42 @@
 <script>
 (function(){
   var hasTauri = !!(window.__TAURI__ && window.__TAURI__.core && window.__TAURI__.core.invoke);
+  var which = ((location.search.match(/[?&]which=([^&]+)/) || [])[1] || 'ai').toLowerCase();
   var aiBall = document.getElementById('aiBall');
   var todoBall = document.getElementById('todoBall');
   var badge = document.getElementById('todoBadge');
   var doing = document.getElementById('todoDoing');
 
+  /* 当前窗口只显示 which 对应的那一个球 */
+  if(which === 'todo'){
+    if(aiBall) aiBall.hidden = true;
+  } else {
+    if(todoBall) todoBall.hidden = true;
+    which = 'ai';
+  }
+
   function invoke(cmd, args){
     return window.__TAURI__.core.invoke(cmd, args || {});
   }
 
-  function fabAction(action){
+  function fabAction(){
     /* 点击时顺手刷新一次角标，避免刚在主窗口改完待办、球上还是旧数字 */
     refresh();
     if(hasTauri){
-      invoke('fab_action', { action: action }).catch(function(){});
+      invoke('fab_action', { action: which }).catch(function(){});
     } else {
       try{ window.open('/工作台.html', '_blank'); }catch(e){}
     }
   }
 
-  function fabMenu(){
+  function fabMenu(ev){
+    ev.preventDefault();
     if(hasTauri){
-      invoke('fab_menu').catch(function(){});
+      invoke('fab_menu', { which: which }).catch(function(){});
     }
   }
 
-  function bindBall(el, action){
+  function bindBall(el){
     if(!el) return;
     /* 拖动：左键按下即启动 Tauri 原生窗口拖动；点按未拖动仍会触发 click */
     el.addEventListener('mousedown', function(e){
@@ -93,16 +103,16 @@
       if(!hasTauri) return;
       try{ invoke('plugin:window|start_dragging'); }catch(err){}
     });
-    el.addEventListener('click', function(){ fabAction(action); });
-    el.addEventListener('contextmenu', function(e){ e.preventDefault(); fabMenu(); });
+    el.addEventListener('click', function(){ fabAction(); });
+    el.addEventListener('contextmenu', fabMenu);
     el.addEventListener('keydown', function(e){
-      if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); fabAction(action); }
+      if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); fabAction(); }
     });
   }
-  bindBall(aiBall, 'ai');
-  bindBall(todoBall, 'todo');
+  bindBall(which === 'todo' ? todoBall : aiBall);
 
   function refresh(){
+    if(which !== 'todo') return;  /* 只有待办球需要数字角标 */
     fetch('/api/todo-count', { cache:'no-store' })
       .then(function(r){ if(!r.ok) throw new Error('bad'); return r.json(); })
       .then(function(d){

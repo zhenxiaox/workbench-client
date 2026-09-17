@@ -4,6 +4,7 @@ description = "允许前端调用工作台自定义命令（fab_action/fab_menu/
 commands.allow = [
   "fab_action",
   "fab_menu",
+  "fab_set_visible",
   "check_update",
   "ignore_update",
   "download_update"

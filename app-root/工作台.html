@@ -322,6 +322,7 @@
   .stage[data-page="qanalysis"] .frame, .stage[data-page="qreport"] .frame, .stage[data-page="qworkload"] .frame, .stage[data-page="sku"] .frame,
   .stage[data-page="ctodo"] .frame,
   .stage[data-page="review"] .frame, .stage[data-page="ask"] .frame, .stage[data-page="product"] .frame,
+  .stage[data-page="rival"] .frame,
   .stage[data-page="juhe"] .frame{display:block;}
   .page{position:absolute; inset:0; overflow:auto; padding:30px 40px; display:none; max-width:1120px; margin:0 auto; box-sizing:border-box;}
   .stage[data-page="overview"] .page-overview,
@@ -579,28 +580,6 @@
   .set-sw[aria-checked="true"]::after{ left:20px; }
   .set-sw:focus-visible{ outline:2px solid var(--accent-d); outline-offset:2px; }
   .set-sw-txt{ font-size:12.5px; color:var(--muted); min-width:34px; text-align:right; }
-  /* 软件更新面板 */
-  .upd-cur{ color:var(--accent); font-weight:700; }
-  .upd-area{ margin-top:6px; border-top:1px dashed var(--line2); padding-top:14px; }
-  .upd-placeholder{ color:var(--muted2); font-size:13px; padding:6px 0; }
-  .upd-box{ display:flex; flex-direction:column; gap:10px; }
-  .upd-row{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
-  .upd-badge{ flex:0 0 auto; padding:2px 10px; border-radius:999px; font-size:12px; font-weight:600; }
-  .upd-badge.new{ background:var(--accent-soft); color:var(--accent); border:1px solid var(--accent); }
-  .upd-badge.ok{ background:rgba(16,185,129,.14); color:#10B981; border:1px solid #10B981; }
-  .upd-badge.err{ background:var(--danger-soft); color:var(--danger); border:1px solid var(--danger); }
-  .upd-note{ color:var(--muted); font-size:13px; line-height:1.7; white-space:pre-wrap; max-height:160px; overflow:auto; }
-  .upd-progress{ display:flex; align-items:center; gap:10px; }
-  .upd-progress-bar{ position:relative; flex:1 1 auto; height:8px; border-radius:999px; background:var(--panel2); overflow:hidden; }
-  .upd-progress-bar i{ position:absolute; left:0; top:0; bottom:0; width:0; background:var(--accent); transition:width .15s ease; }
-  .upd-progress-txt{ flex:0 0 auto; font-size:12.5px; color:var(--muted); min-width:64px; text-align:right; }
-  .upd-actions{ display:flex; gap:8px; flex-wrap:wrap; }
-  .upd-actions .tb-btn{ }
-  .tb-btn.upd-primary{ background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600; }
-  .tb-btn.upd-link{ background:transparent; border-color:transparent; color:var(--muted); text-decoration:underline; }
-  .upd-toast{ position:fixed; right:16px; bottom:84px; z-index:500; display:flex; align-items:center; gap:10px;
-    max-width:420px; padding:12px 14px; border-radius:12px; background:var(--panel2); border:1px solid var(--line2);
-    box-shadow:0 8px 30px rgba(0,0,0,.38); cursor:pointer; transition:opacity .25s ease, transform .25s ease; }
   @media (max-width:560px){ .ai-panel{ width:100vw; max-width:100vw; } }
   .ov-head{margin-bottom:24px;}
   .ov-head h1{margin:0 0 8px; font-size:24px; color:var(--ink);}
@@ -1777,10 +1756,6 @@
                 <span class="sv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.4 9a2.6 2.6 0 1 1 3.6 2.4c-.8.4-1 .9-1 1.7"/><circle cx="11.6" cy="16.6" r="1" fill="currentColor" stroke="none"/></svg></span>
                 <span>使用说明</span>
               </button>
-              <button class="set-nav-item" data-tab="update" data-title="软件更新" type="button">
-                <span class="sv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg></span>
-                <span>软件更新</span>
-              </button>
               <button class="set-nav-item" data-tab="about" data-title="关于" type="button">
                 <span class="sv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><circle cx="12" cy="7.6" r="1" fill="currentColor" stroke="none"/></svg></span>
                 <span>关于</span>
@@ -2035,23 +2010,6 @@
               <li>有任何报错，请联系微信 zhenxiaox 及时修复解决。</li>
             </ul>
             <p class="help-end">— 以上为本工作台完整使用说明 —</p>
-          </div>
-        </div>
-
-        <!-- 软件更新 -->
-        <div class="set-panel" data-panel="update" hidden>
-          <div class="set-sec">软件更新</div>
-          <div class="set-card">
-            <div class="set-frow">
-              <div class="set-frow-main">
-                <div class="set-frow-t">当前版本 <span class="upd-cur" id="updCurrent"></span></div>
-                <div class="set-frow-d">更新由 GitHub Releases 发布，自动检测最新版本。</div>
-              </div>
-              <div class="set-frow-ctl"><button type="button" id="updCheckBtn" class="tb-btn">检查更新</button></div>
-            </div>
-            <div class="upd-area" id="updArea">
-              <div class="upd-placeholder">点击「检查更新」查看是否有新版本。</div>
-            </div>
           </div>
         </div>
 
@@ -2524,8 +2482,12 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
        这就是「问大家页面点了没反应 / 内容一直不显示」的真正原因：不在白名单里就会落进
        else 分支，frame.src 从不被赋值，iframe 一直停在上一个页面。
        ⚠️ 新增 iframe 页面必须**同时**改 3 处：nav-item 的 data-tool / meta 映射 / 这个白名单，
-          漏掉白名单会表现为「菜单能点、但页面永远不加载」，且不报任何错。 */
-    if(page==='item'||page==='store'||page==='qchat'||page==='qanalysis'||page==='qreport'||page==='qworkload'||page==='sku'||page==='review'||page==='ask'||page==='product'||page==='efftools'||page==='juhe'||page==='ctodo'){
+          漏掉白名单会表现为「菜单能点、但页面永远不加载」，且不报任何错。
+       2026-09-16：补 rival（竞品采集）—— 它只登记了 nav-item + meta 两处，CSS 显影规则、
+       本白名单、valid 恢复白名单三处全漏，表现就是「点进去主区一片空白」。
+       同时清掉已失效的 efftools（效率工具现用 juhe，且 meta 里没有 efftools，
+       一旦被切到会走到 meta[page].src 直接抛错）。 */
+    if(page==='item'||page==='store'||page==='qchat'||page==='qanalysis'||page==='qreport'||page==='qworkload'||page==='sku'||page==='review'||page==='ask'||page==='product'||page==='rival'||page==='juhe'||page==='ctodo'){
       var src = meta[page].src;
       /* ★ 带筛选跳转：拼 'filter=xxx'（见上面的 ovPendingQuery）。用完立刻清空。 */
       var q = ovPendingQuery || '';
@@ -4752,10 +4714,10 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
     });
   }
   /* ===== AI 动手能力：白名单工具（函数调用） ===== */
-  var AI_PAGES = ['overview','item','store','sku','qchat','qanalysis','qreport','qworkload','ctodo','review','ask','product','idea','kb','kbp','hot','settings','ai'];
+  var AI_PAGES = ['overview','item','store','sku','qchat','qanalysis','qreport','qworkload','ctodo','review','ask','product','rival','idea','kb','kbp','hot','settings','ai'];
   var AI_TOOLS = [
     { type:'function', function:{ name:'set_theme', description:'切换工作台界面主题。当用户要求切换主题、颜色模式、亮度、外观时，必须调用此工具完成，禁止只文字回复。参数 theme 使用 dark（暗色/深色/黑色）、light（亮色/浅色/白色）、auto（自动）。', parameters:{ type:'object', properties:{ theme:{ type:'string', enum:['dark','light','auto','eye'], description:'目标主题：dark=暗色/深色/黑色, light=亮色/浅色/白色, auto=自动' } }, required:['theme'] } } },
-    { type:'function', function:{ name:'open_page', description:'跳转打开工作台的某个功能页，例如店铺分析、单品分析、待办事项、灵感速记、知识库、每日热点等', parameters:{ type:'object', properties:{ page:{ type:'string', enum:AI_PAGES, description:'功能页标识：overview 首页 / item 单品分析 / store 店铺分析 / sku SKU明细 / product 商品管理 / qchat 客服会话 / qanalysis 需求洞察 / qreport 沟通分析报告 / qworkload 客服分析 / review 评价管理 / ask 问大家 / ctodo 待办事项（客户待办 · 加急 / 延期 / 截图识别） / idea 灵感速记 / kb 个人知识库 / kbp 产品知识库 / hot 每日热点 / settings 设置 / ai AI 助手' } }, required:['page'] } } },
+    { type:'function', function:{ name:'open_page', description:'跳转打开工作台的某个功能页，例如店铺分析、单品分析、待办事项、灵感速记、知识库、每日热点等', parameters:{ type:'object', properties:{ page:{ type:'string', enum:AI_PAGES, description:'功能页标识：overview 首页 / item 单品分析 / store 店铺分析 / sku SKU明细 / product 商品管理 / qchat 客服会话 / qanalysis 需求洞察 / qreport 沟通分析报告 / qworkload 客服分析 / review 评价管理 / ask 问大家 / ctodo 待办事项（客户待办 · 加急 / 延期 / 截图识别） / rival 竞品采集（详情页采价 / 销量 / SKU 对比） / idea 灵感速记 / kb 个人知识库 / kbp 产品知识库 / hot 每日热点 / settings 设置 / ai AI 助手' } }, required:['page'] } } },
     { type:'function', function:{ name:'add_note', description:'添加一条灵感速记', parameters:{ type:'object', properties:{ text:{ type:'string', description:'灵感内容' }, tag:{ type:'string', description:'标签，可为空' } }, required:['text'] } } },
     { type:'function', function:{ name:'add_kb', description:'添加一条笔记到「个人知识库」', parameters:{ type:'object', properties:{ title:{ type:'string', description:'笔记标题，可为空，为空时自动取正文开头' }, text:{ type:'string', description:'笔记正文' }, tags:{ type:'string', description:'标签，逗号分隔，可为空' } }, required:['text'] } } },
     { type:'function', function:{ name:'add_kbp', description:'添加一条产品资料到「产品知识库」（卖点/规格/话术/常见问答等）', parameters:{ type:'object', properties:{ title:{ type:'string', description:'产品名称' }, text:{ type:'string', description:'产品资料正文：卖点/规格/话术/常见问答等' }, cat:{ type:'string', description:'分类，可为空' }, tags:{ type:'string', description:'标签，逗号分隔，可为空' } }, required:['title','text'] } } },
@@ -5096,25 +5058,40 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
   /* 桌面悬浮球已独立（Tauri 客户端）：窗口内不再显示页面悬浮球，避免两套球重复。
       仅客户端环境生效，纯网页版不受影响；桌面球的点击经 fab_action 唤起并跳转。
       用轮询等待 __TAURI__ 注入（客户端才注入，时机可能晚于本脚本），确保客户端里一定隐藏。 */
+  function wbIsClient(){ return !!(window.__TAURI__ && window.__TAURI__.core); }
+  /* 客户端内：页面悬浮球永远隐藏（两套球只保留桌面的），无论开关状态 */
   function wbClientHideFabs(){
     var af = document.getElementById('aiFab'), tf = document.getElementById('todoFab');
     if(af && !af.hidden) af.hidden = true;
     if(tf && !tf.hidden) tf.hidden = true;
+    /* 顺手把桌面悬浮球的初始显隐同步为当前开关状态（开关关掉→桌面球也隐藏） */
+    wbSyncDesktopFab('ai');
+    wbSyncDesktopFab('todo');
+  }
+  /* 让某个桌面悬浮球窗口跟随（which: 'ai'/'todo'），状态取自上一步 wbApplyFabs 已落盘的 localStorage */
+  function wbSyncDesktopFab(which){
+    if(!wbIsClient()) return;
+    var key = which === 'todo' ? FAB_TODO_KEY : FAB_AI_KEY;
+    var visible = wbFabOn(key);
+    try{ window.__TAURI__.core.invoke('fab_set_visible', { which: which, visible: visible }).catch(function(){}); }catch(e){}
   }
   wbApplyFabs();
   (function wbWaitClientHideFabs(tries){
-    if(window.__TAURI__ && window.__TAURI__.core){
+    if(wbIsClient()){
       wbClientHideFabs();
       return;
     }
     if((tries||0) < 80){ setTimeout(function(){ wbWaitClientHideFabs((tries||0)+1); }, 100); }
   })(0);
-  [['setSwAiFab', FAB_AI_KEY], ['setSwTodoFab', FAB_TODO_KEY]].forEach(function(x){
+  [['setSwAiFab', 'ai', FAB_AI_KEY], ['setSwTodoFab', 'todo', FAB_TODO_KEY]].forEach(function(x){
     var el = document.getElementById(x[0]);
     if(!el) return;
     el.addEventListener('click', function(){
-      wbSetFabOn(x[1], !wbFabOn(x[1]));
+      var on = !wbFabOn(x[2]);
+      wbSetFabOn(x[2], on);
       wbApplyFabs();
+      /* 客户端内页面球已隐藏，开关只影响桌面窗口 → 调原生命令控制 */
+      wbSyncDesktopFab(x[1]);
     });
     /* 键盘可达：role=switch 只认 Space（Enter 在 button 上也会触发 click，不重复处理） */
     el.addEventListener('keydown', function(e){
@@ -5201,146 +5178,6 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
         }
       }catch(err){}
     });
-  })();
-
-  /* ===== 软件更新（Tauri 端）=====
-     检查更新(check_update) / 下载并安装(download_update) / 忽略本版本(ignore_update)
-     四个 Rust 命令 + 两个事件：后台发现新版本 wb-update-available、下载进度 wb-update-progress。
-     纯网页版没有 Tauri，自动降级为「提示使用桌面客户端」。 */
-  (function(){
-    var upd = {
-      get tauri(){ return !!(window.__TAURI__ && window.__TAURI__.core && window.__TAURI__.core.invoke); },
-      get area(){ return document.getElementById('updArea'); },
-      get cur(){ return document.getElementById('updCurrent'); },
-      render: function(){},  // 占位，下面覆写
-      state: {}
-    };
-    function escU(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
-    function fmtBytes(b){
-      if(b==null || isNaN(b)) return '';
-      if(b < 1024) return b + ' B';
-      if(b < 1048576) return (b/1024).toFixed(1) + ' KB';
-      return (b/1048576).toFixed(1) + ' MB';
-    }
-    function fmtDate(ts){
-      if(!ts) return '';
-      try{ var d = new Date(ts*1000); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
-      catch(e){ return ''; }
-    }
-    upd.render = function(html){
-      var a = upd.area; if(a) a.innerHTML = html;
-    };
-    upd.showIdle = function(){ upd.render('<div class="upd-placeholder">点击「检查更新」查看是否有新版本。</div>'); };
-    upd.showChecking = function(){ upd.render('<div class="upd-placeholder">正在检查更新…</div>'); };
-    upd.showNone = function(){ upd.render('<div class="upd-box"><div class="upd-row"><span class="upd-badge ok">已是最新版本</span></div></div>'); };
-    upd.showError = function(msg){ upd.render('<div class="upd-box"><div class="upd-row"><span class="upd-badge err">检查失败</span></div><div class="upd-note">' + escU(msg) + '</div></div>'); };
-    upd.showNew = function(info){
-      var body = info.body ? escU(info.body) : '';
-      upd.state.current = info;
-      upd.render(
-        '<div class="upd-box">'
-        + '<div class="upd-row"><span class="upd-badge new">发现新版本 v' + escU(info.version) + '</span><span style="color:var(--muted);font-size:12.5px;">当前 v' + escU(info.current_version) + (info.date ? ' · 发布于 ' + fmtDate(info.date) : '') + '</span></div>'
-        + (body ? '<div class="upd-note">' + body + '</div>' : '')
-        + '<div class="upd-row upd-actions" id="updActions">'
-        + '<button type="button" class="tb-btn upd-primary" data-upd-act="go">立即下载并升级</button>'
-        + '<button type="button" class="tb-btn" data-upd-act="later">稍后</button>'
-        + '<button type="button" class="tb-btn upd-link" data-upd-act="ignore">忽略这个版本</button>'
-        + '</div>'
-        + '<div class="upd-progress" id="updProgress" style="display:none;">'
-        + '<div class="upd-progress-bar"><i></i></div>'
-        + '<div class="upd-progress-txt"></div>'
-        + '</div>'
-        + '</div>'
-      );
-    };
-    upd.showDownloading = function(down, total){
-      var bar = document.getElementById('updProgress');
-      var fill, txt;
-      if(bar){
-        bar.style.display='flex';
-        fill = bar.querySelector('i');
-        txt = bar.querySelector('.upd-progress-txt');
-      }
-      var pct = (total && total>0) ? Math.min(100, Math.round(down*100/total)) : 0;
-      if(fill) fill.style.width = pct + '%';
-      if(txt) txt.textContent = fmtBytes(down) + (total ? ' / ' + fmtBytes(total) : '');
-      var go = document.querySelector('[data-upd-act="go"]');
-      if(go) go.disabled = true;
-      var later = document.querySelector('[data-upd-act="later"]');
-      if(later) later.disabled = true;
-    };
-    upd.check = function(){
-      if(!upd.tauri){
-        upd.render('<div class="upd-box"><div class="upd-row"><span class="upd-badge err">需在客户端内使用</span></div><div class="upd-note">自动更新只在 Tauri 桌面客户端内可用。请下载并运行「运营工作台」客户端。</div></div>');
-        return;
-      }
-      upd.showChecking();
-      window.__TAURI__.core.invoke('check_update')
-        .then(function(r){
-          if(upd.cur) upd.cur.textContent = 'v' + (r.current_version || '');
-          if(r && r.available) upd.showNew(r);
-          else if(r && r.ignored) upd.render('<div class="upd-box"><div class="upd-row"><span class="upd-badge ok">已忽略此版本</span></div><div class="upd-note">你已忽略 v' + escU(r.version) + '。后续版本检查将不再提示它。</div></div>');
-          else upd.showNone();
-        })
-        .catch(function(e){ upd.showError(String(e && e.message ? e.message : e)); });
-    };
-    function onUpdAction(act, info){
-      if(act === 'go'){
-        upd.render(
-          '<div class="upd-box"><div class="upd-row"><span class="upd-badge new">正在下载并升级</span></div>'
-          + '<div class="upd-progress" id="updProgress"><div class="upd-progress-bar"><i></i></div><div class="upd-progress-txt">0%</div></div>'
-          + '<div class="upd-note" id="updDownloadNote">正在下载 v' + escU(info.version) + ' 安装包…</div></div>'
-        );
-        window.__TAURI__.core.invoke('download_update')
-          .then(function(){ /* 安装器已拉起，客户端将自动退出重装 */ })
-          .catch(function(e){ /* 下载/安装失败 */ });
-      } else if(act === 'later'){
-        upd.showIdle();
-      } else if(act === 'ignore'){
-        window.__TAURI__.core.invoke('ignore_update', { version: info.version }).then(function(){ upd.showIdle(); }).catch(function(){});
-      }
-    }
-    /* 事件代理：点击更新区按钮 */
-    document.addEventListener('click', function(e){
-      var btn = e.target.closest('[data-upd-act]');
-      if(!btn) return;
-      var act = btn.getAttribute('data-upd-act');
-      if(upd.state.current){ onUpdAction(act, upd.state.current); e.stopPropagation(); }
-    });
-    /* 全局提示条：后台发现新版本 */
-    window.__TAURI__ && window.__TAURI__.event && window.__TAURI__.event.listen && window.__TAURI__.event.listen('wb-update-available', function(ee){
-      var v = ee && ee.payload && ee.payload.version;
-      if(!v) return;
-      var n = document.createElement('div');
-      n.className = 'upd-toast';
-      n.innerHTML = '<div style="display:flex;align-items:center;gap:10px;flex:1;">'
-        + '<span class="upd-badge new">新版本 v' + escU(v) + '</span>'
-        + '<span style="font-size:13px;color:var(--muted);flex:1;">点击前往「软件更新」升级</span></div>'
-        + '<button type="button" class="tb-btn upd-primary" style="margin-left:auto;">查看</button>';
-      n.addEventListener('click', function(ev){
-        if(ev.target.closest('button')){
-          n.remove();
-          setSettingsTab('update');
-          var sm = document.getElementById('setModal');
-          if(sm) sm.classList.add('show');
-          var chk = document.getElementById('updCheckBtn');
-          if(chk) upd.check();
-        }
-      });
-      document.body.appendChild(n);
-      setTimeout(function(){ if(n.parentNode) n.remove(); }, 10000);
-    });
-    /* 下载进度事件 */
-    window.__TAURI__ && window.__TAURI__.event && window.__TAURI__.event.listen && window.__TAURI__.event.listen('wb-update-progress', function(ee){
-      var p = ee && ee.payload || {};
-      upd.showDownloading(p.downloaded||0, p.total);
-    });
-    /* 初始化：显示当前版本 + 绑定按钮 */
-    var chkBtn = document.getElementById('updCheckBtn');
-    if(chkBtn) chkBtn.addEventListener('click', upd.check);
-    if(upd.cur && upd.tauri){
-      window.__TAURI__.core.invoke('check_update').then(function(r){ if(r && r.current_version) upd.cur.textContent = 'v' + r.current_version; }).catch(function(){});
-    }
   })();
 
   (function todoFabInit(){
@@ -7199,7 +7036,7 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
   (function(){
     /* 2026-09-15：'settings' 已从恢复白名单移除 —— 设置改成弹窗后，
        刷新时不应该自动弹出设置窗口。 */
-    var valid=['overview','idea','kb','kbp','hot','compare','profit','revprice','item','store','qchat','qanalysis','qreport','qworkload','sku','ctodo','review','ask','product','juhe','worklog'];
+    var valid=['overview','idea','kb','kbp','hot','compare','profit','revprice','item','store','qchat','qanalysis','qreport','qworkload','sku','ctodo','review','ask','product','rival','juhe','worklog'];
     var last=null; try{ last=localStorage.getItem('wb_last_page'); }catch(e){}
     /* ★ 双保险：valid 白名单 + wbIsRealPage（防「页面删了但 key 还留在 valid 里」） */
     if(!last || valid.indexOf(last)<0 || !wbIsRealPage(last)) last='overview';
