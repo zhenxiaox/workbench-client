@@ -28,17 +28,20 @@ jobs:
       - name: 安装前端依赖
         run: npm ci
 
-      - name: 注入更新端点（用当前仓库名替换占位符）
-        shell: pwsh
-        run: |
-          $conf = 'src-tauri\tauri.conf.json'
-          $j = (Get-Content $conf -Raw).Replace('REPLACE_WITH_OWNER/REPLACE_WITH_REPO', '${{ github.repository }}')
-          Set-Content -Path $conf -Value $j -NoNewline
-
       - name: 构建并签名
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
         run: npm run tauri -- build
+
+      - name: 重命名安装包为 ASCII 文件名
+        shell: pwsh
+        run: |
+          $nsis = 'src-tauri\target\release\bundle\nsis'
+          $v = (Get-Content 'src-tauri\tauri.conf.json' -Raw | ConvertFrom-Json).version
+          $exe = Get-ChildItem $nsis -Filter '*-setup.exe' | Select-Object -First 1
+          $sig = Get-ChildItem $nsis -Filter '*.exe.sig' | Select-Object -First 1
+          Rename-Item -Path $exe.FullName -NewName "workbench_${v}_x64-setup.exe"
+          Rename-Item -Path $sig.FullName -NewName "workbench_${v}_x64-setup.exe.sig"
 
       - name: 生成 latest.json
         shell: pwsh
