@@ -214,6 +214,16 @@ fn fab_menu(app: tauri::AppHandle) {
     }
 }
 
+const IGNORE_FILE: &str = "ignored-update.txt";
+
+/// 已忽略的版本（用户点了「忽略本版本」后，后台与手动检查都不再提示它）。
+fn read_ignored(data_dir: &Path) -> String {
+    std::fs::read_to_string(data_dir.join(IGNORE_FILE))
+        .ok()
+        .map(|s| s.trim().to_string())
+        .unwrap_or_default()
+}
+
 /// 更新结果（供前端展示 / 手动触发检查）。
 #[derive(serde::Serialize)]
 struct UpdateInfo {
@@ -222,30 +232,79 @@ struct UpdateInfo {
     current_version: String,
     date: Option<i64>,
     body: Option<String>,
+    ignored: bool,
 }
 
-/// 检查更新：返回是否有可用版本（无更新时 available=false）。
+/// 检查更新：返回是否有可用版本（无更新 / 已被忽略 时 available=false）。
 #[tauri::command]
 async fn check_update(app: tauri::AppHandle) -> Result<UpdateInfo, String> {
     let current = app.package_info().version.to_string();
     let updater = app.updater().map_err(|e| e.to_string())?;
+    let ignored = read_ignored(&data_dir_of(&app));
     match updater.check().await {
-        Ok(Some(u)) => Ok(UpdateInfo {
-            available: true,
-            version: u.version.clone(),
-            current_version: current,
-            date: u.date.map(|d| d.unix_timestamp()),
-            body: u.body.clone(),
-        }),
+        Ok(Some(u)) => {
+            let is_ignored = ignored == u.version.as_str();
+            Ok(UpdateInfo {
+                available: !is_ignored,
+                version: u.version.clone(),
+                current_version: current,
+                date: u.date.map(|d| d.unix_timestamp()),
+                body: u.body.clone(),
+                ignored: is_ignored,
+            })
+        }
         Ok(None) => Ok(UpdateInfo {
             available: false,
             version: String::new(),
             current_version: current,
             date: None,
             body: None,
+            ignored: false,
         }),
         Err(e) => Err(e.to_string()),
     }
+}
+
+/// 忽略某个版本：以后检查更新不再提示该版本。
+#[tauri::command]
+fn ignore_update(app: tauri::AppHandle, version: String) -> Result<(), String> {
+    let dir = data_dir_of(&app);
+    std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    std::fs::write(dir.join(IGNORE_FILE), version.trim()).map_err(|e| e.to_string())
+}
+
+/// 下载并安装新版本。下载进度通过 `wb-update-progress` 事件逐块报给前端。
+/// 下载完成后立刻拉起 NSIS 安装器（passive 模式），客户端会自动退出，装完自动重回新版本。
+#[tauri::command]
+async fn download_update(app: tauri::AppHandle) -> Result<(), String> {
+    let updater = app.updater().map_err(|e| e.to_string())?;
+    let update = updater
+        .check()
+        .await
+        .map_err(|e| e.to_string())?
+        .ok_or_else(|| "当前已是最新版本，无需更新".to_string())?;
+
+    let bytes = std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));
+    let target = tauri::EventTarget::labeled(MAIN_LABEL);
+    let handle = app.clone();
+    update
+        .download_and_install(
+            move |chunk, total| {
+                let cur = bytes.fetch_add(chunk, std::sync::atomic::Ordering::SeqCst) + chunk;
+                let _ = handle.emit_to(
+                    target.clone(),
+                    "wb-update-progress",
+                    serde_json::json!({
+                        "downloaded": cur,
+                        "total": total,
+                    }),
+                );
+            },
+            || {},
+        )
+        .await
+        .map_err(|e| e.to_string())?;
+    Ok(())
 }
 
 /// 启动后后台检查一次更新，发现新版本则通知主窗口。
@@ -257,6 +316,10 @@ fn spawn_update_check(app: &tauri::AppHandle) {
             Err(_) => return,
         };
         if let Ok(Some(u)) = updater.check().await {
+            let ignored = read_ignored(&data_dir_of(&handle));
+            if ignored == u.version.as_str() {
+                return;
+            }
             let _ = handle.emit_to(
                 tauri::EventTarget::labeled(MAIN_LABEL),
                 "wb-update-available",
@@ -303,7 +366,13 @@ pub fn run() {
             spawn_update_check(app.handle());
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![fab_action, fab_menu, check_update])
+        .invoke_handler(tauri::generate_handler![
+            fab_action,
+            fab_menu,
+            check_update,
+            ignore_update,
+            download_update
+        ])
         .on_menu_event(|app, event| match event.id().as_ref() {
             "open" => show_main(app),
             "quit" => app.exit(0),
