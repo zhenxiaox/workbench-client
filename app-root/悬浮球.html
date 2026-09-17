@@ -6,101 +6,90 @@
 <title>运营工作台悬浮球</title>
 <style>
   :root{
-    --fab-ai-bg:linear-gradient(145deg,#FFA45C 0%,#F97316 55%,#E4660A 100%);
-    --fab-glow:rgba(249,115,22,.42);
-    --card-bg:rgba(255,255,255,.96);
-    --card-border:rgba(249,115,22,.16);
-    --ink:#2B2B2B; --ink-2:#7A7A7A; --line:rgba(0,0,0,.07);
-    --orange:#F97316; --blue:#3B82F6; --red:#EF4444;
+    --orange:#F97316; --orange-deep:#E4660A;
+    --blue:#3B82F6; --blue-deep:#2563EB;
+    --card-bg:#FFFFFF;
+    --ink:#2B2B2B; --ink-2:#8A8A8A; --line:rgba(0,0,0,.06);
+    --red:#EF4444;
   }
   *{ box-sizing:border-box; }
-  /* hidden 必须显式 !important：.ball/.badge 等作者样式设了 display:flex/inline，
-     会盖掉 UA 默认的 [hidden]{display:none}，把一个球 hidden 后仍会显示（两个球挤在 80px 窗口里被压成椭圆）。 */
+  /* hidden 必须显式 !important：.ball/.card 等作者样式设了 display，会盖掉 UA 默认的 [hidden]{display:none} */
   [hidden]{ display:none !important; }
   html,body{ margin:0; padding:0; background:transparent; overflow:hidden; }
   body{ width:100vw; height:100vh; }
-  .wrap{
-    width:100%; height:100%;
-    display:flex; flex-direction:column; align-items:center;
-    padding-top:12px;
-  }
+  .wrap{ width:100%; height:100%; display:flex; flex-direction:column; align-items:center; padding-top:12px; }
+
+  /* ---- 球（56px 圆形）---- */
   .ball{
     position:relative; width:56px; height:56px; border-radius:50%;
-    background:var(--fab-ai-bg); color:#fff; border:none; cursor:grab; outline:none;
-    display:flex; align-items:center; justify-content:center; flex:0 0 auto;
-    box-shadow:0 6px 16px var(--fab-glow), 0 2px 6px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.34);
+    color:#fff; border:none; cursor:grab; outline:none; flex:0 0 auto;
+    display:flex; align-items:center; justify-content:center; flex-direction:column;
+    box-shadow:0 6px 18px rgba(0,0,0,.28), 0 2px 6px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.32);
     user-select:none; -webkit-user-select:none; touch-action:none;
   }
   .ball:hover{ transform:scale(1.05); }
-  .ball:active{ cursor:grabbing; transform:scale(.96); }
+  .ball:active{ cursor:grabbing; transform:scale(.97); }
+  .ball.ai{ background:linear-gradient(145deg,#60A5FA 0%,#3B82F6 55%,#2563EB 100%); }
+  .ball.todo{ background:linear-gradient(145deg,#FFA45C 0%,#F97316 55%,#E4660A 100%); }
+  .ball.todo.idle{ opacity:.55; }
   .ball svg{ width:26px; height:26px; display:block; }
-  .fab-label{ font-size:15px; font-weight:700; letter-spacing:1px; line-height:1; }
-  .todo.idle{ opacity:.55; }
+  .fab-num{ font-size:21px; font-weight:800; line-height:1; }
+  .fab-cap{ font-size:10px; font-weight:600; margin-top:3px; opacity:.92; letter-spacing:1px; }
+
   .badge, .doing{
-    position:absolute; top:-4px; min-width:20px; height:20px; padding:0 5px;
+    position:absolute; top:-5px; min-width:20px; height:20px; padding:0 5px;
     border-radius:999px; color:#fff; font-size:11.5px; font-weight:700;
     line-height:20px; text-align:center; box-shadow:0 0 0 2px #fff; pointer-events:none;
   }
-  .badge{ right:-4px; background:#F97316; }
-  .doing{ left:-4px; background:#3B82F6; }
-  .badge[hidden], .doing[hidden]{ display:none; }
+  .badge{ right:-5px; background:var(--orange-deep); }
+  .doing{ left:-5px; background:var(--blue); }
 
-  /* ---- 展开的卡片 ---- */
+  /* ---- 气泡卡片（从球下方弹出，带小三角指向球）---- */
   .card{
-    display:none; width:272px; margin-top:10px; flex:1 1 auto; overflow:hidden;
-    background:var(--card-bg); border:1px solid var(--card-border);
-    border-radius:14px; box-shadow:0 14px 34px rgba(0,0,0,.18), 0 2px 8px rgba(0,0,0,.10);
-    flex-direction:column; color:var(--ink);
+    position:relative; width:300px; margin-top:12px; flex:0 0 auto;
+    background:var(--card-bg); border:1px solid rgba(0,0,0,.06);
+    border-radius:16px; box-shadow:0 12px 40px rgba(0,0,0,.20), 0 2px 8px rgba(0,0,0,.08);
+    display:flex; flex-direction:column; color:var(--ink); overflow:hidden;
   }
-  body.expanded .card{ display:flex; }
-  .card-head{
-    display:flex; align-items:center; gap:8px; padding:11px 14px 9px;
-    border-bottom:1px solid var(--line); font-size:13.5px; font-weight:700;
+  .card::before{
+    content:''; position:absolute; top:-7px; left:50%; transform:translateX(-50%);
+    border:7px solid transparent; border-top:none; border-bottom-color:#fff;
+    filter:drop-shadow(0 -1px 1px rgba(0,0,0,.05));
   }
+  .card-head{ display:flex; align-items:center; gap:8px; padding:12px 14px 10px; font-size:13.5px; font-weight:700; border-bottom:1px solid var(--line); }
   .card-head .dot{ width:9px; height:9px; border-radius:50%; flex:0 0 auto; }
+  .todo-card .card-head .dot{ background:var(--orange); }
+  .ai-card .card-head .dot{ background:var(--blue); }
   .card-head .sub{ margin-left:auto; font-weight:500; font-size:11.5px; color:var(--ink-2); }
-  .card-head .close{
-    margin-left:6px; border:none; background:none; color:var(--ink-2);
-    font-size:16px; line-height:1; cursor:pointer; padding:0 3px; border-radius:6px;
-  }
+  .card-head .close{ margin-left:4px; border:none; background:none; color:var(--ink-2); font-size:16px; line-height:1; cursor:pointer; padding:0 3px; border-radius:6px; }
   .card-head .close:hover{ background:rgba(0,0,0,.06); color:var(--ink); }
-  .card-body{ flex:1 1 auto; overflow-y:auto; padding:6px 0; }
+  .card-body{ overflow-y:auto; padding:4px 0; }
+  .card-foot{ padding:9px 14px; border-top:1px solid var(--line); text-align:right; }
+  .card-foot .link{ font-size:12px; font-weight:600; cursor:pointer; }
+  .todo-card .card-foot .link{ color:var(--orange); }
+  .ai-card .card-foot .link{ color:var(--blue); }
 
   /* 待办列表 */
-  .titem{
-    display:flex; align-items:flex-start; gap:9px; padding:9px 14px;
-    border-bottom:1px solid var(--line); font-size:12.5px; line-height:1.45; cursor:pointer;
-  }
+  .titem{ display:flex; align-items:flex-start; gap:9px; padding:10px 14px; border-bottom:1px solid var(--line); font-size:12.5px; line-height:1.45; cursor:pointer; }
   .titem:last-child{ border-bottom:none; }
-  .titem:hover{ background:rgba(249,115,22,.05); }
-  .titem .pri{ width:8px; height:8px; border-radius:50%; margin-top:4px; flex:0 0 auto; }
+  .titem:hover{ background:rgba(249,115,22,.06); }
+  .titem .pri{ width:8px; height:8px; border-radius:50%; margin-top:5px; flex:0 0 auto; }
   .titem .pri.p1{ background:var(--red); } .titem .pri.p2{ background:var(--orange); }
   .titem .pri.p3{ background:var(--blue); } .titem .pri.p4{ background:#D1D5DB; }
   .titem .mt{ flex:1 1 auto; min-width:0; }
   .titem .tt{ font-weight:600; word-break:break-word; }
   .titem .em{ color:var(--red); font-size:11px; font-weight:700; margin-left:4px; }
   .titem .dd{ font-size:11px; color:var(--ink-2); margin-top:2px; }
-  .titem .tag{ flex:0 0 auto; font-size:10.5px; padding:1px 7px; border-radius:999px; color:#fff; }
-  .titem .tag.doing{ background:var(--blue); }
-  .empty{
-    padding:26px 16px; text-align:center; color:var(--ink-2); font-size:12.5px;
-  }
+  .titem .tag{ flex:0 0 auto; font-size:10.5px; padding:1px 8px; border-radius:999px; color:#fff; background:var(--blue); }
+  .titem .tag.pending{ background:#E5E7EB; color:#6B7280; }
+  .empty{ padding:28px 16px; text-align:center; color:var(--ink-2); font-size:12.5px; }
   .empty b{ display:block; color:var(--ink); font-size:13px; margin-bottom:4px; }
 
   /* AI 快捷入口 */
-  .ai-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:8px; padding:12px; }
-  .ai-item{
-    display:flex; flex-direction:column; align-items:center; gap:6px; padding:14px 6px;
-    border:1px solid var(--line); border-radius:11px; background:#fff; cursor:pointer;
-    font-size:11.5px; color:var(--ink); transition:background .12s, transform .08s;
-  }
-  .ai-item:hover{ background:rgba(249,115,22,.06); border-color:var(--card-border); transform:translateY(-1px); }
-  .ai-item svg{ width:22px; height:22px; }
-  .ai-foot{
-    padding:9px 12px; border-top:1px solid var(--line);
-    text-align:center; font-size:11.5px; color:var(--ink-2);
-  }
-  .ai-foot b{ color:var(--orange); cursor:pointer; }
+  .ai-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:8px; padding:12px 12px 14px; }
+  .ai-item{ display:flex; flex-direction:column; align-items:center; gap:7px; padding:14px 6px; border:1px solid var(--line); border-radius:12px; background:#fff; cursor:pointer; font-size:11.5px; color:var(--ink); transition:background .12s, transform .08s, border-color .12s; }
+  .ai-item:hover{ background:rgba(128,170,255,.10); border-color:rgba(59,130,246,.35); transform:translateY(-1px); }
+  .ai-item svg{ width:22px; height:22px; color:var(--blue); }
 </style>
 </head>
 <body>
@@ -112,25 +101,26 @@
     </svg>
   </div>
   <div class="ball todo" id="todoBall" role="button" tabindex="0" title="待办事项" aria-label="待办事项" data-tauri-drag-region>
-    <span class="fab-label">待办</span>
-    <span class="badge" id="todoBadge" hidden>0</span>
+    <span class="fab-num" id="todoNum">0</span>
+    <span class="fab-cap">待办</span>
     <span class="doing" id="todoDoing" hidden>0</span>
   </div>
 
-  <!-- 待办球展开卡片 -->
-  <div class="card" id="todoCard">
+  <!-- 待办球展开气泡（橙色主题） -->
+  <div class="card todo-card" id="todoCard" hidden>
     <div class="card-head">
-      <span class="dot" style="background:var(--orange)"></span>今日待办
+      <span class="dot"></span>今日待办
       <span class="sub" id="todoCardSub"></span>
       <button class="close" title="收起">✕</button>
     </div>
     <div class="card-body" id="todoCardBody"></div>
+    <div class="card-foot"><span class="link">查看全部 →</span></div>
   </div>
 
-  <!-- AI 球展开卡片 -->
-  <div class="card" id="aiCard">
+  <!-- AI 球展开气泡（蓝色主题） -->
+  <div class="card ai-card" id="aiCard" hidden>
     <div class="card-head">
-      <span class="dot" style="background:var(--orange)"></span>AI 助手
+      <span class="dot"></span>AI 助手
       <button class="close" title="收起">✕</button>
     </div>
     <div class="ai-grid">
@@ -151,7 +141,7 @@
         经营总结
       </div>
     </div>
-    <div class="ai-foot">打开完整 <b data-go="ai-main">AI 面板</b></div>
+    <div class="card-foot"><span class="link">打开完整 AI 面板</span></div>
   </div>
 </div>
 <script>
@@ -160,30 +150,36 @@
   var which = ((location.search.match(/[?&]which=([^&]+)/) || [])[1] || 'ai').toLowerCase();
   var aiBall = document.getElementById('aiBall');
   var todoBall = document.getElementById('todoBall');
-  var badge = document.getElementById('todoBadge');
+  var todoNum = document.getElementById('todoNum');
   var doing = document.getElementById('todoDoing');
-  var card = null, bodyEl = document.getElementById('todoCardBody');
+  var bodyEl = document.getElementById('todoCardBody');
+  var aiCardEl = document.getElementById('aiCard');
+  var todoCardEl = document.getElementById('todoCard');
 
-  var CARD_W = 272;
-  var TODO_H = 348, AI_H = 272;
-  var BASE_H = 80;  /* 收起时窗口包含球(56)+上边距 */
+  var CARD_W = 300;
+  var TODO_H = 340, AI_H = 282;
+  var BASE_H = 80;
 
+  var card = null;
   if(which === 'todo'){
     if(aiBall) aiBall.hidden = true;
-    card = document.getElementById('todoCard');
+    card = todoCardEl;
   } else {
     if(todoBall) todoBall.hidden = true;
     which = 'ai';
-    card = document.getElementById('aiCard');
+    card = aiCardEl;
   }
+  /* 关键修复：每个窗口只保留自己那个气泡，另一个彻底隐藏——
+     否则两个 .card 都在同一窗口内，旧 CSS 会把两个气泡一起显示，导致「AI/待办混在一起」。 */
+  /* 初始均为收起状态（只显示球），展开时才通过 card.hidden=false 显示对应卡片。 */
+  if(aiCardEl) aiCardEl.hidden = true;
+  if(todoCardEl) todoCardEl.hidden = true;
 
   function invoke(cmd, args){ return window.__TAURI__.core.invoke(cmd, args || {}); }
   function taWin(){ try{ return window.__TAURI__.window.getCurrentWindow(); }catch(e){ return null; } }
 
-  /* 输入法：全部文本就地生成，无任何外部输入 → 无需防注入，仅负责展示 */
-
-  /* 单击展开 / 双击直达 —— 用 mousedown/up 完成拖动与点击语义区分 */
-  var downX=0, downY=0, downT=0, dragStarted=false, lastClickT=0;
+  var expanded = false;
+  var downX=0, downY=0, dragStarted=false, lastClickT=0;
 
   function openMain(){
     refresh();
@@ -191,17 +187,6 @@
     else { try{ window.open('/工作台.html', '_blank'); }catch(e){} }
   }
 
-  function expand(){
-    document.body.classList.add('expanded');
-    if(which === 'todo') loadTodoCard();
-    var h = which==='todo' ? TODO_H : AI_H;
-    resizeWin(CARD_W, h);
-  }
-  function collapse(){
-    document.body.classList.remove('expanded');
-    resizeWin(80, BASE_H);
-    dragReset();
-  }
   function resizeWin(w, h){
     var win = taWin();
     if(!win) return;
@@ -210,13 +195,25 @@
       win.setSize(new L(w, h)).catch(function(){});
     }catch(e){}
   }
+  function expand(){
+    expanded = true;
+    if(card) card.hidden = false;
+    if(which === 'todo') loadTodoCard();
+    resizeWin(CARD_W, which==='todo' ? TODO_H : AI_H);
+  }
+  function collapse(){
+    expanded = false;
+    if(card) card.hidden = true;
+    resizeWin(80, BASE_H);
+    dragReset();
+  }
   function dragReset(){ var el = which==='todo'? todoBall : aiBall; if(el) el.style.cursor='grab'; }
 
   var currentBall = which === 'todo' ? todoBall : aiBall;
 
   currentBall.addEventListener('mousedown', function(e){
     if(e.button !== 0) return;
-    downX=e.clientX; downY=e.clientY; downT=Date.now(); dragStarted=false;
+    downX=e.clientX; downY=e.clientY; dragStarted=false;
     var el = currentBall;
     var move = function(ev){
       if(dragStarted) return;
@@ -225,10 +222,10 @@
       dragStarted=true;
       if(hasTauri){ try{ invoke('plugin:window|start_dragging'); }catch(err){} el.style.cursor='grabbing'; }
     };
-    var up = function(ev){
+    var up = function(){
       document.removeEventListener('mousemove', move);
       document.removeEventListener('mouseup', up);
-      if(dragStarted){ dragReset(); return; }   /* 拖了就不算点击 */
+      if(dragStarted){ dragReset(); return; }
       handleClick();
     };
     document.addEventListener('mousemove', move);
@@ -237,15 +234,12 @@
 
   function handleClick(){
     var nowTime = Date.now();
-    var expanded = document.body.classList.contains('expanded');
     if(expanded){
-      /* 已展开：单击收起 */
       collapse();
       lastClickT = 0;
       return;
     }
     if(lastClickT && nowTime - lastClickT <= 330){
-      /* 双击：直达主面板 */
       lastClickT = 0;
       openMain();
       return;
@@ -256,20 +250,24 @@
   }
 
   /* 卡片内收起按钮 */
-  var closes = card ? card.querySelectorAll('.close') : [];
-  closes.forEach(function(b){ b.addEventListener('click', function(e){ e.stopPropagation(); collapse(); }); });
+  if(card){
+    card.querySelectorAll('.close').forEach(function(b){ b.addEventListener('click', function(e){ e.stopPropagation(); collapse(); }); });
+  }
 
   /* Esc 收起 */
   document.body.addEventListener('keydown', function(e){
     if(e.key === 'Escape') collapse();
   });
 
-  /* AI 卡快捷项 → 直达对应页面 */
+  /* 卡片底部「查看全部 / 打开完整面板」→ 打开主面板 */
+  if(card){
+    var footLink = card.querySelector('.card-foot .link');
+    if(footLink) footLink.addEventListener('click', function(){ openMain(); });
+  }
+
+  /* AI 卡快捷项 → 直达主面板 */
   if(card) card.querySelectorAll('[data-go]').forEach(function(el){
-    el.addEventListener('click', function(e){
-      var go = el.getAttribute('data-go');
-      openMain();  /* 目前统一打开主面板；未来可细分目标页 */
-    });
+    el.addEventListener('click', function(){ openMain(); });
   });
 
   /* 待办卡片内容 */
@@ -289,15 +287,14 @@
         var html = [];
         items.forEach(function(t){
           var pri = ('p'+(Number(t.priority)||4));
-          var tag = t.status==='doing' ? '<span class="tag doing">进行中</span>' : '';
-          var em = '';
-          if(t.urgent) em = '<span class="em">紧急</span>';
+          var tag = t.status==='doing' ? '<span class="tag">进行中</span>' : '<span class="tag pending">未完成</span>';
+          var em = t.urgent ? '<span class="em">紧急</span>' : '';
           var dd = '';
           if(t.dueAt){
             try{ dd = '截止 ' + new Date(t.dueAt).toLocaleString('zh-CN',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}); }catch(err){}
           }
           html.push(
-            '<div class="titem" data-tip="' + esc(t.title) + '">' +
+            '<div class="titem">' +
               '<span class="pri ' + pri + '"></span>' +
               '<span class="mt">' +
                 '<span class="tt">' + esc(t.title) + em + '</span>' +
@@ -323,7 +320,7 @@
       .then(function(r){ if(!r.ok) throw new Error('bad'); return r.json(); })
       .then(function(d){
         var t=d.today||0, dn=d.doing||0, over=d.overdue||0;
-        if(badge){ badge.hidden=t<=0; badge.textContent=t>99?'99+':String(t); }
+        if(todoNum) todoNum.textContent = t>99?'99+':String(t);
         if(doing){ doing.hidden=dn<=0; doing.textContent=dn>99?'99+':String(dn); }
         if(todoBall){
           todoBall.classList.toggle('alert', over>0);
