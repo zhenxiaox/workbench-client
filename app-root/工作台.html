@@ -5225,6 +5225,25 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
     });
   })();
 
+  /* ===== 系统托盘事件桥（Tauri 客户端）=====
+     托盘菜单「隐藏浮球 / 设置…」经 Rust emit 'tray-event' 到这里，同步 UI 状态。
+     纯网页版没有 window.__TAURI__，直接跳过，不影响浏览器里运行。 */
+  (function(){
+    if(!(window.__TAURI__ && window.__TAURI__.event && window.__TAURI__.event.listen)) return;
+    window.__TAURI__.event.listen('tray-event', function(e){
+      var action = e.payload;
+      try{
+        if(action === 'hide_fab'){
+          wbSetFabOn(FAB_AI_KEY, false);
+          wbSetFabOn(FAB_TODO_KEY, false);
+          wbApplyFabs();
+        } else if(action === 'settings'){
+          openSettingsModal('general');
+        }
+      }catch(err){}
+    });
+  })();
+
   /* ===== 软件更新（Tauri 端）=====
      检查更新(check_update) / 下载并安装(download_update) / 忽略本版本(ignore_update)
      三个 Rust 命令 + 两个事件：后台发现新版本 wb-update-available、下载进度 wb-update-progress。

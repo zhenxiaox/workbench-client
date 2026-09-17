@@ -14,7 +14,7 @@ use std::process::{Child, Command, Stdio};
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
 
-use tauri::menu::{Menu, MenuItem};
+use tauri::menu::{Menu, MenuItem, PredefinedMenuItem};
 use tauri::tray::TrayIconBuilder;
 use tauri::{Emitter, Manager, WebviewUrl, WebviewWindowBuilder, WindowEvent};
 use tauri_plugin_updater::UpdaterExt;
@@ -201,8 +201,16 @@ fn fab_set_visible(app: tauri::AppHandle, which: String, visible: bool) {
 
 fn setup_tray(app: &tauri::App) -> tauri::Result<()> {
     let open = MenuItem::with_id(app, "open", "打开工作台", true, None::<&str>)?;
+    let hide_tray = MenuItem::with_id(app, "hide_tray", "隐藏到托盘", true, None::<&str>)?;
+    let hide_fab = MenuItem::with_id(app, "hide_fab", "隐藏浮球", true, None::<&str>)?;
+    let settings = MenuItem::with_id(app, "settings", "设置…", true, None::<&str>)?;
     let quit = MenuItem::with_id(app, "quit", "退出客户端", true, None::<&str>)?;
-    let menu = Menu::with_items(app, &[&open, &quit])?;
+    let sep1 = PredefinedMenuItem::separator(app)?;
+    let sep2 = PredefinedMenuItem::separator(app)?;
+    let menu = Menu::with_items(
+        app,
+        &[&open, &hide_tray, &hide_fab, &sep1, &settings, &sep2, &quit],
+    )?;
 
     let mut builder = TrayIconBuilder::with_id("main-tray")
         .tooltip("运营工作台")
@@ -405,6 +413,31 @@ pub fn run() {
         ])
         .on_menu_event(|app, event| match event.id().as_ref() {
             "open" => show_main(app),
+            "hide_tray" => {
+                if let Some(w) = app.get_webview_window(MAIN_LABEL) {
+                    let _ = w.hide();
+                }
+            }
+            "hide_fab" => {
+                for (label, _, _) in FABS {
+                    if let Some(w) = app.get_webview_window(label) {
+                        let _ = w.hide();
+                    }
+                }
+                let _ = app.emit_to(
+                    tauri::EventTarget::labeled(MAIN_LABEL),
+                    "tray-event",
+                    "hide_fab",
+                );
+            }
+            "settings" => {
+                show_main(app);
+                let _ = app.emit_to(
+                    tauri::EventTarget::labeled(MAIN_LABEL),
+                    "tray-event",
+                    "settings",
+                );
+            }
             "quit" => app.exit(0),
             _ => {}
         })
