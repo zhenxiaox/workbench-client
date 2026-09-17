@@ -743,6 +743,66 @@ function serveTodoCount(req, res) {
   sendJson(res, req, { ok: true, today: today, doing: doing, overdue: overdue, total: list.length, mtime: f.mtime });
 }
 
+/* ---------- 待办明细（悬浮球「单击展开」卡片用，只读）----------
+   给桌面悬浮球单击时短名单：今日待办 + 进行中，最多取前 N 条，
+   每条给 标题/优先级/是否紧急/截止/Done/status。口径与 serveTodoCount 一致。 */
+function serveTodoMini(req, res) {
+  setRestrictedCORS(res, req);
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
+    res.writeHead(405, { 'Content-Type': 'application/json; charset=utf-8' });
+    res.end(JSON.stringify({ ok: false, error: 'method not allowed' }));
+    return;
+  }
+  var f = readGzJson('ctodo');
+  var list = Array.isArray(f.data) ? f.data : [];
+  var now = new Date();
+  var t0 = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  var items = [], doingCount = 0, overdueCount = 0;
+  // 先做进行中（置顶），再作今日待办；两段都各自按 紧急>截止>标题 排序。
+  var pick = function (arr) { return arr.map(function (t) {
+    return {
+      title: (t && t.title) || '(无标题)',
+      done: !!(t && t.done),
+      urgent: !!(t && t.urgent),
+      priority: t && t.priority,
+      dueAt: t && t.dueAt ? t.dueAt : null,
+      status: (t && t.status) || null
+    };
+  }); };
+  var doing = [], today = [];
+  list.forEach(function (t) {
+    if (!t || t.done) return;
+    if (t.status === 'doing') {
+      doingCount++;
+      doing.push(t);
+      var d = new Date(t.dueAt);
+      if (t.dueAt && !isNaN(d.getTime()) && new Date(d.getFullYear(), d.getMonth(), d.getDate()) < t0) overdueCount++;
+      return;
+    }
+    var inToday = t.urgent || !t.dueAt;
+    if (!inToday) {
+      var d2 = new Date(t.dueAt);
+      inToday = isNaN(d2.getTime()) ? true : (new Date(d2.getFullYear(), d2.getMonth(), d2.getDate()) <= t0);
+    }
+    if (inToday) today.push(t);
+    var d3 = new Date(t.dueAt);
+    if (t.dueAt && !isNaN(d3.getTime()) && new Date(d3.getFullYear(), d3.getMonth(), d3.getDate()) < t0) overdueCount++;
+  });
+  var cmp = function (a, b) {
+    if (!!b.urgent !== !!a.urgent) return (b.urgent ? 1 : 0) - (a.urgent ? 1 : 0);
+    var pa = (a.priority === undefined ? 2 : Number(a.priority) || 2);
+    var pb = (b.priority === undefined ? 2 : Number(b.priority) || 2);
+    if (pb !== pa) return pa - pb;
+    return String(a.title || '').localeCompare(String(b.title || ''));
+  };
+  doing.sort(cmp); today.sort(cmp);
+  items = items.concat(pick(doing), pick(today)).slice(0, 8);
+  sendJson(res, req, {
+    ok: true, items: items, today: today.length, doing: doingCount,
+    overdue: overdueCount, total: list.length, mtime: f.mtime
+  });
+}
+
 function serveOverview(req, res) {
   setRestrictedCORS(res, req);
   if (req.method !== 'GET' && req.method !== 'HEAD') {
@@ -2054,6 +2114,12 @@ var server = http.createServer(function (req, res) {
   /* 待办数量（桌面悬浮球轮询用，只读：今日 / 进行中 / 逾期） */
   if (pathname === '/api/todo-count') {
     serveTodoCount(req, res);
+    return;
+  }
+
+  /* 待办明细（悬浮球「单击展开」卡片用，只读） */
+  if (pathname === '/api/todo-mini') {
+    serveTodoMini(req, res);
     return;
   }
 
