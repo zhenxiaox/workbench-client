@@ -687,7 +687,7 @@ tr:hover td { background: var(--c-brand-soft); }
 /* ---------- 亮色（工作台默认） ---------- */
 :root,
 :root[data-theme="light"] {
-  --rp-bg: #FFFFFF;
+  --rp-bg: #FAF7F5;
   --rp-bg-grad-start: #FFF1E4;
   --rp-bg-grad-mid: #FFF9F5;
   --rp-surface: #FFFFFF;
@@ -823,23 +823,23 @@ body {
 .rp-topbar {
   position: sticky; top: 0; z-index: 30;
   display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-  padding: 12px 22px;
-  background: var(--rp-surface);
+  padding: 16px max(20px, calc(50% - 520px));
+  background: linear-gradient(180deg, rgba(249, 115, 10, 0.06), transparent);
   border-bottom: 1px solid var(--rp-border);
   backdrop-filter: saturate(140%) blur(8px);
 }
 .rp-topbar h1 {
-  display: flex; align-items: center; gap: 9px;
-  font-size: 16px; font-weight: 700; color: var(--rp-ink);
+  display: flex; align-items: center; gap: 10px;
+  font-size: 19px; font-weight: 700; color: var(--rp-ink);
   margin: 0; letter-spacing: 0.2px;
 }
 .rp-topbar .rp-dot {
-  width: 9px; height: 9px; border-radius: 50%;
+  width: 10px; height: 10px; border-radius: 50%;
   background: var(--rp-accent);
-  box-shadow: 0 0 0 4px var(--rp-accent-soft);
+  box-shadow: 0 0 0 4px rgba(249, 115, 10, 0.15);
   flex-shrink: 0;
 }
-.rp-topbar .rp-sub { font-size: 12.5px; color: var(--rp-muted); }
+.rp-topbar .rp-sub { font-size: 12px; color: var(--rp-muted); }
 .rp-topbar .rp-spacer { flex: 1; }
 .rp-period {
   display: inline-flex; align-items: center; gap: 6px;
@@ -1127,7 +1127,7 @@ tr:last-child td { border-bottom: none; }
   position: sticky; top: 46px; z-index: 25;
   background: var(--rp-surface);
   border-bottom: 1px solid var(--rp-border);
-  padding: 10px 22px;
+  padding: 10px max(20px, calc(50% - 520px));
   display: flex; flex-direction: column; gap: 8px;
 }
 .rp-filter-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }

@@ -92,10 +92,13 @@
 .nav-scroll::-webkit-scrollbar { width: 6px; }
 .nav-scroll::-webkit-scrollbar-track { background: transparent !important; }
 .nav-scroll::-webkit-scrollbar-thumb {
-  background: rgba(148,163,184,.45) !important;
+  background: rgba(161,148,134,.5) !important;
   border-radius: 999px; border: none;
 }
 .nav-scroll::-webkit-scrollbar-thumb:hover { background: rgba(249,115,10,.75) !important; }
+/* 收起侧栏（70px 窄图标条）时滚动条更细，避免在窄栏里显得粗笨 */
+body.collapsed .nav-scroll::-webkit-scrollbar { width: 4px; }
+body.collapsed .nav-scroll::-webkit-scrollbar-thumb { background: rgba(161,148,134,.42) !important; }
 
 .tab-list::-webkit-scrollbar { height: 6px; }
 .tab-list::-webkit-scrollbar-track { background: transparent; }
@@ -113,43 +116,65 @@
 #timeline-list.scrolling { scrollbar-color: rgba(148,163,184,.35) transparent; }
 
 /* ============================================================
-   日期输入框统一规范（input[type="date"]）
+   日期/时间输入框统一规范（input[type="date"] / input[type="datetime-local"]）
    ------------------------------------------------------------
-   背景：Chrome 原生日历指示器默认会被拉伸到约 110px 宽，几乎铺满整个输入框，
-        导致点击命中异常、日历有时弹不出来；且 color-scheme 不跟随主题时，
-        亮色主题下图标会发黑不可见、暗色主题下会发白。
-   对策：1) 把指示器固定为 14px；2) 整块输入框可点；3) color-scheme 跟随主题。
+   现状问题：
+     1) Chrome 原生指示器会被拉伸到 ~110px，几乎铺满输入框，点击命中异常；
+     2) 原生图标灰暗，三主题下不清晰、不美观；
+     3) 各页面圆角（6/7/9px）与 hover/focus 高亮色不统一。
+   对策：
+     1) 固定指示器 16px，替换成品牌橙描边日历 SVG（三主题通用、清晰美观）；
+     2) 统一 8px 圆角、hover/focus 橙色高亮 + 柔和光晕；
+     3) color-scheme 跟随主题，保证下拉面板显色正确。
+   注意：只统一「轮廓/图标/交互」，不强制 background/color/宽高/内边距，
+        避免覆盖客户待办的 .inp、单品/店铺的内联 style 等局部布局。
    ============================================================ */
-input[type="date"] {
-  cursor: pointer;                 /* 点输入框任意位置都能唤出日历 */
-  font-family: inherit;
-}
-input[type="date"]::-webkit-calendar-picker-indicator {
+input[type="date"],
+input[type="datetime-local"] {
   cursor: pointer;
-  width: 14px; height: 14px;       /* 关键：不固定尺寸就会被拉伸成 ~110px */
-  margin: 0; padding: 0;
-  flex: 0 0 auto;
-  opacity: .65;
-  transition: opacity .15s;
+  font-family: inherit;
+  border-radius: 8px !important;
+  transition: border-color .15s, box-shadow .15s !important;
+}
+input[type="date"]:hover,
+input[type="datetime-local"]:hover { border-color: var(--accent, #F97316) !important; }
+input[type="date"]:focus,
+input[type="datetime-local"]:focus {
+  outline: none !important;
+  border-color: var(--accent, #F97316) !important;
+  box-shadow: 0 0 0 3px rgba(249,115,10,.14) !important;
+}
+/* 统一日历图标：品牌橙描边日历，三主题下都清晰 */
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  width: 16px !important; height: 16px !important;
+  margin: 0 !important; padding: 0 !important;
+  flex: 0 0 auto !important;
+  opacity: .72 !important;
+  transition: opacity .15s !important;
+  filter: none !important;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23F97316' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='4' width='18' height='17' rx='2'/%3E%3Cpath d='M16 2v4'/%3E%3Cpath d='M8 2v4'/%3E%3Cpath d='M3 10h18'/%3E%3C/svg%3E") center / contain no-repeat !important;
 }
 input[type="date"]:hover::-webkit-calendar-picker-indicator,
-input[type="date"]:focus::-webkit-calendar-picker-indicator { opacity: 1; }
+input[type="date"]:focus::-webkit-calendar-picker-indicator,
+input[type="datetime-local"]:hover::-webkit-calendar-picker-indicator,
+input[type="datetime-local"]:focus::-webkit-calendar-picker-indicator { opacity: 1 !important; }
 /* 空值时占位文字用次要色，避免看起来像坏掉的 yyyy/mm/dd */
 input[type="date"]:not(:focus):invalid::-webkit-datetime-edit { color: var(--muted2, #A99A90); }
 
-/* 主题跟随：指示器颜色随主题自动反转，保证在深浅底上都清晰。
-   注意：这里必须把「日期输入框」写在每个选择器里，不能用 `:root, :root[data-theme="dark"] input…`
+/* 主题跟随：下拉面板随主题正确显色。
+   注意：必须把「日期输入框」写在每个选择器里，不能用 `:root, :root[data-theme="dark"] input…`
    的逗号写法——逗号前那段 `:root` 会独立命中 <html>，把 color-scheme:dark 泄漏到整个文档
    （亮色主题下连原生滚动条/下拉都会被染黑）。 */
 :root input[type="date"],
-:root[data-theme="dark"] input[type="date"] { color-scheme: dark; }
+:root input[type="datetime-local"],
+:root[data-theme="dark"] input[type="date"],
+:root[data-theme="dark"] input[type="datetime-local"] { color-scheme: dark; }
 :root[data-theme="light"] input[type="date"],
-:root[data-theme="eye"]   input[type="date"] { color-scheme: light; }
-/* 亮色/护眼主题下，若页面写了 filter:invert 需要抵消，否则图标看不见 */
-:root[data-theme="light"] input[type="date"]::-webkit-calendar-picker-indicator,
-:root[data-theme="eye"]   input[type="date"]::-webkit-calendar-picker-indicator {
-  filter: none;
-}
+:root[data-theme="light"] input[type="datetime-local"],
+:root[data-theme="eye"] input[type="date"],
+:root[data-theme="eye"] input[type="datetime-local"] { color-scheme: light; }
 
 /* ============================================================
    触摸设备（手机/平板）：原生滚动无需可见滚动条，隐藏以省空间

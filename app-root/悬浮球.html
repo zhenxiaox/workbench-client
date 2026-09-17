@@ -17,21 +17,36 @@
   [hidden]{ display:none !important; }
   html,body{ margin:0; padding:0; background:transparent; overflow:hidden; }
   body{ width:100vw; height:100vh; }
-  .wrap{ width:100%; height:100%; display:flex; flex-direction:column; align-items:center; padding-top:12px; }
+  .wrap{ width:100%; height:100%; display:flex; flex-direction:column; align-items:flex-end; padding-top:12px; padding-right:12px; }
 
   /* ---- 球（56px 圆形）---- */
   .ball{
     position:relative; width:56px; height:56px; border-radius:50%;
-    color:#fff; border:none; cursor:grab; outline:none; flex:0 0 auto;
+    color:#fff; border:none; cursor:pointer; outline:none; flex:0 0 auto;
     display:flex; align-items:center; justify-content:center; flex-direction:column;
-    box-shadow:0 6px 18px rgba(0,0,0,.28), 0 2px 6px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.32);
+    box-shadow:0 3px 10px rgba(0,0,0,.22), 0 1px 3px rgba(0,0,0,.16), inset 0 1px 0 rgba(255,255,255,.32);
     user-select:none; -webkit-user-select:none; touch-action:none;
   }
   .ball:hover{ transform:scale(1.05); }
   .ball:active{ cursor:grabbing; transform:scale(.97); }
-  .ball.ai{ background:linear-gradient(145deg,#60A5FA 0%,#3B82F6 55%,#2563EB 100%); }
+  .ball.ai{ background:linear-gradient(145deg,#FFA45C 0%,#F97316 55%,#E4660A 100%); }
   .ball.todo{ background:linear-gradient(145deg,#FFA45C 0%,#F97316 55%,#E4660A 100%); }
   .ball.todo.idle{ opacity:.55; }
+  /* ★ 呼吸「灯」（光环）：球保持统一橙色，只让外圈光环配色闪烁。
+     今天有要做的→黄灯，有逾期→红灯（更高一级，写在后面覆盖）。 */
+  .ball.todo.today{ animation:ballBreatheYellow 1.6s ease-in-out infinite; }
+  .ball.todo.alert{ animation:ballBreatheRed 1.6s ease-in-out infinite; }
+  @keyframes ballBreatheYellow{
+    0%,100%{ box-shadow:0 3px 10px rgba(0,0,0,.22), 0 1px 3px rgba(0,0,0,.16), 0 0 0 0 rgba(250,204,21,.60), inset 0 1px 0 rgba(255,255,255,.32); }
+    50%    { box-shadow:0 3px 10px rgba(0,0,0,.22), 0 1px 3px rgba(0,0,0,.16), 0 0 0 13px rgba(250,204,21,0), inset 0 1px 0 rgba(255,255,255,.32); }
+  }
+  @keyframes ballBreatheRed{
+    0%,100%{ box-shadow:0 3px 10px rgba(0,0,0,.22), 0 1px 3px rgba(0,0,0,.16), 0 0 0 0 rgba(239,68,68,.60), inset 0 1px 0 rgba(255,255,255,.32); }
+    50%    { box-shadow:0 3px 10px rgba(0,0,0,.22), 0 1px 3px rgba(0,0,0,.16), 0 0 0 13px rgba(239,68,68,0), inset 0 1px 0 rgba(255,255,255,.32); }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .ball.todo.today, .ball.todo.alert{ animation:none; }
+  }
   .ball svg{ width:26px; height:26px; display:block; }
   .fab-num{ font-size:21px; font-weight:800; line-height:1; }
   .fab-cap{ font-size:10px; font-weight:600; margin-top:3px; opacity:.92; letter-spacing:1px; }
@@ -49,25 +64,26 @@
     position:relative; width:300px; margin-top:12px; flex:0 0 auto;
     background:var(--card-bg); border:1px solid rgba(0,0,0,.06);
     border-radius:16px; box-shadow:0 12px 40px rgba(0,0,0,.20), 0 2px 8px rgba(0,0,0,.08);
-    display:flex; flex-direction:column; color:var(--ink); overflow:hidden;
+    display:flex; flex-direction:column; color:var(--ink);
   }
   .card::before{
-    content:''; position:absolute; top:-7px; left:50%; transform:translateX(-50%);
-    border:7px solid transparent; border-top:none; border-bottom-color:#fff;
-    filter:drop-shadow(0 -1px 1px rgba(0,0,0,.05));
+    content:''; position:absolute; top:-8px; right:28px;
+    border:8px solid transparent; border-top:none; border-bottom-color:#fff;
+    filter:drop-shadow(0 -1px 1px rgba(0,0,0,.10));
   }
   .card-head{ display:flex; align-items:center; gap:8px; padding:12px 14px 10px; font-size:13.5px; font-weight:700; border-bottom:1px solid var(--line); }
   .card-head .dot{ width:9px; height:9px; border-radius:50%; flex:0 0 auto; }
   .todo-card .card-head .dot{ background:var(--orange); }
-  .ai-card .card-head .dot{ background:var(--blue); }
+  .ai-card .card-head .dot{ background:var(--orange); }
   .card-head .sub{ margin-left:auto; font-weight:500; font-size:11.5px; color:var(--ink-2); }
   .card-head .close{ margin-left:4px; border:none; background:none; color:var(--ink-2); font-size:16px; line-height:1; cursor:pointer; padding:0 3px; border-radius:6px; }
   .card-head .close:hover{ background:rgba(0,0,0,.06); color:var(--ink); }
   .card-body{ overflow-y:auto; padding:4px 0; }
-  .card-foot{ padding:9px 14px; border-top:1px solid var(--line); text-align:right; }
+  .card-foot{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:9px 14px; border-top:1px solid var(--line); }
+  .card-foot .hint{ font-size:10.5px; color:var(--ink-2); }
   .card-foot .link{ font-size:12px; font-weight:600; cursor:pointer; }
   .todo-card .card-foot .link{ color:var(--orange); }
-  .ai-card .card-foot .link{ color:var(--blue); }
+  .ai-card .card-foot .link{ color:var(--orange); }
 
   /* 待办列表 */
   .titem{ display:flex; align-items:flex-start; gap:9px; padding:10px 14px; border-bottom:1px solid var(--line); font-size:12.5px; line-height:1.45; cursor:pointer; }
@@ -88,19 +104,19 @@
   /* AI 快捷入口 */
   .ai-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:8px; padding:12px 12px 14px; }
   .ai-item{ display:flex; flex-direction:column; align-items:center; gap:7px; padding:14px 6px; border:1px solid var(--line); border-radius:12px; background:#fff; cursor:pointer; font-size:11.5px; color:var(--ink); transition:background .12s, transform .08s, border-color .12s; }
-  .ai-item:hover{ background:rgba(128,170,255,.10); border-color:rgba(59,130,246,.35); transform:translateY(-1px); }
-  .ai-item svg{ width:22px; height:22px; color:var(--blue); }
+  .ai-item:hover{ background:rgba(249,115,22,.10); border-color:rgba(249,115,22,.35); transform:translateY(-1px); }
+  .ai-item svg{ width:22px; height:22px; color:var(--orange); }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <div class="ball ai" id="aiBall" role="button" tabindex="0" title="AI 助手" aria-label="AI 助手" data-tauri-drag-region>
+  <div class="ball ai" id="aiBall" role="button" tabindex="0" title="单击展开AI助手，双击打开主面板" aria-label="AI 助手" data-tauri-drag-region>
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
       <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5Z"/>
       <path d="M8.5 12.5h.01M12 12.5h.01M15.5 12.5h.01"/>
     </svg>
   </div>
-  <div class="ball todo" id="todoBall" role="button" tabindex="0" title="待办事项" aria-label="待办事项" data-tauri-drag-region>
+  <div class="ball todo" id="todoBall" role="button" tabindex="0" title="单击展开待办事项，双击打开主面板" aria-label="待办事项" data-tauri-drag-region>
     <span class="fab-num" id="todoNum">0</span>
     <span class="fab-cap">待办</span>
     <span class="doing" id="todoDoing" hidden>0</span>
@@ -114,7 +130,7 @@
       <button class="close" title="收起">✕</button>
     </div>
     <div class="card-body" id="todoCardBody"></div>
-    <div class="card-foot"><span class="link">查看全部 →</span></div>
+    <div class="card-foot"><span class="hint">单击收起待办事项 · 双击打开主面板</span><span class="link">查看全部 →</span></div>
   </div>
 
   <!-- AI 球展开气泡（蓝色主题） -->
@@ -141,7 +157,7 @@
         经营总结
       </div>
     </div>
-    <div class="card-foot"><span class="link">打开完整 AI 面板</span></div>
+    <div class="card-foot"><span class="hint">单击收起AI助手 · 双击打开主面板</span><span class="link">打开完整 AI 面板</span></div>
   </div>
 </div>
 <script>
@@ -157,6 +173,7 @@
   var todoCardEl = document.getElementById('todoCard');
 
   var CARD_W = 300;
+  var WIN_W = CARD_W + 12;
   var TODO_H = 340, AI_H = 282;
   var BASE_H = 80;
 
@@ -179,7 +196,7 @@
   function taWin(){ try{ return window.__TAURI__.window.getCurrentWindow(); }catch(e){ return null; } }
 
   var expanded = false;
-  var downX=0, downY=0, dragStarted=false, lastClickT=0;
+  var downX=0, downY=0, dragStarted=false, lastClickT=0, clickTimer=null;
 
   function openMain(){
     refresh();
@@ -191,25 +208,39 @@
     var win = taWin();
     if(!win) return;
     try{
-      var L = window.__TAURI__.window.LogicalSize;
-      win.setSize(new L(w, h)).catch(function(){});
+      var T = window.__TAURI__.window;
+      Promise.all([win.outerPosition(), win.outerSize(), win.scaleFactor()]).then(function(r){
+        var pos = r[0], sz = r[1], scale = r[2] || 1;
+        var pw = Math.round(w * scale), ph = Math.round(h * scale);
+        var newX = pos.x + sz.width - pw;
+        win.setPosition(new T.PhysicalPosition(newX, pos.y)).then(function(){
+          return win.setSize(new T.PhysicalSize(pw, ph));
+        }).catch(function(){});
+      }).catch(function(){});
     }catch(e){}
   }
   function expand(){
     expanded = true;
+    setBallTitle(true);
     if(card) card.hidden = false;
     if(which === 'todo') loadTodoCard();
-    resizeWin(CARD_W, which==='todo' ? TODO_H : AI_H);
+    resizeWin(WIN_W, which==='todo' ? TODO_H : AI_H);
   }
   function collapse(){
     expanded = false;
+    setBallTitle(false);
     if(card) card.hidden = true;
     resizeWin(80, BASE_H);
     dragReset();
   }
-  function dragReset(){ var el = which==='todo'? todoBall : aiBall; if(el) el.style.cursor='grab'; }
+  function dragReset(){ var el = which==='todo'? todoBall : aiBall; if(el) el.style.cursor='pointer'; }
 
   var currentBall = which === 'todo' ? todoBall : aiBall;
+  var ballName = which === 'todo' ? '待办事项' : 'AI助手';
+  function setBallTitle(open){
+    var t = (open ? '单击收起' : '单击展开') + ballName + '，双击打开主面板';
+    if(currentBall) currentBall.setAttribute('title', t);
+  }
 
   currentBall.addEventListener('mousedown', function(e){
     if(e.button !== 0) return;
@@ -240,13 +271,18 @@
       return;
     }
     if(lastClickT && nowTime - lastClickT <= 330){
+      clearTimeout(clickTimer);
       lastClickT = 0;
       openMain();
       return;
     }
     lastClickT = nowTime;
-    setTimeout(function(){ if(lastClickT && (Date.now()-lastClickT)>350) lastClickT=0; }, 400);
-    expand();
+    clearTimeout(clickTimer);
+    clickTimer = setTimeout(function(){
+      clickTimer = null;
+      lastClickT = 0;
+      expand();
+    }, 330);
   }
 
   /* 卡片内收起按钮 */
@@ -323,6 +359,7 @@
         if(todoNum) todoNum.textContent = t>99?'99+':String(t);
         if(doing){ doing.hidden=dn<=0; doing.textContent=dn>99?'99+':String(dn); }
         if(todoBall){
+          todoBall.classList.toggle('today', t>0);
           todoBall.classList.toggle('alert', over>0);
           todoBall.classList.toggle('idle', t===0 && dn===0);
         }

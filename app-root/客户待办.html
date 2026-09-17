@@ -4,20 +4,21 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>客户待办</title>
+<link rel="stylesheet" href="scrollbar.css">
 <style>
   :root{
-    --bg:#F5F5F7; --surface:#FFFFFF; --surface2:#F0F0F2; --surface3:#FBFBFC;
-    --line:#E5E5E7; --line2:#D0D0D5; --line3:#ECECEE;
-    --ink:#1D1D1F; --ink2:#3A3A3C; --muted:#6E6E73; --muted2:#9A9AA0;
+    --bg:#FAF7F5; --surface:#FFFFFF; --surface2:#F3EDE8; --surface3:#FBF8F1;
+    --line:#EFE6DE; --line2:#DCD2C9; --line3:#ECECEE;
+    --ink:#221813; --ink2:#4A3A30; --muted:#7B6A61; --muted2:#A99A90;
     --accent:#F97316; --accent-d:#EA580C; --accent-soft:rgba(249,115,22,0.10); --accent-line:rgba(249,115,22,0.35);
     --hi:#E5484D; --hi-soft:rgba(229,72,77,0.10);
     --ok:#30A46C; --blue:#3B82F6;
-    --black:#1D1D1F;
-    --shadow-sm:0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.04);
-    --shadow-md:0 8px 28px rgba(0,0,0,0.14);
+    --black:#221813;
+    --shadow-sm:0 1px 3px rgba(60,50,41,0.05), 0 1px 2px rgba(60,50,41,0.04);
+    --shadow-md:0 8px 28px rgba(60,50,41,0.14);
     --radius:10px;
   }
-  html[data-theme="dark"], html[data-theme="eye"]{
+  html[data-theme="dark"]{
     --bg:#0E0F11; --surface:#17181A; --surface2:#1F2123; --surface3:#1A1B1D;
     --line:#26282B; --line2:#34363A; --line3:#2A2C2F;
     --ink:#F0F0F2; --ink2:#D6D6DA; --muted:#9A9AA0; --muted2:#6E6E73;
@@ -27,6 +28,17 @@
     --black:#FFFFFF;
     --shadow-sm:0 1px 3px rgba(0,0,0,0.4);
     --shadow-md:0 8px 28px rgba(0,0,0,0.5);
+  }
+  html[data-theme="eye"]{
+    --bg:#F5F1E8; --surface:#FBF8F1; --surface2:#F0EADC; --surface3:#FBF8F1;
+    --line:#E5DCCB; --line2:#D5C9B4; --line3:#E5DCCB;
+    --ink:#3C3229; --ink2:#5A4B3C; --muted:#7A6E5F; --muted2:#A2957F;
+    --accent:#F97316; --accent-d:#EA580C; --accent-soft:rgba(249,115,22,0.12); --accent-line:rgba(249,115,22,0.4);
+    --hi:#C0392B; --hi-soft:rgba(192,57,43,0.14);
+    --ok:#2F9E63; --blue:#3B82F6;
+    --black:#3C3229;
+    --shadow-sm:0 1px 3px rgba(60,50,41,0.05), 0 1px 2px rgba(60,50,41,0.04);
+    --shadow-md:0 8px 28px rgba(60,50,41,0.14);
   }
   *{margin:0;padding:0;box-sizing:border-box;}
   html,body{height:100%;}
@@ -41,13 +53,14 @@
   ::-webkit-scrollbar-thumb{background:var(--line2);border-radius:8px;}
   ::-webkit-scrollbar-track{background:transparent;}
 
-  .app{padding:26px 28px 20px;display:flex;flex-direction:column;min-height:100%;}
+  .app{padding:0 28px 20px;display:flex;flex-direction:column;min-height:100%;}
 
   /* ===== 头部：标题 + 日期 + 新增 ===== */
-  .head{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:18px;}
+  .head{display:flex;align-items:center;justify-content:space-between;margin:0 -28px 18px;padding:16px 28px 14px;border-bottom:1px solid var(--line);background:linear-gradient(180deg, rgba(249,115,10,0.06), transparent);}
   .head-left{}
-  .head-title{font-size:26px;font-weight:700;letter-spacing:-0.01em;line-height:1.25;}
-  .head-sub{font-size:13px;color:var(--muted);margin-top:4px;}
+  .head-title{font-size:19px;font-weight:700;letter-spacing:-0.01em;line-height:1.25;display:flex;align-items:center;}
+  .head-title::before{content:"";width:10px;height:10px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px rgba(249,115,10,0.15);margin-right:10px;flex-shrink:0;}
+  .head-sub{font-size:12px;color:var(--muted);margin-top:4px;}
   .btn{
     display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line2);background:var(--surface);
     color:var(--ink);font-size:13px;padding:8px 14px;border-radius:9px;transition:.15s;white-space:nowrap;
@@ -56,7 +69,7 @@
   .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600;}
   .btn.primary:hover{background:var(--accent-d);color:#fff;}
   .btn.dark{background:var(--black);border-color:var(--black);color:var(--bg);font-weight:600;}
-  html[data-theme="dark"] .btn.dark, html[data-theme="eye"] .btn.dark{color:#111;}
+  html[data-theme="dark"] .btn.dark{color:#111;}
   .btn.ghost{border-color:transparent;background:transparent;color:var(--muted);}
   .btn.ghost:hover{color:var(--accent);border-color:transparent;}
   .btn.ghost.danger:hover{color:var(--hi);}
@@ -118,9 +131,6 @@
   .chip.over{color:#fff;background:var(--hi);border-color:var(--hi);}
   html[data-theme="light"] .chip.over{color:#fff;}
   .chip.doing{color:var(--blue);border-color:rgba(59,130,246,.35);background:rgba(59,130,246,.08);}
-  .chip.pri-H{color:var(--hi);border-color:rgba(229,72,77,.3);}
-  .chip.pri-M{color:var(--accent);border-color:var(--accent-line);}
-  .chip.pri-L{color:var(--muted);}
 
   .ci-actions{display:flex;align-items:center;gap:6px;margin-top:10px;flex-wrap:wrap;}
   .ci-actions .btn{background:var(--surface);}
@@ -207,7 +217,8 @@
   .gallery .nav button{background:var(--surface2);border:1px solid var(--line2);border-radius:8px;padding:6px 12px;color:var(--ink);}
 
   @media (max-width:640px){
-    .app{padding:16px 14px 12px;}
+    .app{padding:0 14px 12px;}
+    .head{margin-left:-14px; margin-right:-14px; padding-left:14px; padding-right:14px;}
     .head-title{font-size:22px;}
     .f-grid,.f-grid-2{grid-template-columns:1fr;}
   }
@@ -264,20 +275,10 @@
       <button class="btn small" id="aiFromClip"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="9" y="2" width="6" height="4" rx="1"/></svg></span>粘贴并整理</button>
     </div>
     <div class="dialog-body">
-      <div class="f-grid">
-        <div class="f-row">
-          <label>事项</label>
-          <input class="inp" id="fCustomer" list="custList" placeholder="事项名称，可联想" autocomplete="off">
-          <datalist id="custList"></datalist>
-        </div>
-        <div class="f-row">
-          <label>优先级</label>
-          <select class="sel" id="fPriority">
-            <option value="高">高</option>
-            <option value="中" selected>中</option>
-            <option value="低">低</option>
-          </select>
-        </div>
+      <div class="f-row">
+        <label>事项</label>
+        <input class="inp" id="fCustomer" list="custList" placeholder="事项名称，可联想" autocomplete="off">
+        <datalist id="custList"></datalist>
       </div>
       <div class="f-row">
         <label>要点 <b>*</b></label>
@@ -392,7 +393,7 @@
     cntToday: id('cntToday'), cntTodo: id('cntTodo'), cntDoing: id('cntDoing'), cntDone: id('cntDone'),
     stTodo: id('stTodo'), stDoing: id('stDoing'), stDone: id('stDone'),
     editMask: id('editMask'), editTitle: id('editTitle'), aiFromClip: id('aiFromClip'),
-    fCustomer: id('fCustomer'), fPriority: id('fPriority'), fTitle: id('fTitle'),
+    fCustomer: id('fCustomer'), fTitle: id('fTitle'),
     fReceived: id('fReceived'), fDue: id('fDue'), quickDates: id('quickDates'),
     fNote: id('fNote'), fUrgent: id('fUrgent'), fDoing: id('fDoing'),
     dropzone: id('dropzone'), dzFile: id('dzFile'), dzThumbs: id('dzThumbs'), aiHint: id('aiHint'),
@@ -604,13 +605,11 @@
       var note = document.createElement('div'); note.className = 'ci-note'; note.textContent = t.note; card.appendChild(note);
     }
 
-    // meta：截止日期 + 优先级 chips
+    // meta：截止日期 chips
     var meta = document.createElement('div'); meta.className = 'ci-meta';
     if(t.dueAt){
       var d = document.createElement('span'); d.className = 'chip' + (isOverdue(t) ? ' over' : ''); d.innerHTML = ico('cal') + esc(fmtShortDate(t.dueAt) + (isOverdue(t) ? ' · 已逾期' : '')); meta.appendChild(d);
     }
-    var pmap = { '高':'高优先级', '中':'中优先级', '低':'低优先级' };
-    meta.appendChild(chip(pmap[t.priority] || '中优先级', 'pri-' + pkey(t.priority)));
     if(t.status === 'doing') meta.appendChild(chip('进行中', 'doing'));
     if(t.done) meta.appendChild(chip('已完成', ''));
     if(meta.childNodes.length) card.appendChild(meta);
@@ -668,7 +667,6 @@
     return b;
   }
   function chip(text, cls){ var s = document.createElement('span'); s.className = 'chip ' + (cls || ''); s.textContent = text; return s; }
-  function pkey(p){ return p === '高' ? 'H' : p === '低' ? 'L' : 'M'; }
   function emptyBox(text){ var d = document.createElement('div'); d.className = 'empty'; d.innerHTML = '<div class="ico">' + ico('clip') + '</div>' + esc(text); return d; }
 
   function updateCustomerList(){
@@ -682,7 +680,6 @@
     editingId = t ? t.id : null;
     el.editTitle.textContent = t ? '编辑待办' : '新增待办';
     el.fCustomer.value = t ? (t.customer || '') : '';
-    el.fPriority.value = t ? (t.priority || '中') : '中';
     el.fTitle.value = t ? (t.title || '') : '';
     el.fReceived.value = t && t.receivedAt ? toDateInput(new Date(t.receivedAt)) : toDateInput(new Date());
     el.fDue.value = t && t.dueAt ? String(t.dueAt).slice(0,10) : '';
@@ -718,7 +715,6 @@
     var data = {
       title: title,
       customer: el.fCustomer.value.trim(),
-      priority: el.fPriority.value,
       note: el.fNote.value.trim(),
       urgent: el.fUrgent.checked
     };
@@ -729,7 +725,7 @@
       var i = state.tasks.findIndex(function(t){ return t.id === editingId; });
       if(i >= 0){
         var old = state.tasks[i];
-        old.title = data.title; old.customer = data.customer; old.priority = data.priority;
+        old.title = data.title; old.customer = data.customer;
         old.note = data.note; old.urgent = data.urgent;
         old.dueAt = due || '';
         if(recv) old.receivedAt = new Date(recv + 'T00:00:00').toISOString();
@@ -742,7 +738,6 @@
         id: newId(),
         title: data.title,
         customer: data.customer,
-        priority: data.priority,
         note: data.note,
         urgent: data.urgent,
         dueAt: due || '',

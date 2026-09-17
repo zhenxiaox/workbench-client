@@ -142,6 +142,8 @@ fn open_main_window(app: &tauri::AppHandle) {
     let res = WebviewWindowBuilder::new(app, MAIN_LABEL, WebviewUrl::External(target))
         .title("运营工作台")
         .inner_size(1280.0, 800.0)
+        // 去掉原生标题栏：改用工作台.html 里自绘的顶部标题栏（折叠+搜索+窗口控制），与主题融合。
+        .decorations(false)
         .build();
 
     if let Err(e) = res {
