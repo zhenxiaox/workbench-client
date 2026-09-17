@@ -12,6 +12,7 @@
     ]
   },
   "permissions": [
-    "core:default"
+    "core:default",
+    "allow-workbench-commands"
   ]
 }

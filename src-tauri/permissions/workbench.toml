@@ -1,0 +1,10 @@
+[[permission]]
+identifier = "allow-workbench-commands"
+description = "允许前端调用工作台自定义命令（fab_action/fab_menu/更新相关）"
+commands.allow = [
+  "fab_action",
+  "fab_menu",
+  "check_update",
+  "ignore_update",
+  "download_update"
+]
