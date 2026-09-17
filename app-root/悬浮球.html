@@ -87,7 +87,12 @@
 
   function bindBall(el, action){
     if(!el) return;
-    /* 拖动由 data-tauri-drag-region 交给原生处理；普通点击（未拖动）触发 click */
+    /* 拖动：左键按下即启动 Tauri 原生窗口拖动；点按未拖动仍会触发 click */
+    el.addEventListener('mousedown', function(e){
+      if(e.button !== 0) return;
+      if(!hasTauri) return;
+      try{ invoke('plugin:window|start_dragging'); }catch(err){}
+    });
     el.addEventListener('click', function(){ fabAction(action); });
     el.addEventListener('contextmenu', function(e){ e.preventDefault(); fabMenu(); });
     el.addEventListener('keydown', function(e){
