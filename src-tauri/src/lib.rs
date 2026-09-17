@@ -234,15 +234,16 @@ fn fab_action(app: tauri::AppHandle, action: String) {
     );
 }
 
-/// 悬浮球右键：弹出原生菜单（打开工作台 / 退出客户端）。
+/// 悬浮球右键：弹出原生菜单（隐藏悬浮球 / 设置）。
 #[tauri::command]
 fn fab_menu(app: tauri::AppHandle, which: String) {
     let label = if which == "todo" { FAB_TODO_LABEL } else { FAB_AI_LABEL };
     if let Some(w) = app.get_webview_window(label) {
-        let open = MenuItem::with_id(&app, "open", "打开工作台", true, None::<&str>);
-        let quit = MenuItem::with_id(&app, "quit", "退出客户端", true, None::<&str>);
-        if let (Ok(open), Ok(quit)) = (open, quit) {
-            if let Ok(menu) = Menu::with_items(&app, &[&open, &quit]) {
+        let hide_id = if which == "todo" { "hide_fab_todo" } else { "hide_fab_ai" };
+        let hide = MenuItem::with_id(&app, hide_id, "隐藏悬浮球", true, None::<&str>);
+        let settings = MenuItem::with_id(&app, "fab_settings", "设置", true, None::<&str>);
+        if let (Ok(hide), Ok(settings)) = (hide, settings) {
+            if let Ok(menu) = Menu::with_items(&app, &[&hide, &settings]) {
                 let _ = w.popup_menu(&menu);
             }
         }
@@ -308,6 +309,20 @@ fn ignore_update(app: tauri::AppHandle, version: String) -> Result<(), String> {
     std::fs::write(dir.join(IGNORE_FILE), version.trim()).map_err(|e| e.to_string())
 }
 
+/// 结束 sidecar（node.exe）进程，释放 app\node.exe 等文件锁。
+/// Windows 下 sidecar 是独立子进程，更新安装器覆盖文件前必须先结束它，
+/// 否则会报 "Error opening file for writing: ...\app\node.exe"。
+fn kill_server(app: &tauri::AppHandle) {
+    if let Some(state) = app.try_state::<ServerProcess>() {
+        if let Ok(mut guard) = state.0.lock() {
+            if let Some(mut child) = guard.take() {
+                let _ = child.kill();
+                let _ = child.wait();
+            }
+        }
+    }
+}
+
 /// 下载并安装新版本。下载进度通过 `wb-update-progress` 事件逐块报给前端。
 /// 下载完成后立刻拉起 NSIS 安装器（passive 模式），客户端会自动退出，装完自动重回新版本。
 #[tauri::command]
@@ -322,6 +337,7 @@ async fn download_update(app: tauri::AppHandle) -> Result<(), String> {
     let bytes = std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));
     let target = tauri::EventTarget::labeled(MAIN_LABEL);
     let handle = app.clone();
+    let installer_handle = app.clone();
     update
         .download_and_install(
             move |chunk, total| {
@@ -335,7 +351,10 @@ async fn download_update(app: tauri::AppHandle) -> Result<(), String> {
                     }),
                 );
             },
-            || {},
+            move || {
+                // 下载完成、拉起安装器前：先结束 sidecar，释放 node.exe 文件锁。
+                kill_server(&installer_handle);
+            },
         )
         .await
         .map_err(|e| e.to_string())?;
@@ -430,7 +449,20 @@ pub fn run() {
                     "hide_fab",
                 );
             }
-            "settings" => {
+            "hide_fab_ai" | "hide_fab_todo" => {
+                let is_todo = event.id().as_ref() == "hide_fab_todo";
+                let label = if is_todo { FAB_TODO_LABEL } else { FAB_AI_LABEL };
+                if let Some(w) = app.get_webview_window(label) {
+                    let _ = w.hide();
+                }
+                let which = if is_todo { "todo" } else { "ai" };
+                let _ = app.emit_to(
+                    tauri::EventTarget::labeled(MAIN_LABEL),
+                    "tray-event",
+                    format!("hide_fab:{}", which),
+                );
+            }
+            "settings" | "fab_settings" => {
                 show_main(app);
                 let _ = app.emit_to(
                     tauri::EventTarget::labeled(MAIN_LABEL),
@@ -457,14 +489,7 @@ pub fn run() {
             if let tauri::RunEvent::Exit = event {
                 let data_dir = data_dir_of(app_handle);
                 save_fab_pos(app_handle, &data_dir);
-                if let Some(state) = app_handle.try_state::<ServerProcess>() {
-                    if let Ok(mut guard) = state.0.lock() {
-                        if let Some(mut child) = guard.take() {
-                            let _ = child.kill();
-                            let _ = child.wait();
-                        }
-                    }
-                }
+                kill_server(app_handle);
             }
         });
 }
