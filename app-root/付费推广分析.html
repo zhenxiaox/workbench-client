@@ -1,0 +1,2206 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>付费推广分析</title>
+<script>
+(function(){
+  var WP='wb_theme', WS='wb_theme_auto_start', WE='wb_theme_auto_end';
+  function mins(t){ var p=String(t||'00:00').split(':'); return (parseInt(p[0],10)||0)*60+(parseInt(p[1],10)||0); }
+  function resolve(mode){
+    if(mode==='light'||mode==='dark'||mode==='eye') return mode;
+    if(mode!=='auto') return 'light';
+    var d=new Date(), m=d.getHours()*60+d.getMinutes(), s=1080, e=360;
+    try{ s=mins(localStorage.getItem(WS)||'18:00'); e=mins(localStorage.getItem(WE)||'06:00'); }catch(x){}
+    var dark=(s<e)?(m>=s&&m<e):(m>=s||m<e);
+    return dark?'dark':'light';
+  }
+  window.__wbResolveTheme = resolve;
+  function apply(){ var mode='light'; try{ mode=localStorage.getItem(WP)||'light'; }catch(e){} document.documentElement.setAttribute('data-theme', resolve(mode)); }
+  apply();
+  window.addEventListener('message', function(e){
+    if(e.data && e.data.type==='wb-theme'){
+      var t=e.data.theme||e.data.mode;
+      if(t) document.documentElement.setAttribute('data-theme', resolve(t)); else apply();
+    }
+  });
+  try{ window.addEventListener('storage', function(e){ if(!e.key||e.key===WP||e.key===WS||e.key===WE) apply(); }); }catch(e){}
+})();
+</script>
+<link rel="stylesheet" href="scrollbar.css?v=1">
+<link rel="stylesheet" href="mobile-ui.css?v=1">
+<style>
+/* ★ 2026-09-20 已按工作台色系重上色：靛蓝/紫 → 暖橙（对齐「沟通分析报告」）。
+   原文来自付费推广分析的原报告基线，结构与布局未动，只换颜色。 */
+:root{--bg:#f8fafc;--paper:#fff;--ink:#0f172a;--muted:#64748b;--line:#e2e8f0;--primary:#F97316;--primary-light:#FDBA74;--primary-bg:#FFF1E7;--gradient:linear-gradient(135deg,#F97316,#FB923C);--green:#10b981;--green-bg:#ecfdf5;--amber:#f59e0b;--amber-bg:#fef3c7;--red:#ef4444;--red-bg:#fef2f2;--blue:#2563eb;--blue-bg:#eff6ff;--shadow:0 4px 12px rgba(15,23,42,.06);--s1:#F97316;--s2:#ec4899;--s3:#10b981;--s4:#f59e0b;--font-sans:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Helvetica Neue",sans-serif;--font-mono:'SF Mono','Menlo','Consolas',monospace;--font-size-hero:30px;--font-size-section:24px;--font-size-subsection:17px;--font-size-card-title:16px;--font-size-overview-value:18px;--font-size-overview-label:11px;--font-size-body:15px;--font-size-small:14px;--font-size-micro:12px;--font-size-mono:12.5px;--line-height-body:1.7}
+        *{box-sizing:border-box}code,kbd,samp{font-family:var(--font-mono);font-size:var(--font-size-mono)}body{margin:0;overflow-x:hidden;background:#f9fafb;color:#1f2937;font:var(--font-size-body)/var(--line-height-body) var(--font-sans);letter-spacing:0;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+        .page{width:100%;max-width:1080px;margin:0 auto;padding:32px 20px 80px}
+        .hero{background:var(--gradient);color:#fff;border-radius:20px;padding:40px 48px;box-shadow:var(--shadow)}
+        .hero-left{display:flex;flex-direction:column;gap:8px}
+        /* 顶部主标题字号由 --font-size-hero 控制（当前 30px/800），与评价分析报告的
+           封面标题同属一层，按实际观感微调。不能直接调 --font-size-section：该 token
+           还被正文各章节标题 .section-title 共用，改它会打乱「封面 > 章节」的层级关系。 */
+        .product-title{font-size:var(--font-size-hero);font-weight:800;letter-spacing:.5px;line-height:1.2;overflow-wrap:anywhere}
+        .meta{opacity:.8;margin-top:6px;font-size:var(--font-size-small)}
+        .hero-tags{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+        .tag{padding:5px 10px;border-radius:999px;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.25);font-size:var(--font-size-small)}
+        .tag.danger{background:rgba(220,38,38,.35);border-color:rgba(220,38,38,.5)}
+        /* ── 投放计划模块（淘天专属）───────────────────────────────
+ 按渠道折叠分组：渠道多时一次铺开会淹没重点，折叠让读者先看渠道汇总、
+ 需要时再展开计划明细。零成交行标红底，合计行加粗置底。 */
+.plan-group{margin-top:14px;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.plan-group-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;padding:10px 13px;background:var(--bg);cursor:pointer;list-style:none;user-select:none}
+.plan-group-head::-webkit-details-marker{display:none}
+.plan-group-head::before{content:"▸";color:var(--primary);font-size:20px;font-weight:400;line-height:1;flex:none;margin-right:7px}
+.plan-group[open] .plan-group-head::before{content:"▾"}
+.plan-group-name{font-weight:700;font-size:14px;color:var(--ink)}
+.plan-group-meta{color:var(--muted);font-size:12px}
+.plan-table{width:100%;border-collapse:collapse;font-size:12px}
+.plan-table th,.plan-table td{padding:7px 9px;border-top:1px solid var(--line);white-space:nowrap}
+.plan-table th{background:var(--paper);font-weight:700;color:var(--muted);position:sticky;top:0;z-index:1}
+.plan-table td.num,.plan-table th.num{text-align:right;font-variant-numeric:tabular-nums}
+.plan-name{max-width:230px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* 投放周期列：日期区间是文本不是数值，保持左对齐；天数为次级信息，压小并弱化。
+   tabular-nums 让各行日期数字等宽对齐，扫读时区间边界不会参差。 */
+.plan-period{white-space:nowrap;font-variant-numeric:tabular-nums}
+.plan-period-range{font-size:12px;color:var(--ink)}
+.plan-period-days{font-size:11px;color:var(--muted);margin-top:1px}
+.plan-table tr.is-zero td{background:rgba(220,38,38,.045)}
+.plan-table tr.is-total td{font-weight:700;background:var(--bg);border-top:2px solid var(--line)}
+/* ── 关键词模块（淘天专属）─────────────────────────────────
+ 词云用于「一眼看出哪些词量大」：字号编码展现量、透明度编码花费量级，
+ 两朵云共用同一字号刻度，左右才可横向比较。明细表复用 .plan-table 样式，
+ 保证同一份报告里的表格观感一致。 */
+/* 词类型花费占比：每个类型独占一行，左侧类型名、右侧百分比。
+   类型名压到 12px 常规字重，百分比沿用总览指标卡的数值字号，
+   让"看数"和"看标签"分层，不与其他指标卡的单值样式冲突。 */
+.kw-share{display:flex;flex-direction:column;gap:2px;margin-top:4px}
+.kw-share-row{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.kw-share-row i{font-style:normal;font-size:12px;font-weight:600;color:var(--muted);white-space:nowrap}
+.kw-share-pct{font-size:var(--font-size-overview-value);line-height:1.25;font-variant-numeric:tabular-nums}
+/* ── 行动清单 ───────────────────────────────────────────────
+ 每条一张浅色卡，固定两行：左侧优先级徽标定宽，右侧第一行黑字写"做什么"，
+ 第二行浅灰写佐证数字。徽标用 flex:none 固定宽度，保证多条之间左边缘对齐，
+ 不随文字长短漂移。
+ [2026-08-27] 原第三行"验证目标"（.act-target）已停用：它与动作描述高度
+ 重叠，三行并列反而让人找不到"现在要干什么"。规则暂留，供旧报告 HTML 渲染。 */
+.act-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px;counter-reset:act}
+.act-item{display:flex;align-items:flex-start;gap:14px;padding:11px 16px;border-radius:12px;
+  background:var(--bg);border:1px solid var(--line);transition:box-shadow .18s,transform .18s}
+.act-item:hover{box-shadow:0 4px 14px rgba(15,23,42,.07)}
+.act-flag{flex:none;width:36px;text-align:center;padding:4px 0;border-radius:7px;
+  font-size:11px;font-weight:800;letter-spacing:.3px;line-height:1.5}
+.act-p0 .act-flag{background:rgba(220,38,38,.12);color:#dc2626}
+.act-p1 .act-flag{background:rgba(234,88,12,.12);color:#EA580C}
+.act-p2 .act-flag{background:rgba(100,116,139,.14);color:#475569}
+/* 左侧一道与优先级同色的细边，让扫读时能快速分辨轻重缓急 */
+.act-p0{border-left:3px solid #dc2626}
+.act-p1{border-left:3px solid #EA580C}
+.act-p2{border-left:3px solid #94a3b8}
+.act-body{min-width:0;flex:1}
+.act-title{font-size:13px;font-weight:700;color:var(--ink);line-height:1.5;
+  display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.act-source{font-size:11px;font-weight:600;color:var(--muted);padding:1px 7px;
+  border-radius:5px;background:rgba(100,116,139,.1)}
+.act-desc{font-size:12px;color:var(--muted);line-height:1.6;margin-top:3px}
+.act-target{font-size:11px;color:var(--muted);line-height:1.55;margin-top:5px;
+  padding-top:5px;border-top:1px dashed var(--line)}
+@media (max-width:640px){
+  .act-item{flex-direction:column;gap:8px}
+  .act-flag{width:auto;align-self:flex-start;padding:3px 12px}
+}
+@media (prefers-reduced-motion:reduce){.act-item{transition:none}}
+/* ── 趋势视图切换（总计 / 分维度下钻）─────────────────────────
+ 与上方的指标 Tab 是两个正交维度：指标 Tab 选"看哪个指标"，
+ 这里选"看汇总还是看维度"。用原生 radio 承载单选语义，
+ 键盘方向键与读屏软件都能直接识别，无需额外 ARIA 维护。 */
+.trend-scope{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin:10px 0 2px}
+.trend-scope-radio{display:inline-flex;align-items:center;gap:6px;cursor:pointer;
+  font-size:12px;font-weight:600;color:var(--muted);transition:color .15s}
+.trend-scope-radio:hover{color:var(--ink)}
+.trend-scope-radio input{accent-color:var(--primary);width:14px;height:14px;cursor:pointer;margin:0}
+.trend-scope-radio:has(input:checked){color:var(--primary)}
+/* 汇总视图下只有一条线，图例没有可反选项，整体收起避免误导 */
+.trend-legend.is-collapsed{display:none}
+@media (prefers-reduced-motion:reduce){.trend-scope-radio{transition:none}}
+.kw-cloud-wrap{margin-top:16px;border:1px solid var(--line);border-radius:10px;padding:14px 16px;background:var(--paper)}
+.kw-cloud-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.kw-cloud-head b{font-size:14px;color:var(--ink)}
+.kw-cloud-head span{color:var(--muted);font-size:12px}
+.kw-cloud-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}
+.kw-cloud-card{border-radius:10px;padding:14px 16px}
+.kw-cloud-good{background:var(--primary-bg);border:1px solid var(--primary-light)}
+.kw-cloud-bad{background:var(--red-bg);border:1px solid rgba(239,68,68,.25)}
+.kw-cloud-title{font-weight:700;font-size:13px;color:var(--ink)}
+.kw-cloud-note{color:var(--muted);font-size:11px;margin-top:2px}
+.kw-cloud{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:6px 10px;margin-top:12px;line-height:1.5}
+/* 词条：字号由 --kw-size（∝√展现量）驱动，颜色深浅由 --kw-depth（ROI 组内排名）驱动。
+   两个变量都在行内 style 里给出，CSS 只负责把它们翻译成视觉表现。
+   position:relative 为悬停浮层提供定位上下文；不设 cursor:help，避免出现问号光标。 */
+.kw-chip{position:relative;display:inline-block;font-weight:700;font-size:var(--kw-size,18px);
+  padding:2px 4px;border-radius:6px;cursor:default;outline:none;
+  max-width:100%;overflow-wrap:anywhere;
+  transition:transform .18s cubic-bezier(.34,1.25,.5,1),opacity .18s,background .18s,color .18s}
+/* 颜色深浅表达 ROI：--kw-depth 为 0~1 的组内 ROI 排名。
+   用「浅色 → 近黑」的色相插值，而不是调透明度 —— opacity 的上限是原色，
+   最高 ROI 只能做到"不透明"，无法更深；混入近黑后头部词能真正压到
+   蓝得发黑 / 红得发黑，与尾部的差距远大于透明度方案。
+   color-mix 在 Chrome 111+/Safari 16.2+ 支持；下面用 @supports 兜底，
+   旧内核回退到原来的 opacity 方案，不会出现无色文字。 */
+.kw-good .kw-chip{color:#FDBA74;opacity:calc(.55 + var(--kw-depth,1) * .45)}
+.kw-bad .kw-chip{color:#f08b8b;opacity:calc(.55 + var(--kw-depth,1) * .45)}
+@supports (color:color-mix(in srgb,red 50%,blue)){
+  .kw-good .kw-chip{opacity:1;
+    color:color-mix(in srgb,#1a1140 calc(var(--kw-depth,1) * 92%),#FDBA74)}
+  .kw-bad .kw-chip{opacity:1;
+    color:color-mix(in srgb,#3d0a0a calc(var(--kw-depth,1) * 92%),#f5a3a3)}
+}
+/* 选中动效：放大并回到完全不透明，让当前词从整朵云里"浮"出来。
+   focus-visible 与 hover 同款，键盘 Tab 也能获得同样反馈。 */
+.kw-chip:hover,.kw-chip:focus-visible{transform:scale(1.14);opacity:1;z-index:20}
+.kw-good .kw-chip:hover,.kw-good .kw-chip:focus-visible{background:rgba(234,88,12,.12)}
+.kw-bad .kw-chip:hover,.kw-bad .kw-chip:focus-visible{background:rgba(220,38,38,.12)}
+/* 悬停时其余词整体减淡，突出当前项 */
+/* 悬停时其余词整体减淡（乘在既有 opacity 之上会失真，故直接给定值） */
+.kw-cloud:hover .kw-chip{opacity:.35}
+.kw-cloud .kw-chip:hover,.kw-cloud .kw-chip:focus-visible{opacity:1}
+/* 数据浮层：替代原生 title —— title 会把光标变问号、延迟约 1 秒、样式不可控。
+   字号写死 12px 不继承词条字号，否则 30px 的大词浮层会跟着放大到不可读。 */
+.kw-tip{position:absolute;left:50%;bottom:calc(100% + 8px);transform:translate(-50%,4px);
+  min-width:190px;padding:10px 12px;border-radius:10px;background:#1f2937;color:#f9fafb;
+  font-size:12px;font-weight:500;line-height:1.6;letter-spacing:0;text-align:left;
+  box-shadow:0 8px 24px rgba(15,23,42,.28);opacity:0;visibility:hidden;pointer-events:none;
+  transition:opacity .18s,transform .18s;z-index:30}
+.kw-tip:after{content:"";position:absolute;top:100%;left:50%;margin-left:-5px;
+  border:5px solid transparent;border-top-color:#1f2937}
+.kw-chip:hover .kw-tip,.kw-chip:focus-visible .kw-tip{opacity:1;visibility:visible;transform:translate(-50%,0)}
+.kw-tip-name{display:block;font-weight:700;font-size:12px;margin-bottom:6px;
+  padding-bottom:6px;border-bottom:1px solid rgba(249,250,251,.18);color:#fff}
+.kw-tip-row{display:flex;justify-content:space-between;gap:14px;white-space:nowrap}
+.kw-tip-row i{font-style:normal;color:#cbd5e1}
+.kw-tip-row b{font-weight:700;font-variant-numeric:tabular-nums}
+/* 贴近容器左右边缘的词，浮层改为向内对齐，避免被卡片裁掉 */
+.kw-cloud .kw-chip:first-child .kw-tip{left:0;transform:translate(0,4px)}
+.kw-cloud .kw-chip:first-child:hover .kw-tip,.kw-cloud .kw-chip:first-child:focus-visible .kw-tip{transform:translate(0,0)}
+.kw-cloud .kw-chip:last-child .kw-tip{left:auto;right:0;transform:translate(0,4px)}
+.kw-cloud .kw-chip:last-child:hover .kw-tip,.kw-cloud .kw-chip:last-child:focus-visible .kw-tip{transform:translate(0,0)}
+@media (prefers-reduced-motion:reduce){
+  .kw-chip{transition:none}
+  .kw-chip:hover,.kw-chip:focus-visible{transform:none}
+  .kw-tip{transition:none}
+}
+/* 名称列的 ID 副行：投放计划、关键词、人群、商品四处共用同一样式，
+   用于回后台定位具体对象。源表没有 ID 的维度（如人群）不渲染这一行，
+   不留空占位。 */
+.entity-id{color:var(--muted);font-size:11px;font-variant-numeric:tabular-nums;margin-top:1px;line-height:1.4}
+/* ── 人群模块（淘天专属）─────────────────────────────────
+ 环形图只画 Top5 + 其他：超过五段后色块过窄，既难辨认也难悬停。
+ 图例表同时给出花费、占比与 ROI——只看占比会把「花得多」误当「效果好」。 */
+.donut-wrap{margin-top:16px;border:1px solid var(--line);border-radius:10px;padding:14px 16px;background:var(--paper)}
+.donut-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.donut-head b{font-size:14px;color:var(--ink)}
+.donut-head span{color:var(--muted);font-size:12px}
+.donut-body{display:flex;align-items:center;gap:22px;flex-wrap:wrap}
+.donut-svg{width:180px;height:180px;flex:none}
+/* 扇区与图例联动：任一侧被选中时，JS 给 .donut-body 加 is-active 并给
+   对应的扇区/图例行加 is-on。CSS 只负责把这两个状态翻译成视觉表现，
+   避免在 JS 里直接写样式。 */
+.donut-arc{transition:opacity .15s,stroke-width .15s;cursor:pointer;outline:none}
+/* 未激活时全部常亮；一旦有选中项，非选中项整体减淡 */
+.donut-body.is-active .donut-arc{opacity:.28}
+.donut-body.is-active .donut-arc.is-on{opacity:1;stroke-width:26}
+.donut-arc:focus-visible{stroke-width:26}
+.donut-legend-row{cursor:pointer;transition:background .15s;outline:none}
+.donut-body.is-active .donut-legend-row{opacity:.45}
+.donut-body.is-active .donut-legend-row.is-on{opacity:1;background:var(--primary-bg)}
+.donut-legend-row.is-on td{font-weight:700}
+.donut-legend-row:focus-visible{background:var(--primary-bg)}
+/* 选中时色点放大，与扇区加粗形成呼应 */
+.donut-dot{transition:transform .15s}
+.donut-legend-row.is-on .donut-dot{transform:scale(1.35)}
+@media (prefers-reduced-motion:reduce){
+  .donut-arc,.donut-legend-row,.donut-dot{transition:none}
+  .donut-legend-row.is-on .donut-dot{transform:none}
+}
+.donut-center-value{font-size:15px;font-weight:800;fill:var(--ink)}
+.donut-center-label{font-size:11px;fill:var(--muted)}
+.donut-legend{min-width:280px;flex:1;border-collapse:collapse;font-size:12px}
+.donut-legend th,.donut-legend td{padding:6px 10px;border-top:1px solid var(--line);white-space:nowrap}
+.donut-legend th{color:var(--muted);font-weight:700;text-align:left}
+.donut-legend th.num,.donut-legend td.num{text-align:right;font-variant-numeric:tabular-nums}
+.donut-dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:7px;vertical-align:middle}
+.hero-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-top:18px}
+        /* 总览指标只允许两种布局：≤6 项排一行，正好 8 项排两行每行 4 个。
+           用 data-kpi-count 显式声明列数，不再依赖 auto-fit —— auto-fit 会把 8 项
+           挤进一行导致金额被压缩，且换行位置随视口漂移，无法保证「两行各 4 个」。 */
+        .hero-kpis[data-kpi-count="1"]{grid-template-columns:repeat(1,minmax(0,1fr))}
+        .hero-kpis[data-kpi-count="2"]{grid-template-columns:repeat(2,minmax(0,1fr))}
+        .hero-kpis[data-kpi-count="3"]{grid-template-columns:repeat(3,minmax(0,1fr))}
+        .hero-kpis[data-kpi-count="4"]{grid-template-columns:repeat(4,minmax(0,1fr))}
+        .hero-kpis[data-kpi-count="5"]{grid-template-columns:repeat(5,minmax(0,1fr))}
+        .hero-kpis[data-kpi-count="6"]{grid-template-columns:repeat(6,minmax(0,1fr))}
+        .hero-kpis[data-kpi-count="8"]{grid-template-columns:repeat(4,minmax(0,1fr))}
+        .hero-kpi{min-width:0;padding:14px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:12px}
+        /* 总览指标标题字号由 --font-size-overview-label 统一控制：Hero 一行要并排
+           放多张卡，标题过大会挤压数值区并提前触发换行。仅作用于 Hero，模块内的
+           .kpi-card-label 不受影响；问号按钮用自己的 --font-size-micro，不随此值变化。 */
+        .hero-kpi span{display:block;opacity:.8;font-size:var(--font-size-overview-label)}.hero-kpi-label,.kpi-card-label{display:flex;align-items:center;gap:6px;min-height:18px}.hero-kpi .metric-help{border-color:rgba(255,255,255,.55);background:rgba(255,255,255,.13);color:#fff}
+        .hero-kpi b{display:block;margin-top:4px;font-size:var(--font-size-overview-value);line-height:1.2;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+        .card{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:20px;box-shadow:0 1px 2px rgba(15,23,42,.04)}
+        .section{margin-top:32px;padding:40px;background:var(--paper);border:1px solid var(--line);border-radius:16px;box-shadow:0 1px 2px rgba(15,23,42,.04);scroll-margin-top:84px}
+        .section>.card{padding:0;border:0;border-radius:0;background:transparent;box-shadow:none}
+        .section-title-row{display:flex;align-items:center;gap:12px;margin-bottom:24px}
+        .section-no{width:32px;height:32px;border-radius:8px;background:var(--primary);color:#fff;display:grid;place-items:center;font-size:16px;font-weight:700;flex:0 0 32px}
+        .section-title{font-size:var(--font-size-section);font-weight:700;line-height:1.3;overflow-wrap:anywhere}
+        .chart-title{font-size:15px;font-weight:700;margin-bottom:10px}
+        .metric-strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-top:16px}.core-metrics{grid-template-columns:repeat(6,minmax(0,1fr));margin-top:0}
+        .metric{min-width:0;padding:13px;background:var(--bg);border-radius:8px}.metric-label{display:flex;align-items:center;gap:6px;min-height:18px}.metric-label span{min-width:0;color:var(--muted);font-size:var(--font-size-small)}.metric-help{position:relative;display:grid;flex:0 0 16px;width:16px;height:16px;padding:0;place-items:center;border:1px solid var(--primary-light);border-radius:50%;background:#fff;color:var(--primary);font:700 var(--font-size-micro)/1 var(--font-sans);cursor:help}.metric-help .metric-help-tip{position:absolute;bottom:calc(100% + 8px);left:50%;z-index:30;display:block;width:min(240px,calc(100vw - 44px));padding:9px 11px;border-radius:7px;background:var(--ink);color:#fff;font:var(--font-size-small)/1.55 var(--font-sans);text-align:left;white-space:normal;box-shadow:0 8px 24px rgba(30,27,75,.18);opacity:0;visibility:hidden;pointer-events:none;cursor:text;-webkit-user-select:text;user-select:text;transform:translate(-50%,4px);transition:opacity .15s,transform .15s,visibility .15s}.metric-help .metric-help-tip:after{content:"";position:absolute;right:0;bottom:-9px;left:0;height:9px}.metric-help[data-tip-align="start"] .metric-help-tip{right:auto;left:0;transform:translateY(4px)}.metric-help[data-tip-align="end"] .metric-help-tip{right:0;left:auto;transform:translateY(4px)}.metric-help:hover .metric-help-tip,.metric-help:focus-visible .metric-help-tip,.metric-help[aria-expanded="true"] .metric-help-tip{opacity:1;visibility:visible;pointer-events:auto;transform:translate(-50%,0)}.metric-help[data-tip-align="start"]:hover .metric-help-tip,.metric-help[data-tip-align="start"]:focus-visible .metric-help-tip,.metric-help[data-tip-align="start"][aria-expanded="true"] .metric-help-tip,.metric-help[data-tip-align="end"]:hover .metric-help-tip,.metric-help[data-tip-align="end"]:focus-visible .metric-help-tip,.metric-help[data-tip-align="end"][aria-expanded="true"] .metric-help-tip{transform:translateY(0)}
+        .hero-kpi,.metric,.kpi-card{position:relative;transition:box-shadow .22s ease,border-color .22s ease}
+        @media(hover:hover) and (pointer:fine){.hero-kpi:hover,.metric:hover,.kpi-card:hover{z-index:12;box-shadow:0 12px 28px rgba(30,27,75,.14)}.hero-kpi:hover{border-color:rgba(255,255,255,.42)}}
+        @media(prefers-reduced-motion:reduce){.hero-kpi,.metric,.kpi-card{transition:none;will-change:auto}.hero-kpi:hover,.metric:hover,.kpi-card:hover{}}
+        .metric b{display:block;font-size:var(--font-size-overview-value);margin:4px 0;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+        .metric em{font-style:normal;font-size:var(--font-size-small)}
+        .kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:18px}
+        .kpi-card{padding:16px;border:1px solid var(--line);border-radius:12px;background:var(--paper)}.kpi-card span{display:block;color:var(--muted);font-size:var(--font-size-small)}.kpi-card b{display:block;margin-top:4px;font-size:var(--font-size-overview-value);color:var(--ink);line-height:1.25;font-variant-numeric:tabular-nums}.kpi-card small{display:block;margin-top:3px;color:var(--muted);font-size:var(--font-size-small)}
+        .conclusion-cards{display:grid;gap:16px;margin-top:4px}.conclusion-card{padding:20px 24px;border:1.5px solid #eaa93c;border-radius:16px;background:linear-gradient(180deg,#fef7da,#fbeaba)}.conclusion-card .c-title{margin-bottom:13px;color:#a5591b;font-size:var(--font-size-card-title);font-weight:400;line-height:1.55}.conclusion-card .c-points{display:grid;gap:10px;margin:0;padding:0;list-style:none}.conclusion-card .c-points li{position:relative;padding-left:16px;color:#7c6636;font-size:var(--font-size-small);line-height:1.8;overflow-wrap:anywhere}.conclusion-card .c-points li:before{position:absolute;top:-2px;left:3px;color:#c98a2e;font-size:18px;font-weight:800;content:"\00B7"}
+        /* 核心结论卡片：按用户要求取消全部悬停反馈（先去 scale 放大，再去描边加深 + 投影加强），
+           卡片在 hover / focus 时保持与静态一致，不做任何视觉变化。
+           因此不再需要 hover 态的 transition、z-index 抬升，以及为放大预留层叠上下文的
+           .conclusion-cards{isolation} 与 .conclusion-card{position:relative}，一并移除。
+           另按用户要求去掉卡片自身的常态阴影（box-shadow）与标题加粗（font-weight 800→400），
+           标题层级改由字号与深棕色 #a5591b 体现；边框、圆角、渐变底色保持不变。
+           注：列表符号 li:before 的 font-weight:800 仅作用于「·」圆点字形，非文本加粗，故保留。 */
+        .ai-module-conclusion{margin-top:22px;padding:18px 20px}.ai-conclusion-item+ .ai-conclusion-item{margin-top:10px}.ai-conclusion-item strong{display:block;margin-bottom:3px;font-size:var(--font-size-small)}.ai-conclusion-item p{margin:0;color:var(--ink);line-height:1.7}.ai-section-group+.ai-section-group{margin-top:14px;padding-top:14px;border-top:1px solid rgba(249,115,10,.18)}.ai-conclusion-basis-label{margin-bottom:7px;color:var(--muted);font-size:var(--font-size-micro);font-weight:700;letter-spacing:0}.ai-module-conclusion ul.c-points{display:grid;gap:9px;margin:0;padding:0;list-style:none}.ai-module-conclusion ul.c-points li{position:relative;padding-left:16px;color:var(--ink);font-size:var(--font-size-small);line-height:1.75;overflow-wrap:anywhere}.ai-module-conclusion ul.c-points li:before{position:absolute;top:-2px;left:3px;color:var(--primary);font-size:18px;font-weight:800;content:"\00B7"}.ai-module-conclusion ul.c-points strong{margin-right:6px;font-weight:800}.ai-module-conclusion ul.c-points span{display:inline;color:inherit}.ai-module-conclusion .ai-action-target{display:block;margin-top:3px;color:#EA580C;font-size:var(--font-size-micro)}
+        .insight{margin-top:20px;padding:0;background:transparent}
+        .insight.bad{border-color:var(--red);background:var(--red-bg)}
+        .insight h3{margin:0 0 12px;font-size:var(--font-size-subsection);color:var(--ink)}
+        .insight-box{margin-top:16px;padding:16px 18px;border:1px solid var(--primary-light);border-radius:12px;background:var(--primary-bg)}.insight-box h4{margin:0 0 8px;font-size:var(--font-size-body);color:var(--primary)}.insight-box p,.insight-box li{margin:4px 0;font-size:var(--font-size-small);line-height:1.7}
+/* ── AI 笔记卡（淘天专属改版）───────────────────────────────
+ 整卡为无边框浅紫块：洞察是对上方数据的附注而非并列的新板块，去掉边框与
+ 全部分隔装饰后，它在视觉上归属于所在模块，而不是另起一个控件。
+ 刻意不加左侧强调条、徽章底色和投影 —— 这些装饰会把"附注"重新拉回成一个
+ 独立面板，与轻量笔记的定位相反。
+ 这些规则写在原 .insight-box / .ai-module-conclusion 之后，靠层叠顺序覆盖：
+ 两者特异性相同，顺序决定胜负，用位置而非 !important 表达覆盖关系。
+ 只作用于淘天模板，其他平台仍是原来的蓝紫描边卡。 */
+.ai-module-conclusion{position:relative;margin-top:22px;padding:18px 22px 20px;border:0;border-radius:16px;background:#FFF7ED;box-shadow:none}
+/* 标题徽章：直接置于浅紫底上，无底色无投影，仅靠字重与紫色区分层级 */
+.ai-module-conclusion .ai-badge{display:inline-flex;align-items:center;gap:6px;margin:-8px -10px 2px -10px;padding:8px 14px 8px 10px;border-radius:10px;background:none;box-shadow:none;color:#EA580C;font-size:var(--font-size-small);font-weight:800;letter-spacing:.3px;cursor:default;transition:background .2s,color .2s}
+.ai-badge-icon{width:14px;height:14px;flex:none;transform-origin:50% 50%;transition:transform .5s cubic-bezier(.34,1.3,.5,1)}
+/* 悬停整个笔记卡时四角星自转一圈并轻微放大。用 transition 而非 keyframes
+ 动画：鼠标移开时能沿原路平滑退回，不会像 animation 那样被打断后跳回原位。
+ 缓动带轻微回弹（cubic-bezier 第二个控制点 >1），让旋转收尾更有生气。
+ 命中区域取整张卡而不是图标本身：图标只有 14px，精确悬停成本太高。
+ 转满 360° 而不是 180°：四角星是四重对称图形，转 90° 或 180° 后与原样完全
+ 重合，只能看到半程运动；整圈才读得出"转了一下"。 */
+/* 命中区是徽章整体：图标 + 「AI 笔记」文字 + 上下左右各约 8-14px 留白。
+ 不用整张卡做触发器：卡片高度常有数百像素，鼠标一进入顶部星星就转完了，
+ 之后移到徽章上不会再触发，反而让人觉得「文字不在 hover 范围内」。
+ 命中区靠 padding 扩出，再用等值负 margin 抵消，徽章视觉位置和原来一致。 */
+.ai-badge:hover .ai-badge-icon{transform:rotate(360deg) scale(1.12)}
+/* 文字同步加深并浮出淡紫底，明确告诉用户「这几个字也在响应区内」 */
+.ai-badge:hover{background:rgba(234,88,12,.09);color:#C2410C}
+/* 键盘用户：徽章本身不可聚焦，由卡内任意元素获得焦点时触发同一动效 */
+.ai-module-conclusion:focus-within .ai-badge-icon{transform:rotate(360deg) scale(1.12)}
+@media (prefers-reduced-motion:reduce){.ai-badge-icon{transition:none}
+.ai-badge:hover .ai-badge-icon,.ai-module-conclusion:focus-within .ai-badge-icon{transform:none}}
+.ai-module-conclusion .ai-conclusion-basis-label{color:#EA580C;opacity:.85}
+.ai-module-conclusion .ai-section-group+.ai-section-group{border-top-color:rgba(234,88,12,.16)}
+.ai-module-conclusion ul.c-points li:before{color:#FB923C}
+.ai-module-conclusion .ai-action-target{color:#C2410C}
+
+        .insight-block{min-width:0}
+        .insight-block b{display:block;margin-bottom:5px}
+        .insight-block p{margin:0}
+
+        .trend-conclusion{margin-top:16px;padding:14px 16px;border:1px solid var(--line);border-radius:10px;background:var(--bg)}.trend-conclusion h4{margin:0 0 8px;font-size:var(--font-size-small);font-weight:700}.trend-conclusion table{width:100%;border-collapse:collapse;font-size:var(--font-size-small);margin-top:8px}.trend-conclusion th{text-align:left;color:var(--muted);padding:6px 8px;border-bottom:1px solid var(--line);font-weight:600}.trend-conclusion td{padding:6px 8px;border-bottom:1px solid var(--line)}
+        .table-wrap{overflow:auto}
+        table{width:100%;border-collapse:collapse;font-size:var(--font-size-small);font-variant-numeric:tabular-nums}
+        th{text-align:left;color:var(--muted);background:var(--bg);font-weight:600}
+        th,td{padding:10px;border-bottom:1px solid var(--line);white-space:nowrap}
+        td.num,th.num{text-align:right}
+        .bad-cell{color:var(--red);font-weight:700}
+        .good-cell{color:var(--green);font-weight:700}
+        .chart-wrap{position:relative}
+        .tooltip-box{position:absolute;display:none;pointer-events:none;background:var(--ink);color:#fff;border-radius:8px;padding:7px 9px;font-size:11px;z-index:8;white-space:nowrap}
+        .svg-chart{width:100%;display:block}
+        .donut-svg{width:min(100%,380px);height:auto;display:block;margin:20px auto;overflow:visible}
+        .mm-formula{margin:0 0 6px;font-size:var(--font-size-body);font-weight:700;color:var(--ink)}
+/* 方向提示：颜色与柱子一致（负=绿=好，正=红=差），让公式本身就说清好坏，
+   而不是只给一个中性的减法定义。 */
+.mm-formula-hint{display:block;margin-top:5px;margin-bottom:14px;font-size:var(--font-size-micro);font-weight:400;color:var(--muted);line-height:1.6}
+.mm-formula-hint b{font-weight:700}
+.mm-formula-hint b.neg{color:var(--green)}
+.mm-formula-hint b.pos{color:var(--red)}
+.mm-formula-hint i{margin:0 8px;font-style:normal;color:#c3ccd8}.mm-desc{margin:0 0 12px;color:var(--muted);font-size:var(--font-size-micro);line-height:1.6}.mismatch-table{margin-top:4px}.mismatch-table table{min-width:0;table-layout:fixed;width:100%}.mismatch-table col.mm-col-name{width:25%}.mismatch-table col.mm-col-spend{width:7.41%}.mismatch-table col.mm-col-outcome{width:8.14%}.mismatch-table col.mm-col-value{width:7.83%}.mismatch-table col.mm-col-bar{width:51.62%}.mismatch-table tbody td{padding:3px 4px;border-bottom:none}.mismatch-table tbody td.product-name{padding-left:10px}.mismatch-table tbody td.mm-bar-cell{padding-left:12px;padding-top:0;padding-bottom:0}.mismatch-table thead th{padding:6px 4px;font-size:var(--font-size-micro);border-bottom:1px solid var(--line)}.mismatch-table thead th:first-child{padding-left:10px}.mismatch-table tbody tr:hover td:not(.mm-bar-cell){background:var(--bg)}.mismatch-table td.product-name{max-width:none;white-space:normal}.mismatch-table .product-cell-main>a,.mismatch-table .product-cell-main>b{display:-webkit-box;-webkit-line-clamp:var(--clamp,2);-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere;line-height:1.28;font-size:var(--font-size-micro);font-weight:600}.mismatch-table .product-title-link{color:var(--ink);text-decoration:none}.mismatch-table .product-title-link:hover{color:var(--primary);text-decoration:none}.mismatch-table .product-id-line{font-size:11px;margin-top:0;line-height:1.3}.mismatch-table td.product-name .product-id-line{margin-top:0}.mismatch-table .product-id-copy{width:14px;height:14px}.mismatch-table thead th{white-space:nowrap}.mismatch-table td.mm-amount{white-space:nowrap;vertical-align:middle}.mm-amount-main{font-weight:700;font-size:var(--font-size-micro);line-height:1.3;font-variant-numeric:tabular-nums}.mm-amount-share{margin-top:0;color:var(--muted);font-size:11px;line-height:1.3;font-weight:400;font-variant-numeric:tabular-nums}.mismatch-table td.mm-bar-cell{padding-right:12px;vertical-align:middle;border-left:1px solid var(--line);position:relative;overflow:visible;background-origin:content-box}.mismatch-table thead th.mm-bar-head{border-left:1px solid var(--line)}.mismatch-table .mm-axis-row td:last-child{border-left:1px solid var(--line)}.mm-bar-track{position:relative;height:28px}.mm-bar{position:absolute;top:50%;transform:translateY(-50%);height:22px;border-radius:4px}.mm-bar.positive{background:var(--red);border-radius:0 3px 3px 0}.mm-bar.negative{background:var(--green);border-radius:3px 0 0 3px}.mm-bar.neutral{background:#94a3b8}
+/* 柱悬浮：加深阴影 + 轻微提亮，给出"这根被选中"的即时反馈。
+   只动 box-shadow 和 filter，不动尺寸——柱长表示错配度大小，
+   hover 时放大等于短暂显示了错误的数值。 */
+.mm-bar{cursor:pointer;transition:box-shadow .12s ease,filter .12s ease}
+.mm-bar:hover,.mm-bar:focus-visible{box-shadow:0 2px 10px rgba(30,27,75,.30);filter:saturate(1.12) brightness(1.04);outline:none}
+.mm-bar:focus-visible{box-shadow:0 0 0 2px #fff,0 0 0 4px var(--primary)}
+/* 近零行不画柱，用透明热区兜底，保证每一行都能悬浮出详情 */
+.mm-bar-hit{position:absolute;top:50%;transform:translateY(-50%);height:22px;background:transparent;cursor:pointer}
+/* 浮层的定位基准。表格本身可横向滚动，挂在滚动容器内会被裁掉，
+   因此锚在 .mismatch-table 这一层（它同时是 bindChartTooltip 的 container）。 */
+.mismatch-table.mm-chart{position:relative}.mismatch-table td.mm-value-cell{white-space:nowrap;vertical-align:middle;padding-right:10px}.mm-bar-value{font-size:var(--font-size-micro);font-weight:700;font-variant-numeric:tabular-nums}.mm-bar-value.positive{color:var(--red)}.mm-bar-value.negative{color:var(--green)}.mm-bar-value.neutral{color:#64748b}.mm-axis-row td{padding:0 12px 2px;border:none}.mm-axis{position:relative;height:26px;margin-top:2px}.mm-tick{position:absolute;top:0;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center}.mm-tick i{display:block;width:1px;height:6px;background:#c3ccd8}.mm-tick.is-zero i{background:#94a3b8;height:8px}.mm-tick em{margin-top:2px;color:var(--muted);font-size:11px;font-style:normal;font-variant-numeric:tabular-nums;white-space:nowrap}.mm-tick.is-zero em{color:#64748b;font-weight:600}.mm-toggle{display:block;width:100%;margin-top:10px;padding:7px 12px;border:1px dashed var(--line);border-radius:8px;background:transparent;color:var(--primary);font:inherit;font-size:var(--font-size-micro);font-weight:600;cursor:pointer}.mm-toggle:hover{border-color:var(--primary);background:var(--bg)}.mm-toggle .mm-toggle-less{display:none}.mm-toggle[aria-expanded="true"] .mm-toggle-more{display:none}.mm-toggle[aria-expanded="true"] .mm-toggle-less{display:inline}
+        .quadrant-chart{position:relative;width:100%;max-width:100%;min-width:0;margin:0;overflow:hidden}.quadrant-scroll{width:100%;max-width:100%;overflow-x:hidden;overflow-y:hidden;border:1px solid var(--line);border-radius:8px;background:var(--paper);overscroll-behavior-inline:contain}.quadrant-scroll.is-scrollable{overflow-x:auto}.quadrant-svg{display:block;width:100%;height:auto;max-width:none}
+        .quadrant-threshold{stroke:#94a3b8;stroke-width:1.5;stroke-dasharray:7 6}.quadrant-threshold-label{fill:#64748b;font-size:var(--font-size-micro);font-weight:700}.quadrant-label{fill:var(--muted);font-size:var(--font-size-micro);font-weight:700}.quadrant-tick{fill:#94a3b8;font-size:var(--font-size-micro)}.quadrant-zone{font-size:var(--font-size-small);font-weight:800;opacity:.82}/* 商品四象限气泡：去掉原先 2px 纯白描边——它在浅色象限底上像一圈生硬镂空，
+   气泡密集时白边彼此挤压，观感割裂。改为轻拟物方案：
+   1) 同色系半透明描边替代白边，只做边缘收束，不切断气泡与底色的过渡；
+   2) 常态叠一层柔和投影，让气泡「浮」在象限面上而非贴平；
+   3) 悬停加深投影并轻微提亮，用景深而不是加粗描边来表达交互。
+   描边用 currentColor 继承各自 fill 色，四种语义色共用一条规则。 */
+        .quadrant-point{
+            /* 描边浓度 65%：58% 时红色气泡边缘在浅粉底上几乎融进背景，
+               提到 65% 后边界清晰，仍远比原先 2px 纯白柔和。 */
+            stroke:color-mix(in srgb, currentColor 65%, transparent);
+            stroke-width:1;
+            cursor:pointer;
+            /* 投影 alpha 0.20：0.16 时在 1× 屏上只有 2~5 灰阶差，浮起感几乎看不出。 */
+            filter:drop-shadow(0 1.5px 3px rgba(30,27,75,.2));
+            transition:opacity .16s ease,filter .16s ease;
+            outline:none
+        }
+        .quadrant-point:hover,.quadrant-point:focus{
+            /* 悬停保持 opacity 不变：若从 .88 拉到 1，饱和化会抵消 brightness 的提亮，
+               实测内部亮度反而下降。固定不透明度后，提亮才真正可见。
+               同时不再改 stroke-width——交互反馈完全交给景深与亮度，避免描边跳粗。 */
+            filter:drop-shadow(0 5px 10px rgba(30,27,75,.3)) brightness(1.1)
+        }
+        /* 旧内核不支持 color-mix 时回退到极淡白边，仍比原先 2px 实白柔和 */
+        @supports not (color: color-mix(in srgb, red 50%, transparent)){
+            .quadrant-point{stroke:rgba(255,255,255,.55);stroke-width:1}
+        }
+        @media(prefers-reduced-motion:reduce){.quadrant-point{transition:none}}/* 标注文字需可被鼠标选中复制（商品名/ID 常用于粘贴到后台核对）。
+   原设 pointer-events:none 是为了让点击穿透到下方气泡，但同时也屏蔽了文字选中。
+   改为 text：仅文本区域接收事件，气泡本身不被遮挡（标注框有留白，不覆盖圆点）。 */
+        .quadrant-point-label{pointer-events:none;-webkit-user-select:text;user-select:text}
+        .quadrant-point-label text{pointer-events:visiblePainted;cursor:text}
+        /* SVG 内其余说明性文字同样允许选中 */
+        .quadrant-svg text{-webkit-user-select:text;user-select:text}.quadrant-point-label text{font-size:var(--font-size-micro);paint-order:stroke;stroke:#fff;stroke-width:3px;stroke-linejoin:round}.quadrant-point-detail{fill:#64748b;font-size:var(--font-size-micro);font-weight:500}.quadrant-tooltip{position:absolute;z-index:40;display:grid;gap:3px;width:max-content;max-width:min(300px,calc(100% - 16px));padding:10px 12px;border:1px solid rgba(165,180,252,.38);border-radius:8px;background:rgba(30,27,75,.96);color:#fff;box-shadow:0 10px 28px rgba(30,27,75,.24);opacity:0;visibility:hidden;pointer-events:none;transform:translateY(3px) scale(.98);transform-origin:bottom left;transition:opacity .06s ease,transform .06s ease,visibility 0s linear .06s}.quadrant-tooltip.is-visible{opacity:1;visibility:visible;transform:translateY(0) scale(1);transition-delay:0s}.quadrant-tooltip strong{font-size:var(--font-size-small);line-height:1.45;overflow-wrap:anywhere}.quadrant-tooltip span{color:#FDBA74;font-size:var(--font-size-micro);line-height:1.5}.quadrant-caption{margin:10px 0 0;color:var(--muted);font-size:var(--font-size-micro);text-align:center}
+        .roi-feature-comparison{margin-top:22px;padding-top:22px;border-top:1px solid var(--line)}.roi-feature-table{margin-top:14px;border:1px solid var(--line);border-radius:8px;background:var(--paper);overflow:hidden}.roi-feature-title{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px}.roi-feature-title h3{margin:0;font-size:15px}.roi-feature-title span{padding:3px 8px;border-radius:5px;background:var(--bg);color:var(--muted);font-size:11px;font-weight:700}.roi-feature-table.high{border-top:3px solid var(--green)}.roi-feature-table.low{border-top:3px solid var(--red)}.roi-feature-table table{min-width:900px}.roi-feature-table th{font-size:11px}.roi-feature-table td{max-width:220px;white-space:normal;vertical-align:top;line-height:1.45}.roi-feature-table .feature-product{min-width:150px}.product-feature-values{display:block;overflow-wrap:anywhere}
+        .cannibalization-table{margin-top:12px}.cannibalization-table table{min-width:800px}.cannibalization-table td small{display:block;margin-top:3px;color:var(--muted)}.cannibalization-table .risk-high{color:var(--red);font-weight:700}.cannibalization-table .risk-medium{color:var(--amber);font-weight:700}.cannibalization-table .risk-low{color:var(--green)}
+        .glossary-section{margin-top:14px}.glossary-note{margin:0 0 14px;color:var(--muted);font-size:var(--font-size-micro);line-height:1.7}.glossary-section table{min-width:600px}.glossary-section th{font-size:var(--font-size-small);background:var(--primary-bg);color:var(--primary)}.glossary-section td{font-size:var(--font-size-small);vertical-align:top;white-space:normal;line-height:1.7}
+
+        .action-field:nth-child(2),.action-field:nth-child(3){grid-column:1/-1}
+        .empty-state{padding:24px;border:1px dashed var(--line);border-radius:12px;background:var(--bg);color:var(--muted);text-align:center}
+        .module-subhead{display:flex;align-items:end;justify-content:space-between;gap:18px;margin-bottom:12px}.module-subhead h3{margin:0;font-size:var(--font-size-subsection)}.module-subhead span{color:var(--muted);font-size:11px;text-align:right}.campaign-block,.trend-block{margin-top:22px}.campaign-table{margin-top:12px}.campaign-table table{min-width:1120px}.campaign-name{max-width:280px;white-space:normal}.campaign-name b{display:block;overflow-wrap:anywhere}.campaign-name small{display:block;margin-top:3px;color:var(--muted)}.campaign-total-row td{font-weight:700;background:var(--bg)}
+        .comparison-panel{overflow:hidden;border:1px solid var(--line);border-radius:8px;background:var(--paper)}.comparison-head{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 16px 0}.comparison-head h4{margin:0;font-size:var(--font-size-body)}.comparison-legend{display:flex;gap:14px;flex-wrap:wrap;color:var(--muted);font-size:var(--font-size-micro)}.comparison-legend span{white-space:nowrap}.comparison-legend i{display:inline-block;margin-right:6px;vertical-align:middle}.legend-bar{width:10px;height:10px;border-radius:2px}.legend-bar.spend{background:var(--primary)}.legend-bar.revenue{background:var(--amber)}.legend-line{width:20px;height:0;border-top:3px dashed var(--s3)}.comparison-scroll{overflow-x:auto}.comparison-chart{width:100%;height:auto;display:block}.comparison-axis{fill:var(--muted);font-size:var(--font-size-micro);font-weight:600}.comparison-axis-money{fill:var(--primary)}.comparison-axis-roi,.comparison-roi-value{fill:var(--s3)}.comparison-roi-line{fill:none;stroke:var(--s3);stroke-width:2.5;stroke-dasharray:6 5;stroke-linecap:round;stroke-linejoin:round}.comparison-roi-value{font-size:var(--font-size-micro);font-weight:800}.comparison-label{fill:var(--ink);font-size:var(--font-size-micro);font-weight:600}
+        .card>.campaign-block:first-child,.card>.trend-block:first-child{margin-top:0}
+        details.fold{margin-top:14px;border:1px solid var(--line);border-radius:10px;background:var(--paper)}
+        details.fold>summary{padding:12px 16px;cursor:pointer;font-weight:600;font-size:var(--font-size-small);color:var(--primary);list-style:none}
+        details.fold>summary::-webkit-details-marker{display:none}details.fold>summary:before{content:"▸";font-size:20px;font-weight:400;line-height:1;display:inline-block;vertical-align:baseline;margin-right:7px}details.fold[open]>summary:before{content:"▾"}
+        details.fold .campaign-table{margin:0;padding:0 16px 16px}
+        /* 商品明细表：模块 04 的商品维度事实底表，列多行全，默认折叠。 */
+        .plan-group.product-detail .plan-group-meta{margin-left:auto}
+        .plan-group.product-detail .table-wrap{padding:0}
+        .product-detail-table{min-width:1180px}
+        .product-detail-table th,.product-detail-table td{white-space:nowrap;border-top:none;border-bottom:none}.product-detail-table thead th{border-bottom:1px solid var(--line)}.product-detail-table tbody tr:hover td{background:var(--bg)}
+        .product-detail-table tbody td{padding:5px 10px}.product-detail-table thead th{padding:6px 10px;font-size:var(--font-size-micro)}.product-detail-table td.product-name{white-space:normal;min-width:230px;max-width:300px}.product-detail-table .product-cell-main>a,.product-detail-table .product-cell-main>b{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere;line-height:1.32;font-size:var(--font-size-micro);font-weight:600}.product-detail-table .product-id-line{font-size:11px;margin-top:0;line-height:1.3}.product-detail-table .product-title-link{color:var(--ink);text-decoration:none}.product-detail-table .product-title-link:hover{color:var(--primary);text-decoration:none}.product-detail-table tbody td.num{font-size:var(--font-size-micro)}
+        .product-detail-table td.product-name b{display:block;overflow-wrap:anywhere;line-height:1.45}
+        .product-detail-table td.pd-status,.product-detail-table th:last-child{text-align:right}
+        /* 横向滚动时固定宝贝标题列：15 列一屏放不下，滚到右侧若标题跟着滚走，
+           看到的就是一排无主的数字。粘性首列让「这行是哪个商品」始终可见。 */
+        .product-detail-table th:first-child,.product-detail-table td.product-name{position:sticky;left:0;z-index:2;background:var(--paper)}
+        .product-detail-table thead th:first-child{z-index:3;background:var(--bg)}
+        .product-detail-table th:first-child::after,.product-detail-table td.product-name::after{content:"";position:absolute;top:0;right:0;bottom:0;width:1px;background:var(--line)}
+        .pd-badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:var(--font-size-micro);font-weight:600;white-space:nowrap}
+        .pd-badge.ok{background:var(--green-bg);color:var(--green)}
+        .pd-badge.weak{background:var(--amber-bg);color:var(--amber)}
+        .pd-badge.zero{background:var(--red-bg);color:var(--red)}
+        .pd-note{margin:10px 13px 12px;color:var(--muted);font-size:var(--font-size-micro);line-height:1.6}
+        .fold-meta{color:var(--muted);font-size:var(--font-size-micro);font-weight:400}
+        .metric-tabs{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px}.metric-tab{padding:6px 11px;border:1px solid var(--line);border-radius:7px;background:#fff;color:var(--muted);font:inherit;font-size:var(--font-size-small);font-weight:600;cursor:pointer}.metric-tab:hover{border-color:var(--tab-color,var(--primary));color:var(--tab-color,var(--primary))}.metric-tab[aria-selected="true"]{border-color:var(--tab-color,var(--primary));background:var(--tab-color,var(--primary));color:#fff}.trend-tab-panel[hidden]{display:none}.trend-panel{min-width:0;padding:14px;border:1px solid var(--line);border-radius:8px;background:var(--paper);overflow:hidden}.trend-panel-head{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:4px}.trend-panel h4{margin:0;font-size:var(--font-size-body)}.trend-legend{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end;color:var(--muted);font-size:var(--font-size-micro)}.trend-legend-item{display:inline-flex;align-items:center;padding:4px 7px;border:1px solid transparent;border-radius:6px;background:transparent;color:inherit;font:inherit;white-space:nowrap;cursor:pointer}.trend-legend-item:hover,.trend-legend-item:focus-visible{border-color:var(--line);background:var(--bg);outline:none}.trend-legend-item[aria-pressed="false"]{opacity:.42;text-decoration:line-through}.trend-legend i{display:inline-block;width:18px;height:2px;margin-right:5px;border-radius:2px;vertical-align:middle}.trend-scale-note{align-self:center;color:var(--amber);font-weight:600;white-space:nowrap}.trend-series.is-hidden{display:none}.trend-svg{width:100%;height:auto;display:block}.trend-grid-line{stroke:#e8edf3;stroke-width:.8;stroke-dasharray:3 5}.trend-axis-label{fill:var(--muted);font-size:var(--font-size-micro)}.trend-line{fill:none;stroke-width:1.55;stroke-linecap:round;stroke-linejoin:round;opacity:.84;transition:stroke-width .08s ease,opacity .08s ease,filter .08s ease}.trend-point{stroke:#fff;stroke-width:1;opacity:.58;transition:opacity .08s ease,r .08s ease}.trend-density-dense .trend-point:not(.trend-point-key){opacity:.12}.trend-density-very-dense .trend-point:not(.trend-point-key){opacity:0}.trend-density-dense .trend-point-key,.trend-density-very-dense .trend-point-key{opacity:.68}.trend-series:hover .trend-line,.trend-series.is-emphasized .trend-line{stroke-width:2;opacity:1;filter:drop-shadow(0 2px 2px rgba(30,27,75,.16))}.trend-series:hover .trend-point,.trend-series.is-emphasized .trend-point{opacity:.92}.trend-point-clipped{stroke:var(--amber);stroke-width:2;opacity:1!important}.trend-outlier-label{fill:var(--amber);font-size:var(--font-size-micro);font-weight:700}
+        .product-card{display:grid;gap:22px}.product-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}.product-kpi{min-width:0;padding:12px;border:1px solid var(--line);border-radius:8px;background:var(--bg)}
+        .product-kpi span{display:block;color:var(--muted);font-size:var(--font-size-small)}.product-kpi b{display:block;margin-top:4px;font-size:var(--font-size-overview-value);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}.product-observations{margin-top:2px}.product-observations
+                                                                                                                                                                                                                                                                                .product-funnel-block,.product-diagnoses{padding-top:22px;border-top:1px solid var(--line)}.product-funnel-stages{display:grid;grid-template-columns:minmax(120px,1fr) minmax(96px,.55fr) minmax(120px,1fr) minmax(96px,.55fr) minmax(120px,1fr);align-items:stretch;gap:10px}.product-funnel-stage{display:flex;min-height:88px;flex-direction:column;justify-content:center;padding:14px 16px;border:1px solid var(--line);border-radius:8px;background:var(--bg)}.product-funnel-stage span{color:var(--muted);font-size:var(--font-size-small)}.product-funnel-stage b{margin-top:4px;font-size:var(--font-size-overview-value);font-variant-numeric:tabular-nums}.product-funnel-connector{display:flex;min-height:88px;flex-direction:column;align-items:center;justify-content:center;color:var(--muted);text-align:center}.product-funnel-connector:after{content:"\2192";display:block;margin-top:5px;color:var(--primary);font-size:18px}.product-funnel-connector span{font-size:var(--font-size-micro)}.product-funnel-connector b{color:var(--ink);font-size:var(--font-size-body)}.product-funnel-outcomes{display:flex;justify-content:flex-end;gap:18px;flex-wrap:wrap;margin-top:10px;color:var(--muted);font-size:var(--font-size-small)}.product-funnel-outcomes b{margin-left:5px;color:var(--ink)}.product-scope-note{margin:12px 0 0;padding:9px 12px;border-left:3px solid var(--primary);background:var(--primary-bg);color:#C2410C;font-size:var(--font-size-micro)}
+        .diagnosis-group{padding:22px 0;border-top:1px solid var(--line)}.product-diagnoses>.diagnosis-group:first-of-type{padding-top:0;border-top:0}.diagnosis-group-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:12px}.diagnosis-group-head h3{margin:0;font-size:var(--font-size-body)}.diagnosis-group-head p{margin:3px 0 0;color:var(--muted);font-size:var(--font-size-micro)}.diagnosis-count{display:inline-grid;min-width:22px;height:22px;margin-left:5px;padding:0 6px;place-items:center;border-radius:11px;background:var(--bg);color:var(--muted);font-size:var(--font-size-micro)}.diagnosis-list{display:grid;gap:0}.diagnosis-row{display:grid;grid-template-columns:minmax(210px,.7fr) minmax(0,2fr);gap:18px;padding:15px 14px;border-left:3px solid var(--line);border-bottom:1px solid var(--line);background:#fff}.diagnosis-row:last-child{border-bottom:0}.diagnosis-row.severity-critical{border-left-color:var(--red);background:linear-gradient(90deg,var(--red-bg),#fff 28%)}.diagnosis-row.severity-warning{border-left-color:var(--amber);background:linear-gradient(90deg,var(--amber-bg),#fff 28%)}.diagnosis-row.severity-opportunity{border-left-color:var(--green);background:linear-gradient(90deg,var(--green-bg),#fff 28%)}.diagnosis-name{min-width:0}.diagnosis-name b{display:block;overflow-wrap:anywhere}.diagnosis-name small{display:block;margin-top:4px;color:var(--muted)}.diagnosis-copy{min-width:0}.diagnosis-copy p{margin:0 0 7px;overflow-wrap:anywhere}.diagnosis-copy p:last-of-type{margin-bottom:9px}.diagnosis-copy strong{display:inline-block;width:42px;color:var(--muted);font-size:var(--font-size-micro)}.diagnosis-basis{display:flex;gap:6px;flex-wrap:wrap}.diagnosis-basis span{padding:3px 7px;border-radius:5px;background:var(--bg);color:var(--ink);font-size:var(--font-size-micro)}.concentration-visual{margin:4px 0 14px}.concentration-bar{display:flex;height:14px;overflow:hidden;border-radius:5px;background:var(--bg)}.concentration-bar span{display:block;height:100%}.concentration-legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:8px;color:var(--muted);font-size:var(--font-size-micro)}.concentration-legend span{min-width:0}.concentration-legend i{display:inline-block;width:9px;height:9px;margin-right:5px;border-radius:2px}.concentration-legend b{color:var(--ink)}
+        .product-table h3{margin:0 0 12px;font-size:var(--font-size-body)}.detail-value{display:flex;min-width:76px;flex-direction:column;align-items:flex-end;gap:2px}.detail-value>span{font-weight:600;font-variant-numeric:tabular-nums}.metric-comparison{display:inline-flex;align-items:baseline;gap:4px;width:100%;font-size:var(--font-size-micro);font-weight:500;font-variant-numeric:tabular-nums;white-space:nowrap;line-height:1.5}.metric-comparison .mc-label{color:var(--muted);font-weight:400;flex:none}.metric-comparison .mc-prev{color:var(--ink);font-weight:600}.metric-comparison .mc-value{font-weight:600}.metric-comparison .mc-value.up{color:var(--red)}.metric-comparison .mc-value.down{color:var(--green)}.metric-comparison .mc-value.flat,.metric-comparison .mc-value.missing{color:var(--muted)}.kpi-card .metric-comparison,.detail-value .metric-comparison{display:flex;align-items:baseline;gap:4px;margin-top:3px}.kpi-card .metric-comparison .mc-label,.kpi-card .metric-comparison .mc-value,.kpi-card .metric-comparison .mc-prev{display:inline;font-size:inherit}.kpi-card .metric-comparison .mc-label{color:var(--muted)}.metric-comparison.up{color:var(--red)}.metric-comparison.down{color:var(--green)}.metric-comparison.flat,.metric-comparison.missing{color:var(--muted)}.hero-kpi .metric-comparison{margin-top:5px}.hero-kpi .metric-comparison .mc-label,.hero-kpi .metric-comparison .mc-value,.hero-kpi .metric-comparison .mc-prev{color:rgba(255,255,255,.8);font-weight:500}
+        .product-table{min-width:0}.product-table table{min-width:2100px}.product-name{max-width:320px;white-space:normal}.product-name b{display:block;overflow-wrap:anywhere}.product-name small{display:block;margin-top:3px;color:var(--muted)}.product-status{display:inline-block;padding:3px 7px;border-radius:7px;font-size:11px;font-weight:600}.product-status.converted{color:var(--green);background:var(--green-bg)}.product-status.attention{color:#92400e;background:var(--amber-bg)}.product-status.active{color:var(--blue);background:var(--blue-bg)}.product-status.inactive,.product-status.missing{color:var(--muted);background:var(--bg)}.product-total-row td{font-weight:700;background:var(--bg)}.product-extra-row[hidden]{display:none!important}.table-toggle{display:block;margin:14px auto 0;padding:8px 18px;border:1px solid var(--primary);border-radius:8px;background:#fff;color:var(--primary);font:inherit;font-weight:600;cursor:pointer}.table-toggle:hover{background:rgba(249,115,10,.05)}.table-caption{margin:10px 0 0;color:var(--muted);font-size:11px;overflow-wrap:anywhere}
+        .report-tabs-wrap{position:sticky;top:0;z-index:20;margin:16px 0 28px;padding:8px 0;background:rgba(249,250,251,.94);backdrop-filter:blur(10px)}
+        /* 导航必须保持单行：auto-fit + minmax(88px,1fr) 会在标签数增加时自动折行，
+   把导航撑成两排。改为按实际标签数等分列宽（--tab-count 由渲染器写入），
+   列数固定，宽度自适应，无论 7 个还是 8 个标签都排在一行。
+   窄屏由后面的媒体查询接管，改为横向滚动。 */
+.report-tabs{display:grid;grid-template-columns:repeat(var(--tab-count,7),minmax(0,1fr));overflow:hidden;border:1px solid var(--line);border-radius:13px;background:rgba(255,255,255,.96);box-shadow:0 8px 24px rgba(249,115,10,.07)}
+        .report-tab{position:relative;padding:14px 6px;min-width:0;overflow:hidden;text-overflow:ellipsis;color:var(--muted);font-size:var(--font-size-small);font-weight:600;text-align:center;text-decoration:none;white-space:nowrap;transition:color .18s ease,background .18s ease}
+        .report-tab:hover{color:var(--primary);background:rgba(249,115,10,.04)}
+        .report-tab.active{color:var(--primary);background:rgba(249,115,10,.07)}
+        .report-tab.active:after{content:"";position:absolute;right:18px;bottom:0;left:18px;height:3px;border-radius:3px 3px 0 0;background:var(--primary)}
+        .report-anchor{scroll-margin-top:92px}
+        @media(max-width:1100px){.metric-strip,.core-metrics{grid-template-columns:repeat(3,1fr)}.kpi-row{grid-template-columns:repeat(2,1fr)}}
+        @media(max-width:950px){.report-tabs{display:flex;overflow-x:auto;scrollbar-width:none}.report-tabs::-webkit-scrollbar{display:none}.report-tab{min-width:96px;flex:0 0 auto}.metric-strip{grid-template-columns:repeat(2,1fr)}.product-observations .trend-grid{grid-template-columns:1fr}.product-funnel-stages{grid-template-columns:1fr 72px 1fr 72px 1fr}.diagnosis-row{grid-template-columns:minmax(170px,.65fr) minmax(0,1.7fr)}}
+        @media(max-width:900px){.hero-kpis:not([hidden]){grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:620px){.page{padding:22px 14px 50px}.hero-kpis:not([hidden]){grid-template-columns:repeat(2,minmax(0,1fr))}.section{padding:24px 18px}.report-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));overflow:visible}.report-tab{min-width:0;padding:11px 3px;white-space:normal}.report-tab.active:after{right:8px;left:8px}.metric-strip,.core-metrics{grid-template-columns:1fr}.kpi-row{grid-template-columns:1fr}.module-subhead{display:block}.module-subhead span{display:block;margin-top:3px;text-align:left}
+.comparison-head{display:block}.comparison-legend{margin-top:8px}.campaign-table{overflow:visible}.campaign-table table{min-width:0}.campaign-table thead{display:none}.campaign-table tbody{display:grid;gap:10px}.campaign-table tr{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:12px;border:1px solid var(--line);border-radius:8px}.campaign-table td,.campaign-table td.num{display:block;padding:0;border:0;white-space:normal;text-align:left}.campaign-table .detail-value{align-items:flex-start}.campaign-table td:before{content:attr(data-label);display:block;margin-bottom:2px;color:var(--muted);font-size:var(--font-size-micro)}.campaign-table td.campaign-name{grid-column:1/-1;max-width:none;padding-bottom:8px;border-bottom:1px solid var(--line)}.trend-panel{overflow-x:auto}.trend-svg{min-width:560px}.product-funnel-stages{grid-template-columns:1fr}.product-funnel-stage{min-height:72px}.product-funnel-connector{min-height:54px}.product-funnel-connector:after{content:"\2193"}.product-funnel-outcomes{justify-content:flex-start}.diagnosis-row{grid-template-columns:1fr;gap:9px}.diagnosis-name{padding-bottom:8px;border-bottom:1px solid var(--line)}.diagnosis-copy strong{width:38px}.product-table .table-wrap{overflow:visible}.product-table table{min-width:0}.product-table thead{display:none}.product-table tbody{display:grid;gap:10px}.product-table tr{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:12px;border:1px solid var(--line);border-radius:8px}.product-table td,.product-table td.num{display:block;padding:0;border:0;white-space:normal;text-align:left}.product-table .detail-value{align-items:flex-start}.product-table td:before{content:attr(data-label);display:block;margin-bottom:2px;color:var(--muted);font-size:var(--font-size-micro)}.product-table td.product-name{grid-column:1/-1;max-width:none;padding-bottom:8px;border-bottom:1px solid var(--line)}.product-table td.product-name:before{display:none}.mismatch-table table{min-width:0;table-layout:fixed}.mismatch-table col.mm-col-spend,.mismatch-table col.mm-col-outcome{visibility:collapse;width:0}.mismatch-table col.mm-col-name{width:38%}.mismatch-table col.mm-col-value{width:16%}.mismatch-table col.mm-col-bar{width:46%}.mismatch-table tbody td{padding:3px 2px}.mismatch-table .product-title{-webkit-line-clamp:2}.mismatch-table td.mm-bar-cell{width:auto;min-width:0;padding-left:4px;padding-right:4px}.mm-bar-value{position:static;transform:none;display:inline-block;margin-left:6px;background:transparent;padding-left:0}.cannibalization-table .table-wrap{overflow:visible}.cannibalization-table table{min-width:0}.cannibalization-table thead{display:none}.cannibalization-table tbody{display:grid;gap:10px}.cannibalization-table tr{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:12px;border:1px solid var(--line);border-radius:8px}.cannibalization-table td,.cannibalization-table td.num{display:block;padding:0;border:0;white-space:normal;text-align:left;overflow-wrap:anywhere}.cannibalization-table td:before{content:attr(data-label);display:block;margin-bottom:2px;color:var(--muted);font-size:var(--font-size-micro)}.cannibalization-table td:first-child,.cannibalization-table td:nth-child(4),.cannibalization-table td:nth-child(5){grid-column:1/-1}.cannibalization-table td:first-child{padding-bottom:8px;border-bottom:1px solid var(--line)}.glossary-section table{min-width:0}.hero-stats{grid-template-columns:repeat(3,1fr)}.two-col{grid-template-columns:1fr}.funnel-compare-row{grid-template-columns:1fr;max-width:280px;margin-inline:auto}}
+        @media(max-width:480px){.hero{padding:24px 18px}.hero-kpi{padding:12px 10px}.product-title{font-size:26px}.product-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.hero-kpis:not([hidden]){grid-template-columns:repeat(2,minmax(0,1fr))}.hero-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+        .hero-stats{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
+        .hero-stat{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.22);border-radius:10px;padding:12px 14px}
+        .hero-stat .num{font-size:var(--font-size-overview-value);font-weight:700;line-height:1.2}
+        .hero-stat .lbl{font-size:var(--font-size-small);opacity:.8;margin-top:2px;display:flex;align-items:center;gap:5px}
+        .hero-tip{position:relative;display:inline-grid;width:14px;height:14px;place-items:center;border:1px solid rgba(255,255,255,.5);border-radius:50%;background:rgba(255,255,255,.15);color:rgba(255,255,255,.85);font:700 var(--font-size-micro)/1 var(--font-sans);cursor:default;flex-shrink:0}
+        .hero-tip .tip-text{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);z-index:30;width:max-content;max-width:220px;padding:10px 12px 16px;border-radius:7px;background:var(--ink);color:#fff;font:var(--font-size-small)/1.5 var(--font-sans);white-space:normal;box-shadow:0 8px 24px rgba(30,27,75,.25);opacity:0;visibility:hidden;transition:opacity .15s,visibility .15s;pointer-events:none;cursor:text;-webkit-user-select:text;user-select:text}
+        .hero-tip:hover .tip-text{opacity:1;visibility:visible;pointer-events:auto}
+        .section-intro{color:var(--muted);font-size:15px;margin-bottom:20px}
+        h3.sec3{font-size:15px;color:var(--ink);margin:22px 0 8px;font-weight:700}
+        .verdict-box{background:linear-gradient(135deg,#e6f6ef,#d1fae5);border:1px solid #6ee7b7;border-radius:12px;padding:18px 22px;margin:14px 0}
+        .verdict-box h4{color:#065f46;font-size:15px;margin-bottom:6px}
+        .verdict-box p{color:#065f46;font-size:13px;margin:4px 0}
+        .issue-card{border:1px solid #fecaca;border-left:4px solid var(--red);border-radius:10px;padding:14px 18px;margin:10px 0;background:#fff}
+        .issue-card strong{color:#991b1b;display:block;margin-bottom:4px;font-size:13px}
+        .issue-card p{color:#7f1d1d;font-size:13px;margin:2px 0}
+        .principle-card{border:1px solid #FDBA74;border-left:4px solid var(--primary);border-radius:10px;padding:14px 18px;margin:10px 0;background:#fff}
+        .principle-card .p-title{font-weight:700;color:#7C2D12;font-size:var(--font-size-body);margin-bottom:4px}
+        .principle-card .p-meaning{color:var(--ink);font-size:13px;margin-bottom:5px}
+        .principle-card .p-action{color:var(--primary);font-weight:500;font-size:13px}
+        .warning-box{background:var(--red-bg);border-left:4px solid var(--red);border-radius:10px;padding:14px 18px;color:#991b1b;margin:14px 0;font-size:13px}
+        .info-box{background:var(--blue-bg);border-left:4px solid var(--blue);border-radius:10px;padding:14px 18px;color:#1e3a5f;margin:14px 0;font-size:13px}
+        .info-box strong{color:#1e40af;display:block;margin-bottom:6px}
+        .diagram{border:1px solid var(--line);border-radius:14px;background:var(--paper);padding:22px 18px 14px;margin:16px 0;box-shadow:0 5px 20px rgba(24,67,72,.04)}
+        .diagram svg{display:block;margin:0 auto;max-width:100%;height:auto}
+        .diagram-caption{text-align:center;font-size:11px;color:var(--muted);margin-top:12px}
+        .data-table{width:100%;border-collapse:collapse;margin:14px 0;font-size:var(--font-size-small)}
+        .data-table th{background:var(--ink);color:#fff;padding:10px;text-align:left;font-weight:600;white-space:nowrap;font-size:var(--font-size-small)}
+        .data-table td{padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
+        .data-table tr:nth-child(even) td{background:#f8fafc}
+        .data-table td:first-child{font-weight:600;color:var(--ink)}
+        .data-table .num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+        .kpi{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:12px 14px;text-align:center}
+        .kpi .v{font-size:var(--font-size-overview-value);font-variant-numeric:tabular-nums;font-weight:700;color:var(--ink)}
+        .kpi .k{font-size:var(--font-size-small);color:var(--muted);margin-top:2px}
+        .kpi .v.red{color:var(--red)}.kpi .v.green{color:var(--green)}.kpi .v.purple{color:var(--primary)}
+        .tag-green{background:var(--green-bg);color:#065f46}
+        .tag-red{background:var(--red-bg);color:#991b1b}
+        .tag-yellow{background:var(--amber-bg);color:#92400e}
+        .tag-blue{background:var(--blue-bg);color:#1e40af}
+        .tag-purple{background:#FFEDD5;color:#7C2D12}
+        .funnel-compare-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px}
+        .funnel-compare-item{border:1px solid var(--line);border-radius:12px;background:var(--paper);padding:8px 4px;transition:box-shadow .2s}
+        .funnel-compare-item:hover{box-shadow:0 4px 16px rgba(0,0,0,.07)}
+        .funnel-compare-item svg{display:block;width:100%;height:auto}
+        .mini-note{font-size:11px;color:var(--muted);margin-top:8px}
+        .badge-estimate{display:inline-block;background:var(--amber-bg);color:#92400e;font-size:var(--font-size-micro);font-weight:600;padding:1px 6px;border-radius:4px;margin-left:4px;vertical-align:middle}
+        .two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+        .footer{text-align:center;color:var(--muted);font-size:11px;margin-top:34px}
+        .page-title{font-size:var(--font-size-body);font-weight:600;color:var(--muted);letter-spacing:0;margin-bottom:16px}
+        .hero-title{font-size:var(--font-size-hero);font-weight:800;letter-spacing:.5px;line-height:1.2;margin-bottom:6px;overflow-wrap:anywhere}
+        .hero .sub{font-size:13px;letter-spacing:.3px;opacity:.8;margin-bottom:20px}
+        .num-badge{width:32px;height:32px;border-radius:8px;background:var(--primary);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:var(--font-size-body);font-weight:700;flex-shrink:0}
+        .cdx-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;padding:16px}
+        .cdx-metric{padding:13px;background:var(--bg);border:1px solid var(--line);border-radius:8px}
+        .cdx-metric-label{display:flex;align-items:center;gap:6px;min-height:18px}
+        .cdx-metric-label span{color:var(--muted);font-size:var(--font-size-small)}
+        .cdx-metric-help{position:relative;display:inline-grid;width:16px;height:16px;place-items:center;border:1px solid var(--primary-light);border-radius:50%;background:#fff;color:var(--muted);font:700 var(--font-size-micro)/1 var(--font-sans);cursor:help}
+        .cdx-metric-help:after{content:attr(data-tip);position:absolute;bottom:calc(100% + 8px);left:0;z-index:30;width:min(240px,calc(100vw - 44px));padding:9px 11px;border-radius:7px;background:var(--ink);color:#fff;font:var(--font-size-small)/1.55 var(--font-sans);white-space:normal;box-shadow:0 8px 24px rgba(30,27,75,.18);opacity:0;visibility:hidden;transform:translateY(4px);transition:opacity .15s,transform .15s,visibility .15s}
+        .cdx-metric-help:hover:after,.cdx-metric-help:focus-visible:after,.cdx-metric-help[aria-expanded="true"]:after{opacity:1;visibility:visible;transform:translateY(0)}
+        .cdx-metric b{display:block;font-size:var(--font-size-overview-value);font-variant-numeric:tabular-nums;margin:4px 0}
+        .cdx-table-wrap{overflow-x:auto;margin-top:12px}
+        .cdx-table{width:100%;border-collapse:collapse;font-size:var(--font-size-small)}
+        .cdx-table th{text-align:left;color:var(--muted);background:var(--bg);font-weight:600;padding:10px;border-bottom:1px solid var(--line);white-space:nowrap}
+        .cdx-table td{padding:10px;border-bottom:1px solid var(--line);white-space:nowrap}
+        .cdx-table th.num,.cdx-table td.num{text-align:right}
+        .diagnosis-item{margin:8px 0;padding:10px 14px;border-left:3px solid var(--line);border-radius:0 8px 8px 0;background:var(--bg);font-size:var(--font-size-small)}
+        .diagnosis-item.critical{border-left-color:var(--red);background:var(--red-bg)}
+        .diagnosis-item.warning{border-left-color:var(--amber);background:var(--amber-bg)}
+        .diagnosis-item.opportunity{border-left-color:var(--green);background:var(--green-bg)}
+        .diagnosis-item strong{display:block;margin-bottom:4px;font-size:var(--font-size-small)}
+        .diagnosis-item p{margin:2px 0;font-size:var(--font-size-small);color:#374151}
+        details.fold .fold-content{padding:0 16px 16px}
+        .funnel-svg{display:block;width:100%;max-width:600px;height:auto;margin:0 auto 14px}
+        .sortable-table th.sortable{cursor:pointer;user-select:none;white-space:nowrap;transition:color .15s}
+        .sortable-table th.sortable:hover{color:var(--primary)}
+        .sortable-table th.sortable:focus-visible{outline:2px solid var(--primary);outline-offset:-2px}
+        .sortable-table th.sortable .sort-arrow{display:inline-block;width:0;height:0;margin-left:5px;vertical-align:middle;border-left:4px solid transparent;border-right:4px solid transparent;border-bottom:5px solid currentColor;opacity:.28}
+        .sortable-table th.sorted-asc .sort-arrow{opacity:1;border-bottom:5px solid var(--primary);border-top:0}
+        .sortable-table th.sorted-desc .sort-arrow{opacity:1;border-top:5px solid var(--primary);border-bottom:0}
+        .sortable-table th.sorted-asc,.sortable-table th.sorted-desc{color:var(--primary)}
+        .product-name .product-id-line{display:flex;align-items:center;gap:4px;margin-top:2px;font-size:11px;font-weight:400;color:var(--muted);font-variant-numeric:tabular-nums;letter-spacing:.2px}.product-id-text{color:inherit;opacity:.72}.product-id-link{text-decoration:none;cursor:pointer;transition:color .15s,opacity .15s}.product-id-link:hover,.product-id-link:focus-visible{color:var(--primary);opacity:1;text-decoration:underline}.product-id-link:focus-visible{outline:2px solid var(--primary);outline-offset:2px;border-radius:3px}.product-id-copy{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;padding:0;border:0;border-radius:3px;background:transparent;color:var(--muted);opacity:0;cursor:pointer;flex:none;transition:opacity .15s,color .15s,background .15s}.product-id-copy svg{width:11px;height:11px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}.product-id-line:hover .product-id-copy{opacity:.6}.product-id-copy:hover{opacity:1;color:var(--primary);background:rgba(249,115,10,.1)}.product-id-copy:focus-visible{opacity:1;color:var(--primary);outline:2px solid var(--primary);outline-offset:1px}.product-id-copy.is-copied{opacity:1;color:var(--green)}@media (hover:none){.product-id-copy{opacity:.55}}.svg-product-link{cursor:pointer}.svg-product-link text{transition:fill .15s}.svg-product-link:hover text,.svg-product-link:focus-visible text{fill:var(--primary)}.svg-product-link:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+        .tooltip-thumb{width:52px;height:52px;border-radius:6px;object-fit:cover;background:rgba(255,255,255,.12);grid-row:1/3;align-self:start}.quadrant-tooltip.has-thumb{grid-template-columns:auto minmax(0,1fr);column-gap:10px;align-items:start}.product-thumb-store{display:none}
+        .ai-product-ref{color:var(--primary);text-decoration:none;font-variant-numeric:tabular-nums;border-bottom:1px dashed rgba(249,115,10,.5);cursor:pointer}.ai-product-ref:hover,.ai-product-ref:focus-visible{border-bottom-style:solid;background:rgba(249,115,10,.08)}.ai-product-ref:focus-visible{outline:2px solid var(--primary);outline-offset:2px;border-radius:3px}.ai-product-ref-plain{cursor:default;border-bottom-style:dotted}.ai-product-pop{position:fixed;z-index:60;display:none;gap:10px;max-width:320px;padding:10px 12px;border:1px solid rgba(165,180,252,.38);border-radius:8px;background:rgba(30,27,75,.96);color:#fff;box-shadow:0 10px 28px rgba(30,27,75,.24);pointer-events:none;font-size:var(--font-size-micro);line-height:1.5}.ai-product-pop.is-visible{display:flex}.ai-product-pop img{width:56px;height:56px;flex:0 0 56px;border-radius:6px;object-fit:cover;background:rgba(255,255,255,.12)}.ai-product-pop-name{min-width:0;overflow-wrap:anywhere;font-weight:600}.ai-product-pop-id{margin-top:3px;color:#FDBA74;font-weight:400}
+        .product-cell{display:flex;align-items:flex-start;gap:10px;min-width:0}.product-cell-main{min-width:0;flex:1}.product-thumb{width:44px;height:44px;flex:0 0 44px;border-radius:6px;object-fit:cover;background:#f1f5f9;border:1px solid rgba(15,23,42,.08);display:block}.product-thumb-link{display:block;flex:0 0 44px;line-height:0;text-decoration:none}.product-thumb-link:hover .product-thumb{border-color:var(--primary)}.product-thumb-empty{display:flex;align-items:center;justify-content:center;color:var(--muted);opacity:.35}.product-thumb-empty svg{width:20px;height:20px}@media print{.product-thumb{border-color:rgba(15,23,42,.2)}}
+        .quadrant-point-id{fill:var(--muted);font-size:11px;font-weight:400;opacity:.75;font-variant-numeric:tabular-nums}
+    
+
+/* ── 分组投入产出对比 ────────────────────────────────────────────────
+   每个分组两根条形：上=花费，下=产出。电商族共用金额刻度可直接比长短；
+   线索族因产出是计数、与花费不同量纲，两行各自归一（见 render_channel_roi_compare）。 */
+.roi-compare{margin-top:22px;padding-top:18px;border-top:1px solid var(--line)}
+.roi-compare>h4{margin:0 0 4px;font-size:var(--font-size-small);font-weight:700}
+.roi-compare-row{margin-top:16px}
+.roi-compare-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.roi-compare-head>b{font-size:var(--font-size-small);font-weight:600}
+/* 入选口径徽标：与行动清单的 P0/P1/P2 同一套药丸视觉（淡底 + 同色深字 + 圆角）。
+   颜色承载语义：绿=该加投，红=该缩减，靛蓝=中性定位提示。
+   inline-block + 右外边距，让它与计划名同基线且不被长名称挤走。 */
+.rc-tag{display:inline-block;margin-right:7px;padding:2px 8px;border-radius:6px;
+  font-size:11px;font-weight:800;letter-spacing:.2px;line-height:1.5;vertical-align:1px;
+  white-space:nowrap}
+/* 紫=高投入（只表示预算压在这里，不含好坏判断） */
+.rc-tag-spend{background:rgba(249,115,10,.13);color:#EA580C}
+/* 绿=正向：高产出与各类高 ROI，值得加投或复制 */
+.rc-tag-good{background:rgba(16,185,129,.14);color:#047857}
+/* 红=负向：低 ROI 与零成交，该缩减或停投 */
+.rc-tag-bad{background:rgba(220,38,38,.12);color:#dc2626}
+/* 兜底档：出现未映射的新标签时不至于没样式 */
+.rc-tag-neutral{background:rgba(100,116,139,.14);color:#475569}
+.roi-compare-eff{font-size:var(--font-size-micro);color:var(--muted)}
+.roi-compare-eff>b{margin-left:4px;font-size:var(--font-size-small);color:var(--ink);font-weight:700}
+.roi-compare-bar{height:9px;margin-top:6px;border-radius:999px;background:#f1f5f9;overflow:hidden}
+.roi-compare-bar>i{display:block;height:100%;border-radius:999px}
+.roi-compare-bar.spend>i{background:linear-gradient(90deg,#FDBA74,#F97316)}
+.roi-compare-bar.outcome>i{background:linear-gradient(90deg,#6ee7d7,#10b981)}
+.roi-compare-meta{display:flex;flex-wrap:wrap;gap:16px;margin-top:7px;
+  font-size:var(--font-size-micro);color:var(--muted)}
+.roi-compare-legend{display:flex;gap:18px;margin-top:18px;
+  font-size:var(--font-size-micro);color:var(--muted)}
+.roi-compare-legend>span{display:inline-flex;align-items:center;gap:6px}
+.roi-compare-legend>span::before{content:"";width:9px;height:9px;border-radius:50%}
+.roi-compare-legend>.spend::before{background:#F97316}
+.roi-compare-legend>.outcome::before{background:#10b981}
+
+/* 趋势块的小标题与口径说明并排一行。
+   通用 .module-subhead 在窄屏媒体查询里被改成 display:block + span 独占一行
+   （长说明在窄容器里更易读），趋势块的说明已精简到一句，无需独占一行。
+   这里恢复 flex 行内排列，只作用于 .core-trend，不影响其他模块。
+   注意 align-items 用 baseline：标题 15px、说明 11px，按基线对齐比按顶端
+   对齐更整齐（两者行高不同，顶端对齐会显得说明文字偏高）。 */
+.core-trend .module-subhead{display:flex;align-items:baseline;justify-content:flex-start;
+  gap:12px;flex-wrap:nowrap;margin-bottom:10px}
+.core-trend .module-subhead h3{flex:none;white-space:nowrap}
+/* 不写 display:inline —— span 是 flex item，会被规范强制块化，该声明永远
+   不生效。同行效果由父容器的 flex 行承担；这里只需清掉通用规则留下的
+   上边距，并允许它在剩余空间内收缩。 */
+.core-trend .module-subhead span{margin-top:0;text-align:left;min-width:0;flex:0 1 auto}
+@media (max-width:900px){
+  /* 窄屏容器放不下时允许回落成两行，优先保证文字不被截断 */
+  .core-trend .module-subhead{flex-wrap:wrap;gap:2px 12px}
+  .core-trend .module-subhead span{flex:1 0 100%}
+}
+
+/* ══════════════════════════════════════════════════════════════
+   与「沟通分析报告」对齐的视觉层（2026-09-20）
+   ★ 上面那份是付费推广分析的原报告 CSS —— **结构/布局一个字没动，只重上了色**
+     （靛蓝紫 → 工作台暖橙，见 _t/recolor-adreport.js）。
+   ★ 这一层负责三件事：
+     ① 引入工作台报告令牌 --rp-*（与「沟通分析报告」**同一套**）
+     ② 把原报告的变量映射过去 → 原 CSS 一个字都不用改就能跟着换肤
+     ③ 工具条 / hero 居中卡 / 数据来源条（对齐沟通分析报告的版式）
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── ① 工作台报告令牌（照抄「沟通分析报告」的 --rp-* 三主题） ── */
+:root, :root[data-theme="light"]{
+  --rp-bg:#FAF7F5; --rp-surface:#FFFFFF; --rp-surface-soft:#FAF6F3;
+  --rp-border:#EFE6DE; --rp-border-strong:#DCD2C9;
+  --rp-ink:#221813; --rp-ink-2:#3A2C24; --rp-muted:#7B6A61; --rp-muted-2:#A99A90;
+  --rp-accent:#F97316; --rp-accent-d:#EA580C;
+  --rp-accent-soft:rgba(249,115,10,.10); --rp-accent-border:rgba(249,115,10,.34);
+  --rp-danger:#EF4444; --rp-danger-soft:#FEF2F2; --rp-danger-border:#FCA5A5;
+  --rp-warn:#D97706; --rp-warn-soft:#FEF3C7; --rp-warn-border:#FDE68A;
+  --rp-ok:#10B981; --rp-ok-soft:#ECFDF5; --rp-info:#3B82F6; --rp-info-soft:#EFF6FF;
+  --rp-shadow:0 4px 12px rgba(34,24,19,.06);
+  --rp-grad:linear-gradient(135deg,#FB923C 0%,#F97316 52%,#EA580C 100%);
+}
+:root[data-theme="eye"]{
+  --rp-bg:#F5F1E8; --rp-surface:#FBF8F1; --rp-surface-soft:#F0EADC;
+  --rp-border:#E5DCCB; --rp-border-strong:#D5C9B4;
+  --rp-ink:#3C3229; --rp-ink-2:#4A3D31; --rp-muted:#7A6E5F; --rp-muted-2:#A2957F;
+  --rp-accent:#F97316; --rp-accent-d:#EA580C;
+  --rp-accent-soft:rgba(249,115,10,.13); --rp-accent-border:rgba(249,115,10,.40);
+  --rp-danger:#DC2626; --rp-danger-soft:#FBEDE9; --rp-danger-border:#E8B4A8;
+  --rp-warn:#B45309; --rp-warn-soft:#F7EBD4; --rp-warn-border:#E4CEA6;
+  --rp-ok:#059669; --rp-ok-soft:#E9F2EA; --rp-info:#2563EB; --rp-info-soft:#E6EBF2;
+  --rp-shadow:0 4px 12px rgba(60,50,41,.07);
+  --rp-grad:linear-gradient(135deg,#FB923C 0%,#F97316 52%,#EA580C 100%);
+}
+:root[data-theme="dark"]{
+  --rp-bg:#100E0C; --rp-surface:#171412; --rp-surface-soft:#221C18;
+  --rp-border:#2A231E; --rp-border-strong:#3D332C;
+  --rp-ink:#F5EFEA; --rp-ink-2:#E4DAD2; --rp-muted:#B4A49A; --rp-muted-2:#8A7A70;
+  --rp-accent:#FB923C; --rp-accent-d:#F97316;
+  --rp-accent-soft:rgba(251,146,60,.14); --rp-accent-border:rgba(251,146,60,.38);
+  --rp-danger:#F87171; --rp-danger-soft:rgba(248,113,113,.13); --rp-danger-border:rgba(248,113,113,.38);
+  --rp-warn:#FBBF24; --rp-warn-soft:rgba(251,191,36,.14); --rp-warn-border:rgba(251,191,36,.34);
+  --rp-ok:#34D399; --rp-ok-soft:#12251D; --rp-info:#60A5FA; --rp-info-soft:#141F2E;
+  --rp-shadow:0 4px 12px rgba(0,0,0,.42);
+  --rp-grad:linear-gradient(135deg,#FB923C 0%,#F97316 52%,#EA580C 100%);
+}
+
+/* ── ② 原报告变量 → 工作台令牌（原 CSS 一个字不用改） ── */
+:root{
+  --bg:var(--rp-bg); --paper:var(--rp-surface); --ink:var(--rp-ink);
+  --muted:var(--rp-muted); --line:var(--rp-border);
+  --primary:var(--rp-accent); --primary-light:var(--rp-accent-border); --primary-bg:var(--rp-accent-soft);
+  --gradient:var(--rp-grad); --shadow:var(--rp-shadow);
+  --s1:var(--rp-accent); --s2:#EC4899; --s3:var(--rp-ok); --s4:var(--rp-warn);
+  --green:var(--rp-ok); --green-bg:var(--rp-ok-soft);
+  --amber:var(--rp-warn); --amber-bg:var(--rp-warn-soft);
+  --red:var(--rp-danger); --red-bg:var(--rp-danger-soft);
+  --blue:var(--rp-info); --blue-bg:var(--rp-info-soft);
+}
+body{ background:var(--rp-bg); color:var(--rp-ink); }
+
+/* ── ③ 暗色/护眼下把原报告里的「浅底硬编码」兜住（防白板） ──
+   全页扫描断言（暗色下不得有大面积纯白）保证不漏。 */
+:root[data-theme="eye"] .kw-tip,
+:root[data-theme="eye"] .tooltip-box,
+:root[data-theme="eye"] .quadrant-tooltip,
+:root[data-theme="eye"] .metric-tab,
+:root[data-theme="eye"] .diagnosis-row,
+:root[data-theme="eye"] .table-toggle,
+:root[data-theme="eye"] .hero-tip .tip-text,
+:root[data-theme="eye"] .issue-card,
+:root[data-theme="eye"] .principle-card,
+:root[data-theme="eye"] .num-badge,
+:root[data-theme="eye"] .cdx-metric-help,
+:root[data-theme="eye"] .cdx-metric-help:after,
+:root[data-theme="eye"] .ai-product-pop,
+:root[data-theme="eye"] .data-table th,
+:root[data-theme="eye"] .metric-help .metric-help-tip{ background:var(--rp-surface); }
+:root[data-theme="eye"] .data-table tr:nth-child(even) td,
+:root[data-theme="eye"] .product-thumb,
+:root[data-theme="eye"] .roi-compare-bar{ background:var(--rp-surface-soft); }
+:root[data-theme="eye"] .conclusion-card{ background:#FBF3DC; }
+:root[data-theme="eye"] .ai-module-conclusion{ background:#F2ECF5; }
+:root[data-theme="eye"] .verdict-box{ background:var(--rp-ok-soft); }
+
+:root[data-theme="dark"] .kw-tip,
+:root[data-theme="dark"] .tooltip-box,
+:root[data-theme="dark"] .quadrant-tooltip,
+:root[data-theme="dark"] .metric-tab,
+:root[data-theme="dark"] .diagnosis-row,
+:root[data-theme="dark"] .table-toggle,
+:root[data-theme="dark"] .hero-tip .tip-text,
+:root[data-theme="dark"] .issue-card,
+:root[data-theme="dark"] .principle-card,
+:root[data-theme="dark"] .num-badge,
+:root[data-theme="dark"] .cdx-metric-help,
+:root[data-theme="dark"] .cdx-metric-help:after,
+:root[data-theme="dark"] .ai-product-pop,
+:root[data-theme="dark"] .data-table th,
+:root[data-theme="dark"] .metric-help .metric-help-tip{ background:var(--rp-surface); color:var(--rp-ink); }
+:root[data-theme="dark"] .data-table tr:nth-child(even) td,
+:root[data-theme="dark"] .product-thumb,
+:root[data-theme="dark"] .roi-compare-bar{ background:#1B1613; }
+:root[data-theme="dark"] .conclusion-card{ background:#2A2210; }
+:root[data-theme="dark"] .ai-module-conclusion{ background:#241E33; }
+:root[data-theme="dark"] .verdict-box{ background:var(--rp-ok-soft); }
+:root[data-theme="dark"] .diagnosis-row.severity-critical{ background:#2A1614; }
+:root[data-theme="dark"] .diagnosis-row.severity-warning{ background:#2A2210; }
+:root[data-theme="dark"] .diagnosis-row.severity-opportunity{ background:#141F2E; }
+:root[data-theme="dark"] .tag-purple{ background:#2A2440; }
+:root[data-theme="dark"] .kw-bad .kw-chip{ color:#F5A3A3; }
+:root[data-theme="dark"] .hero, :root[data-theme="dark"] .hero-inner,
+:root[data-theme="dark"] .hero *, :root[data-theme="eye"] .hero, :root[data-theme="eye"] .hero-inner,
+:root[data-theme="eye"] .hero *{ color:#fff; }
+
+/* ── ④ 顶部工具条：对齐「沟通分析报告」的 .rp-topbar ── */
+.rp-topbar{
+  position:sticky; top:0; z-index:30;
+  display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+  padding:16px max(20px, calc(50% - 520px));
+  background:linear-gradient(180deg, rgba(249,115,10,.06), transparent);
+  border-bottom:1px solid var(--rp-border);
+  backdrop-filter:saturate(140%) blur(8px);
+}
+.rp-topbar h1{
+  display:flex; align-items:center; gap:10px;
+  font-size:19px; font-weight:700; color:var(--rp-ink);
+  margin:0; letter-spacing:.2px;
+}
+.rp-topbar .rp-dot{
+  width:10px; height:10px; border-radius:50%;
+  background:var(--rp-accent);
+  box-shadow:0 0 0 4px rgba(249,115,10,.15);
+  flex-shrink:0;
+}
+.rp-topbar .rp-sub{ font-size:12px; color:var(--rp-muted); }
+.rp-topbar .rp-spacer{ flex:1; }
+.rp-period{
+  display:inline-flex; align-items:center; gap:6px;
+  padding:5px 11px; border-radius:999px;
+  background:var(--rp-accent-soft); border:1px solid var(--rp-accent-border);
+  color:var(--rp-accent-d); font-size:12px; font-weight:600;
+  font-variant-numeric:tabular-nums;
+}
+.rp-print{
+  appearance:none; border:1px solid var(--rp-border-strong);
+  background:var(--rp-surface); color:var(--rp-ink-2);
+  padding:7px 14px; border-radius:10px; font-size:12.5px; font-weight:600;
+  cursor:pointer; transition:all .16s; font-family:inherit;
+}
+.rp-print:hover{ border-color:var(--rp-accent); color:var(--rp-accent-d); background:var(--rp-accent-soft); }
+
+/* ── ⑤ hero 改成「居中渐变卡」（对齐沟通分析报告的 .hero > .hero-inner） ── */
+.hero{ background:transparent; color:#fff; border-radius:0; padding:0; box-shadow:none; margin-top:24px; }
+.hero-inner{
+  background:var(--rp-grad); color:#fff;
+  border-radius:20px; padding:48px 48px 40px;
+  box-shadow:var(--rp-shadow);
+}
+.hero-eyebrow{ font-size:12px; letter-spacing:3px; opacity:.7; margin-bottom:10px; text-transform:uppercase; }
+.hero .product-title{ font-size:30px; font-weight:800; letter-spacing:.5px; line-height:1.2; }
+.hero .meta{ opacity:.85; margin-top:8px; font-size:14px; line-height:1.7; }
+.hero .hero-kpis{ margin-top:22px; }
+.hero .hero-kpi{ background:rgba(255,255,255,.16); border-color:rgba(255,255,255,.25); }
+.hero .tag{ background:rgba(255,255,255,.16); border-color:rgba(255,255,255,.25); }
+
+/* 小屏：跟沟通分析报告一致的收窄 */
+@media (max-width: 720px){
+  .hero-inner{ padding:32px 24px; border-radius:16px; }
+  .hero .product-title{ font-size:24px; }
+  .rp-topbar{ padding:12px 14px; }
+  .rp-topbar .rp-sub{ display:none; }
+}
+
+/* ── ⑥ 打印 / 导出 PDF：只留报告正文 ── */
+@media print{
+  .rp-topbar, .rp-print, .src-picker, .rp-toc{ display:none !important; }
+  body{ background:#fff; }
+  .hero-inner{ box-shadow:none; }
+}
+
+/* ══════════════════════════════════════════════════════════
+   ⑦ 报告目录（吸顶导航） 2026-09-22 新增
+   背景：报告 8 模块 / ≈10000px（约 10 屏），此前**无任何内部跳转**。
+   层级：.rp-topbar(30) 之下、正文之上，z-index:26（低于 30 避免压住工具条）。
+   ★ 所有定位值都用变量，不写死像素：
+     --toc-h 由 JS 写入（syncTocHeight），供 scroll-margin-top 计算锚点偏移。
+   ══════════════════════════════════════════════════════════ */
+:root{ --toc-h:0px; }
+
+.rp-toc{
+  position:sticky; z-index:26;
+  /* ★ 紧跟 .rp-topbar 之下：top 用工具条的实际高度。
+     工具条是 sticky top:0，高度约 56px（16px 上下 padding + 内容行）；
+     用 var 兜底 + 实测微调，小屏由媒体查询缩减。 */
+  top:var(--topbar-h, 56px);
+  display:flex; align-items:center; gap:10px;
+  padding:8px max(20px, calc(50% - 520px));
+  background:rgba(255,255,255,.86);
+  backdrop-filter:saturate(150%) blur(10px);
+  border-bottom:1px solid var(--rp-border);
+}
+:root[data-theme="dark"] .rp-toc{ background:rgba(23,20,18,.86); }
+:root[data-theme="eye"]  .rp-toc{ background:rgba(251,248,241,.86); }
+
+.rp-toc-label{
+  font-size:12px; font-weight:600; color:var(--rp-muted);
+  flex:0 0 auto; letter-spacing:.5px;
+}
+.rp-toc-track{
+  display:flex; align-items:center; gap:4px;
+  flex:1 1 auto; min-width:0;
+  overflow-x:auto; overflow-y:hidden;
+  scrollbar-width:none; -ms-overflow-style:none;
+}
+.rp-toc-track::-webkit-scrollbar{ height:0; display:none; }
+
+.rp-toc-item{
+  appearance:none; border:1px solid transparent; background:transparent;
+  display:inline-flex; align-items:center; gap:6px;
+  padding:5px 10px; border-radius:999px;
+  font-family:inherit; font-size:12.5px; font-weight:600;
+  color:var(--rp-muted); white-space:nowrap; cursor:pointer;
+  transition:background .15s, color .15s, border-color .15s;
+  flex:0 0 auto;
+}
+.rp-toc-item em{
+  font-style:normal; font-size:11px; font-weight:700;
+  color:var(--rp-accent); opacity:.85;
+  font-variant-numeric:tabular-nums;
+}
+.rp-toc-item:hover{ background:var(--rp-accent-soft); color:var(--rp-ink); }
+.rp-toc-item.is-active{
+  background:var(--rp-accent-soft);
+  border-color:var(--rp-accent-border);
+  color:var(--rp-accent-d);
+}
+.rp-toc-item.is-active em{ opacity:1; }
+
+/* 锚点偏移：跳转 / 手动点锚点时，标题不要被吸顶条盖住 */
+.report-anchor{ scroll-margin-top: calc(var(--toc-h, 0px) + var(--topbar-h, 56px) + 12px); }
+
+@media (max-width: 720px){
+  .rp-toc{ padding:7px 14px; }
+  .rp-toc-label{ display:none; }
+  .rp-toc-item{ padding:4px 9px; font-size:12px; }
+  .rp-toc-item span{ max-width:72px; overflow:hidden; text-overflow:ellipsis; }
+}
+
+
+/* ══ 数据驱动版新增（原报告是静态 HTML，这些是动态渲染需要的） ══ */
+.trend-svg{ width:100%; height:150px; display:block; color:var(--muted); }
+.chart-wrap{ margin:6px 0 12px; }
+.rp-src{ margin:28px auto 0; max-width:1080px; padding:14px 20px; border-top:1px solid var(--line);
+  color:var(--muted); font-size:var(--font-size-micro); line-height:1.9; }
+.rp-src b{ color:var(--ink); }
+.rp-src a{ color:var(--primary); text-decoration:none; }
+.rp-src a:hover{ text-decoration:underline; }
+/* 动态渲染的表格默认在 .table-wrap 里横向滚动 */
+.table-wrap{ overflow-x:auto; }
+.data-table, .plan-table{ min-width:640px; }
+/* 空态 / 加载态 */
+.empty-state{ padding:60px 20px; text-align:center; color:var(--muted); }
+/* 口径提示：动态生成时父级可能是 .hero-kpi-label / .kpi-card-label，这里保证定位上下文 */
+.hero-kpi-label, .kpi-card-label{ position:relative; }
+/* 折叠面板的三角（原 CSS 靠 details 的 marker） */
+.plan-group summary{ cursor:pointer; }
+.plan-group summary::-webkit-details-marker{ display:none; }
+/* 数据来源条：说明这次分析「合并了哪几张表」（2026-09-20 由「单选下拉」改成合并模式） */
+.src-picker{ max-width:1080px; margin:20px auto -8px; padding:0 20px;
+  display:flex; align-items:flex-start; gap:10px; flex-wrap:wrap; }
+.src-picker[hidden]{ display:none; }
+.src-picker .sp-label{ font-size:12.5px; color:var(--muted); flex:none; padding-top:3px; }
+.src-picker .sp-tables{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+.src-picker .sp-tag{ display:inline-flex; align-items:baseline; gap:5px;
+  font-size:12px; padding:3px 9px; border-radius:999px;
+  background:var(--paper); border:1px solid var(--line); color:var(--ink); }
+.src-picker .sp-tag i{ font-style:normal; font-size:10.5px; color:var(--muted); font-variant-numeric:tabular-nums; }
+.src-picker .sp-sum{ font-size:11.5px; color:var(--muted); margin-left:2px; }
+
+</style>
+</head>
+<body>
+<!-- 顶部工具条：版式对齐「沟通分析报告」的 .rp-topbar（2026-09-20） -->
+<header class="rp-topbar">
+  <h1><span class="rp-dot"></span>付费推广分析</h1>
+  <span class="rp-sub">淘宝店铺付费推广 · 按上传的数据自动生成</span>
+  <span class="rp-spacer"></span>
+  <span class="rp-period" id="rpPeriod">加载中…</span>
+  <button class="rp-print" id="rpPrint" type="button" title="用浏览器打印，可另存为 PDF">⤓ 导出 PDF</button>
+</header>
+
+<!-- 报告目录（吸顶导航）：
+     2026-09-22 新增。报告实测 8 个模块 / 约 10000px（≈10 屏），此前**没有任何内部锚点**，
+     用户看到第 6 节想回对第 2 节的数字只能靠滚轮手找。
+     做法：**DOM 后处理** —— 渲染完报告后扫描 .section-title-row 自动生成，
+     而不是把目录写死在 renderer 里。好处：某个模块因数据缺失不出现时，目录自动跟着少一项，
+     永远不会出现「点了没反应」的死链。 -->
+<nav class="rp-toc" id="rpToc" hidden aria-label="报告目录">
+  <span class="rp-toc-label">目录</span>
+  <div class="rp-toc-track" id="rpTocTrack" role="tablist"></div>
+</nav>
+
+<!-- 数据来源条：说明这次分析「合并了哪几张表」（2026-09-20 改成合并模式） -->
+<div class="src-picker" id="srcPicker" hidden>
+  <span class="sp-label">数据来源</span>
+  <span class="sp-tables" id="spTables"></span>
+</div>
+
+<main class="page" id="reportRoot">
+  <div class="empty-state" id="bootTip">正在读取推广数据…</div>
+</main>
+
+<div class="rp-src" id="rpSrc" hidden></div>
+
+<script>/* ══════════════════════════════════════════════════════════════════
+   付费推广分析 · 计算引擎
+   纯函数、零依赖 —— 同一份代码在 Node（验证口径）与浏览器（渲染）里跑。
+
+   口径（2026-09-20 逆向自一份已生成的原报告，逐项核对过）：
+   · 全店 KPI：从「投放计划 / 商品推广 / 关键词分析 / 营销场景」任一张表
+     按行求和结果**完全一致**（这几张是同一份数据的平行投影）。
+     ⚠️ 「人群分析」只覆盖有人群定向的那部分花费，**不能**用来算全店。
+   · 花费=Σ花费，成交金额=Σ「总成交金额」，曝光=Σ展现量，点击=Σ点击量，
+     成交订单数=Σ「总成交笔数」，ROI=成交金额÷花费。
+     ⚠️ 原报告的口径说明写的是「总预售成交金额」，但那一列实测全是 0 ——
+        真值取的是「总成交金额」（= 直接成交 + 间接成交）。这里按**实测**来。
+   · 错配度 = 花费占比 − 成交金额占比（负=少花钱多出货，值得加投）。
+   ══════════════════════════════════════════════════════════════════ */
+(function (root) {
+  'use strict';
+
+  /* ── 小工具 ── */
+  function n(v) {
+    if (v === null || v === undefined) return 0;
+    var s = String(v).replace(/,/g, '').replace(/%/g, '').trim();
+    if (!s) return 0;
+    var f = parseFloat(s);
+    return isFinite(f) ? f : 0;
+  }
+  function div(a, b) { return b ? a / b : 0; }
+  function pct(a, b) { return b ? (a / b) * 100 : 0; }
+  /* 按表头名取列下标；找不到返回 -1 */
+  function col(headers, name) { return headers.indexOf(name); }
+  function pick(row, ci) { return ci < 0 ? '' : (row[ci] === undefined ? '' : row[ci]); }
+
+  /* 把一张 sheet 的「行数组」按某个 keyFn 分组并求和 */
+  function groupSum(rows, cols, keyFn) {
+    var map = new Map();
+    rows.forEach(function (r) {
+      var k = keyFn(r);
+      if (k === null || k === undefined || k === '') return;
+      var o = map.get(k);
+      if (!o) {
+        o = { key: k, spend: 0, gmv: 0, imp: 0, click: 0, orders: 0, carts: 0, newCust: 0, cust: 0, dates: {}, rows: 0 };
+        map.set(k, o);
+      }
+      o.spend += n(pick(r, cols.spend));
+      o.gmv += n(pick(r, cols.gmv));
+      o.imp += n(pick(r, cols.imp));
+      o.click += n(pick(r, cols.click));
+      o.orders += n(pick(r, cols.orders));
+      o.carts += n(pick(r, cols.cartD)) + n(pick(r, cols.cartI));
+      o.newCust += n(pick(r, cols.newCust));
+      o.cust += n(pick(r, cols.cust));
+      var d = String(pick(r, cols.date) || '').slice(0, 10);
+      if (d) o.dates[d] = 1;
+      o.rows++;
+    });
+    return map;
+  }
+  function finalize(o) {
+    o.roi = div(o.gmv, o.spend);
+    o.ctr = div(o.click, o.imp);
+    o.cpc = div(o.spend, o.click);
+    o.cvr = div(o.orders, o.click);
+    o.cartRate = div(o.carts, o.click);
+    o.days = Object.keys(o.dates).sort();
+    o.dayCount = o.days.length;
+    o.period = o.dayCount ? (o.days[0] + ' ~ ' + o.days[o.dayCount - 1]) : '';
+    return o;
+  }
+
+  /* ★ 按「列名特征」判断一张表属于哪个维度 —— 比只认 sheet 名稳得多：
+     用户自己合并 / 改过名的报表（sheet 名可能是 Sheet1）也能认出来。
+     ⚠️ 判断顺序要紧：「投放计划」表里也有「场景名字」，所以 plan 必须排在 scene 前面。 */
+  function classifySheet(sh) {
+    var h = (sh && sh.headers) || [];
+    function has(n) { return h.indexOf(n) >= 0; }
+    if (has('词名字/词包名字') || has('词ID/词包ID')) return 'kw';
+    if (has('计划名字') || has('计划ID')) return 'plan';
+    if (has('人群名字')) return 'crowd';
+    if (has('主体名称') || has('主体ID')) return 'prod';
+    if (has('场景名字')) return 'scene';
+    return null;
+  }
+
+  /* 找一张表：先按标准 sheet 名，找不到再按列名特征兜底 */
+  function findSheet(sheets, name, kind) {
+    var i;
+    for (i = 0; i < sheets.length; i++) {
+      if (sheets[i] && sheets[i].name === name) return sheets[i];
+    }
+    if (kind) {
+      for (i = 0; i < sheets.length; i++) {
+        if (sheets[i] && classifySheet(sheets[i]) === kind) return sheets[i];
+      }
+    }
+    return null;
+  }
+
+  function sheetOf(sheets, name) {
+    for (var i = 0; i < sheets.length; i++) {
+      if (sheets[i] && sheets[i].name === name) return sheets[i];
+    }
+    return null;
+  }
+
+  /* ── 主入口 ── */
+  function analyzeReport(sheets) {
+    sheets = sheets || [];
+    var plan = findSheet(sheets, '投放计划', 'plan');
+    var prod = findSheet(sheets, '商品推广', 'prod');
+    var kw = findSheet(sheets, '关键词分析', 'kw');
+    var crowd = findSheet(sheets, '人群分析', 'crowd');
+    var scene = findSheet(sheets, '营销场景', 'scene');
+
+    /* 全店口径优先用「投放计划」（它一定有），退化到其它表 */
+    var base = plan || prod || kw || scene;
+    if (!base || !base.rows || !base.rows.length) return null;
+
+    function colsOf(sh) {
+      var h = sh.headers;
+      return {
+        date: col(h, '日期'), scene: col(h, '场景名字'), plan: col(h, '计划名字'), planId: col(h, '计划ID'),
+        subject: col(h, '主体名称'), subjectId: col(h, '主体ID'),
+        crowd: col(h, '人群名字'), word: col(h, '词名字/词包名字'), wordType: col(h, '词类型'),
+        wordId: col(h, '词ID/词包ID'),
+        imp: col(h, '展现量'), click: col(h, '点击量'), spend: col(h, '花费'),
+        cartD: col(h, '直接购物车数'), cartI: col(h, '间接购物车数'),
+        gmv: col(h, '总成交金额'), orders: col(h, '总成交笔数'), carts: col(h, '总购物车数'),
+        newCust: col(h, '成交新客数'), cust: col(h, '成交人数')
+      };
+    }
+    var C = colsOf(base);
+
+    /* ── 全店汇总 ── */
+    var total = { spend: 0, gmv: 0, imp: 0, click: 0, orders: 0, carts: 0 };
+    base.rows.forEach(function (r) {
+      total.spend += n(pick(r, C.spend));
+      total.gmv += n(pick(r, C.gmv));
+      total.imp += n(pick(r, C.imp));
+      total.click += n(pick(r, C.click));
+      total.orders += n(pick(r, C.orders));
+      /* ★ 加购数 = 直接购物车数 + 间接购物车数。
+         「总购物车数」那一列口径不同（实测 581 vs 报告 1033），别用。 */
+      total.carts += n(pick(r, C.cartD)) + n(pick(r, C.cartI));
+    });
+    total.roi = div(total.gmv, total.spend);
+    total.ctr = div(total.click, total.imp);
+    total.cpc = div(total.spend, total.click);
+    total.cvr = div(total.orders, total.click);
+    total.cartRate = div(total.carts, total.click);
+
+    /* 分析周期 */
+    var dates = {};
+    base.rows.forEach(function (r) { var d = String(pick(r, C.date) || '').slice(0, 10); if (d) dates[d] = 1; });
+    var dayList = Object.keys(dates).sort();
+    var period = { from: dayList[0] || '', to: dayList[dayList.length - 1] || '', days: dayList.length, list: dayList };
+
+    /* ── 日趋势（全店） ── */
+    var byDate = new Map();
+    base.rows.forEach(function (r) {
+      var d = String(pick(r, C.date) || '').slice(0, 10);
+      if (!d) return;
+      var o = byDate.get(d) || { d: d, spend: 0, gmv: 0, imp: 0, click: 0, orders: 0, carts: 0 };
+      o.spend += n(pick(r, C.spend)); o.gmv += n(pick(r, C.gmv));
+      o.imp += n(pick(r, C.imp)); o.click += n(pick(r, C.click));
+      o.orders += n(pick(r, C.orders)); o.carts += n(pick(r, C.cartD)) + n(pick(r, C.cartI));
+      byDate.set(d, o);
+    });
+    var trend = dayList.map(function (d) {
+      var o = byDate.get(d);
+      o.roi = div(o.gmv, o.spend); o.ctr = div(o.click, o.imp);
+      o.cvr = div(o.orders, o.click); o.cpc = div(o.spend, o.click);
+      o.cartRate = div(o.carts, o.click);
+      return o;
+    });
+
+    /* ── 营销场景（分场景日趋势） ── */
+    var scenes = [];
+    if (base === scene && C.scene >= 0) {
+      var scMap = groupSum(base.rows, C, function (r) { return String(pick(r, C.scene) || '').trim(); });
+      scMap.forEach(function (o, k) {
+        finalize(o); o.name = k;
+        /* 该场景的逐日 */
+        var dm = new Map();
+        base.rows.forEach(function (r) {
+          if (String(pick(r, C.scene) || '').trim() !== k) return;
+          var d = String(pick(r, C.date) || '').slice(0, 10); if (!d) return;
+          var x = dm.get(d) || { d: d, spend: 0, gmv: 0 };
+          x.spend += n(pick(r, C.spend)); x.gmv += n(pick(r, C.gmv));
+          dm.set(d, x);
+        });
+        o.daily = dayList.map(function (d) { return dm.get(d) || { d: d, spend: 0, gmv: 0 }; });
+        scenes.push(o);
+      });
+      scenes.sort(function (a, b) { return b.spend - a.spend; });
+    }
+
+    /* ── 03 投放计划 ── */
+    var planReport = null;
+    if (plan && plan.rows.length) {
+      var P = colsOf(plan);
+      var planName = {};
+      var pm = groupSum(plan.rows, P, function (r) {
+        var id = String(pick(r, P.planId) || '').trim();
+        var nm = String(pick(r, P.plan) || '').trim();
+        var key = id || nm;
+        if (key && !planName[key]) planName[key] = nm;
+        return key;
+      });
+      var items = [];
+      pm.forEach(function (o, k) {
+        finalize(o);
+        o.name = planName[k] || k;
+        o.id = k;
+        o.scene = '';
+        plan.rows.forEach(function (r) { if (!o.scene && String(pick(r, P.planId) || '').trim() === k) o.scene = String(pick(r, P.scene) || ''); });
+        items.push(o);
+      });
+      items.sort(function (a, b) { return b.spend - a.spend; });
+
+      var withGmv = items.filter(function (x) { return x.gmv > 0; });
+      var zero = items.filter(function (x) { return x.gmv <= 0; });
+      var rois = withGmv.map(function (x) { return x.roi; }).sort(function (a, b) { return a - b; });
+
+      /* 按渠道（场景）分组 */
+      var gmap = new Map();
+      items.forEach(function (x) {
+        var k = x.scene || '未标注场景';
+        if (!gmap.has(k)) gmap.set(k, []);
+        gmap.get(k).push(x);
+      });
+      var groups = [];
+      gmap.forEach(function (arr, k) {
+        var g = { scene: k, items: arr, spend: 0, gmv: 0 };
+        arr.forEach(function (x) { g.spend += x.spend; g.gmv += x.gmv; });
+        g.roi = div(g.gmv, g.spend);
+        g.share = pct(g.spend, total.spend);
+        groups.push(g);
+      });
+      groups.sort(function (a, b) { return b.spend - a.spend; });
+
+      /* 代表性计划：5 类各取 1（原报告的取法） */
+      var reps = [];
+      function takeRep(label, hint, arr) {
+        if (!arr.length) return;
+        var x = arr[0];
+        reps.push({ label: label, hint: hint, item: x });
+      }
+      var bySpend = items.slice().sort(function (a, b) { return b.spend - a.spend; });
+      var byGmv = items.slice().sort(function (a, b) { return b.gmv - a.gmv; });
+      var byRoi = withGmv.slice().sort(function (a, b) { return b.roi - a.roi; });
+      var byRoiAsc = withGmv.slice().sort(function (a, b) { return a.roi - b.roi; });
+      var byImp = items.slice().sort(function (a, b) { return b.imp - a.imp; });
+      var used = {};
+      function firstUnused(arr) {
+        for (var i = 0; i < arr.length; i++) { if (!used[arr[i].name]) { used[arr[i].name] = 1; return arr[i]; } }
+        return arr[0] || null;
+      }
+      var r1 = firstUnused(bySpend); if (r1) reps.push({ label: '高投入', hint: '花费最多', item: r1 });
+      var r2 = firstUnused(byImp.filter(function (x) { return x.roi < total.roi; })); if (r2) reps.push({ label: '规模化低 ROI', hint: '曝光大但效率低', item: r2 });
+      var r3 = firstUnused(byImp.filter(function (x) { return x.roi >= total.roi; })); if (r3) reps.push({ label: '规模化高 ROI', hint: '曝光大且效率高', item: r3 });
+      var r4 = firstUnused(byRoi); if (r4) reps.push({ label: '高 ROI', hint: '效率最高', item: r4 });
+      var r5 = firstUnused(byGmv); if (r5) reps.push({ label: '高产出', hint: '成交金额最多', item: r5 });
+
+      planReport = {
+        total: items.length, withGmv: withGmv.length, zero: zero.length,
+        zeroSpend: zero.reduce(function (a, x) { return a + x.spend; }, 0),
+        zeroClick: zero.reduce(function (a, x) { return a + x.click; }, 0),
+        roiMin: rois.length ? rois[0] : 0, roiMax: rois.length ? rois[rois.length - 1] : 0,
+        groups: groups, items: items, reps: reps
+      };
+    }
+
+    /* ── 04/05 商品 ── */
+    var prodReport = null;
+    if (prod && prod.rows.length) {
+      var D = colsOf(prod);
+      var prodName = {};
+      var dm2 = groupSum(prod.rows, D, function (r) {
+        var id = String(pick(r, D.subjectId) || '').trim();
+        var nm = String(pick(r, D.subject) || '').trim();
+        var key = id || nm;
+        if (key && !prodName[key]) prodName[key] = nm;
+        return key;
+      });
+      var pitems = [];
+      dm2.forEach(function (o, k) {
+        finalize(o);
+        o.name = prodName[k] || k; o.id = k;
+        o.spendPct = pct(o.spend, total.spend);
+        o.gmvPct = pct(o.gmv, total.gmv);
+        o.diff = o.spendPct - o.gmvPct;   /* 错配度 */
+        pitems.push(o);
+      });
+      /* 错配榜：按 |错配度| 排序，但分别给出超配（正）与欠配（负） */
+      var mism = pitems.slice().sort(function (a, b) { return Math.abs(b.diff) - Math.abs(a.diff); });
+      var spenders = pitems.filter(function (x) { return x.spend > 0; }).sort(function (a, b) { return b.spend - a.spend; });
+
+      /* 四象限：以「有花费且有 ROI」的商品集合的**中位数**划分 */
+      var quad = spenders.filter(function (x) { return x.spend > 0 && x.gmv > 0; });
+      var medSpend = median(quad.map(function (x) { return x.spend; }));
+      var medRoi = median(quad.map(function (x) { return x.roi; }));
+      var quads = { hh: [], hl: [], lh: [], ll: [] };
+      quad.forEach(function (x) {
+        var hi = x.spend >= medSpend, good = x.roi >= medRoi;
+        (hi ? (good ? quads.hh : quads.hl) : (good ? quads.lh : quads.ll)).push(x);
+      });
+      ['hh', 'hl', 'lh', 'll'].forEach(function (k) { quads[k].sort(function (a, b) { return b.spend - a.spend; }); });
+
+      prodReport = {
+        total: pitems.length, spenders: spenders.length,
+        mismatch: mism.slice(0, 30), items: pitems,
+        quad: quads, medSpend: medSpend, medRoi: medRoi
+      };
+    }
+
+    /* ── 06 关键词 ── */
+    var kwReport = null;
+    if (kw && kw.rows.length) {
+      var K = colsOf(kw);
+      /* ★ 按「词ID/词包ID」分组 —— 词包名会重复（如两个「流量智选-好词优选」），
+         按名字分会把它们并成一个（实测 9 个 vs 报告 32 个）。显示名另存 name。 */
+      var kwName = {};
+      var km = groupSum(kw.rows, K, function (r) {
+        var id = String(pick(r, K.wordId) || '').trim();
+        var nm = String(pick(r, K.word) || '').trim();
+        var key = id || nm;
+        if (key && !kwName[key]) kwName[key] = nm;
+        return key;
+      });
+      var kitems = [];
+      km.forEach(function (o, k) {
+        finalize(o);
+        o.name = kwName[k] || k;
+        o.id = k;
+        o.type = '';
+        kw.rows.forEach(function (r) { if (!o.type && String(pick(r, K.wordId) || '').trim() === k) o.type = String(pick(r, K.wordType) || ''); });
+        kitems.push(o);
+      });
+      kitems.sort(function (a, b) { return b.spend - a.spend; });
+
+      var typeMap = new Map();
+      kitems.forEach(function (x) {
+        var t = x.type || '未标注';
+        var o = typeMap.get(t) || { type: t, spend: 0, gmv: 0, n: 0 };
+        o.spend += x.spend; o.gmv += x.gmv; o.n++;
+        typeMap.set(t, o);
+      });
+      var types = [];
+      typeMap.forEach(function (o) { o.pct = pct(o.spend, total.spend); o.roi = div(o.gmv, o.spend); types.push(o); });
+      types.sort(function (a, b) { return b.spend - a.spend; });
+
+      var kwWithGmv = kitems.filter(function (x) { return x.gmv > 0; });
+      var kwZero = kitems.filter(function (x) { return x.gmv <= 0 && x.spend > 0; });
+
+      /* 词云：按展现量缩放字号、按 ROI 染色。两朵云共用同一刻度。 */
+      var impMax = Math.max.apply(null, kitems.map(function (x) { return x.imp; }).concat([1]));
+      var good = kwWithGmv.slice().sort(function (a, b) { return b.roi - a.roi; });
+      var bad = kitems.filter(function (x) { return x.spend > 0 && x.roi < total.roi; })
+                      .sort(function (a, b) { return b.spend - a.spend; });
+
+      kwReport = {
+        total: kitems.length, withGmv: kwWithGmv.length,
+        zeroCount: kwZero.length,
+        zeroSpend: kwZero.reduce(function (a, x) { return a + x.spend; }, 0),
+        zeroClick: kwZero.reduce(function (a, x) { return a + x.click; }, 0),
+        types: types, items: kitems,
+        cloud: { impMax: impMax, good: good.slice(0, 14), bad: bad.slice(0, 14) }
+      };
+    }
+
+    /* ── 07 人群 ── */
+    var crowdReport = null;
+    if (crowd && crowd.rows.length) {
+      var W = colsOf(crowd);
+      var wm = groupSum(crowd.rows, W, function (r) { return String(pick(r, W.crowd) || '').trim(); });
+      var witems = [];
+      wm.forEach(function (o, k) { finalize(o); o.name = k; witems.push(o); });
+      witems.sort(function (a, b) { return b.spend - a.spend; });
+      var wSpend = witems.reduce(function (a, x) { return a + x.spend; }, 0);
+      var wGmv = witems.reduce(function (a, x) { return a + x.gmv; }, 0);
+      var wNew = witems.reduce(function (a, x) { return a + x.newCust; }, 0);
+      var wCust = witems.reduce(function (a, x) { return a + x.cust; }, 0);
+      var wRois = witems.filter(function (x) { return x.gmv > 0; }).map(function (x) { return x.roi; }).sort(function (a, b) { return a - b; });
+      witems.forEach(function (x) { x.share = pct(x.spend, wSpend); });
+      crowdReport = {
+        total: witems.length, items: witems,
+        spend: wSpend, gmv: wGmv, roi: div(wGmv, wSpend),
+        share: pct(wSpend, total.spend),
+        newRatio: div(wNew, wCust),
+        roiMin: wRois.length ? wRois[0] : 0, roiMax: wRois.length ? wRois[wRois.length - 1] : 0
+      };
+    }
+
+    /* ── 01 数据洞察（规则生成） ── */
+    var insights = buildInsights({ total: total, prod: prodReport, kw: kwReport, crowd: crowdReport, plan: planReport });
+
+    /* ── 08 行动清单（规则生成） ── */
+    var actions = buildActions({ total: total, prod: prodReport, kw: kwReport, crowd: crowdReport, plan: planReport });
+
+    /* 数据覆盖了哪些维度 —— 有些文件只有一张表（比如单独导出的关键词报表），
+       报告只渲染有数据的那几章，并在页面上说明覆盖范围，免得用户以为「少了几章」。 */
+    var coverage = [];
+    if (plan) coverage.push('投放计划');
+    if (prod) coverage.push('商品');
+    if (kw) coverage.push('关键词');
+    if (crowd) coverage.push('人群');
+    if (scene) coverage.push('营销场景');
+
+    return {
+      coverage: coverage, baseKind: classifySheet(base),
+      period: period, kpi: total, trend: trend, scenes: scenes,
+      plan: planReport, prod: prodReport, kw: kwReport, crowd: crowdReport,
+      insights: insights, actions: actions
+    };
+  }
+
+  function median(arr) {
+    if (!arr || !arr.length) return 0;
+    var a = arr.slice().sort(function (x, y) { return x - y; });
+    var m = Math.floor(a.length / 2);
+    return a.length % 2 ? a[m] : (a[m - 1] + a[m]) / 2;
+  }
+  function f2(v) { return (Math.round(v * 100) / 100).toFixed(2); }
+  function fPct(v) { return (Math.round(v * 100) / 100).toFixed(2) + '%'; }
+  function fPp(v) { return (v >= 0 ? '+' : '') + (Math.round(v * 100) / 100).toFixed(2) + 'pp'; }
+
+  /* 数据洞察：从已算好的各维度里挑「最值得说的三条」 */
+  function buildInsights(x) {
+    var out = [];
+
+    /* 洞察一：商品错配（挑绝对值最大的欠配与超配） */
+    if (x.prod && x.prod.mismatch && x.prod.mismatch.length >= 3) {
+      var under = x.prod.mismatch.filter(function (m) { return m.diff < 0; }).slice(0, 1)[0];
+      var overs = x.prod.mismatch.filter(function (m) { return m.diff > 0; }).slice(0, 3);
+      var pts = [];
+      if (under) {
+        pts.push(short(under.name) + '花费占比 ' + fPct(under.spendPct) + '、成交占比 ' + fPct(under.gmvPct) +
+                 '，错配度 ' + fPp(under.diff) + '，ROI ' + f2(under.roi));
+      }
+      if (overs.length) {
+        pts.push(overs.map(function (m) { return short(m.name); }).join('、') + ' 错配 ' +
+                 overs.map(function (m) { return fPp(m.diff); }).join('、') + '，ROI 分别 ' +
+                 overs.map(function (m) { return f2(m.roi); }).join('、'));
+      }
+      if (pts.length) {
+        out.push({
+          title: '钱压错了商品：' + (overs.length ? short(overs[0].name) : '部分商品') + '超配，' +
+                 (under ? short(under.name) : '高回报款') + '欠配',
+          points: pts
+        });
+      }
+    }
+
+    /* 洞察二：关键词类型效率 */
+    if (x.kw && x.kw.types && x.kw.types.length) {
+      var top = x.kw.types[0];
+      var pts2 = [];
+      if (top) {
+        pts2.push(top.type + '花费 ' + f2(top.spend) + '、成交 ' + f2(top.gmv) + '，ROI ' + f2(top.roi) +
+                  (top.roi < x.total.roi ? '，低于全店 ' + f2(x.total.roi) : '，高于全店 ' + f2(x.total.roi)));
+      }
+      x.kw.types.slice(1, 4).forEach(function (t) {
+        pts2.push(t.type + '花费 ' + f2(t.spend) + ' 带来 ' + f2(t.gmv) + '，ROI ' + f2(t.roi));
+      });
+      if (x.kw.zeroCount) {
+        pts2.push('另有 ' + x.kw.zeroCount + ' 个零成交词消耗 ' + f2(x.kw.zeroSpend) + ' 元、' +
+                  Math.round(x.kw.zeroClick).toLocaleString('en-US') + ' 次点击');
+      }
+      if (pts2.length) {
+        out.push({
+          title: '近 ' + fPct(top ? top.pct : 0) + ' 预算走「' + (top ? top.type : '主要词类型') + '」，其中效率分化明显',
+          points: pts2
+        });
+      }
+    }
+
+    /* 洞察三：人群 */
+    if (x.crowd && x.crowd.items && x.crowd.items.length) {
+      var c0 = x.crowd.items[0];
+      var pts3 = [];
+      if (c0) pts3.push(c0.name + '花费 ' + f2(c0.spend) + '、成交 ' + f2(c0.gmv) + '，ROI ' + f2(c0.roi));
+      pts3.push(x.crowd.total + ' 个人群合计花费 ' + f2(x.crowd.spend) + '、成交 ' + f2(x.crowd.gmv) +
+                '，仅占全店花费 ' + fPct(x.crowd.share));
+      var good = x.crowd.items.filter(function (c) { return c.gmv > 0; })
+                    .sort(function (a, b) { return b.roi - a.roi; }).slice(0, 2);
+      if (good.length) {
+        pts3.push(good.map(function (c) { return c.name + ' ROI ' + f2(c.roi); }).join('、') +
+                  '，是人群层里相对可用的' + (good.length > 1 ? '两档' : '一档'));
+      }
+      out.push({
+        title: x.crowd.roi < x.total.roi
+          ? '人群定向效率偏低：覆盖花费仅 ' + fPct(x.crowd.share) + '，ROI ' + f2(x.crowd.roi) + ' 低于全店'
+          : '人群定向：覆盖花费 ' + fPct(x.crowd.share) + '，ROI ' + f2(x.crowd.roi) + ' 高于全店',
+        points: pts3
+      });
+    }
+    return out;
+  }
+
+  /* 行动清单：从诊断里产出「做什么 + 佐证数字」 */
+  function buildActions(x) {
+    var acts = [];
+    var t = x.total;
+
+    /* 1) 零成交计划 */
+    if (x.plan && x.plan.zero > 0) {
+      acts.push({
+        level: 'high',
+        title: '暂停 ' + x.plan.zero + ' 个零成交计划',
+        detail: '共消耗 ¥' + f2(x.plan.zeroSpend) + '、' + Math.round(x.plan.zeroClick).toLocaleString('en-US') + ' 次点击，0 成交'
+      });
+    }
+
+    /* 2) 高花费低 ROI 商品 */
+    if (x.prod && x.prod.quad && x.prod.quad.hl && x.prod.quad.hl.length) {
+      var hl = x.prod.quad.hl.slice(0, 3);
+      acts.push({
+        level: 'high',
+        title: '压降 ' + hl.length + ' 个「高投入 / 低 ROI」商品',
+        detail: hl.map(function (p) { return short(p.name) + '（花费 ¥' + f2(p.spend) + '，ROI ' + f2(p.roi) + '）'; }).join('；')
+      });
+    }
+
+    /* 3) 欠配（该加钱） */
+    if (x.prod && x.prod.mismatch) {
+      var under = x.prod.mismatch.filter(function (m) { return m.diff < 0 && m.gmv > 0; }).slice(0, 3);
+      if (under.length) {
+        acts.push({
+          level: 'high',
+          title: '给 ' + under.length + ' 个欠配商品加预算',
+          detail: under.map(function (p) { return short(p.name) + '（错配 ' + fPp(p.diff) + '，ROI ' + f2(p.roi) + '）'; }).join('；')
+        });
+      }
+    }
+
+    /* 4) 零成交词 */
+    if (x.kw && x.kw.zeroCount > 0) {
+      acts.push({
+        level: 'mid',
+        title: '清理 ' + x.kw.zeroCount + ' 个零成交词',
+        detail: '消耗 ¥' + f2(x.kw.zeroSpend) + '、' + Math.round(x.kw.zeroClick).toLocaleString('en-US') + ' 次点击，建议加否词或降价'
+      });
+    }
+
+    /* 5) 低效词类型 */
+    if (x.kw && x.kw.types && x.kw.types.length > 1) {
+      var badType = x.kw.types.filter(function (t2) { return t2.spend > 0 && t2.roi < t.roi; })
+                              .sort(function (a, b) { return b.spend - a.spend; })[0];
+      if (badType) {
+        acts.push({
+          level: 'mid',
+          title: '收紧「' + badType.type + '」的预算',
+          detail: '花费 ¥' + f2(badType.spend) + '、ROI ' + f2(badType.roi) + '，低于全店 ' + f2(t.roi)
+        });
+      }
+    }
+
+    /* 6) 人群 */
+    if (x.crowd && x.crowd.items && x.crowd.items.length) {
+      var bad = x.crowd.items.filter(function (c) { return c.gmv > 0 && c.roi < 1.5; });
+      if (bad.length) {
+        acts.push({
+          level: 'mid',
+          title: '缩减 ' + bad.length + ' 个低回报人群包',
+          detail: bad.slice(0, 3).map(function (c) { return c.name + '（ROI ' + f2(c.roi) + '）'; }).join('；')
+        });
+      }
+      var best = x.crowd.items.filter(function (c) { return c.gmv > 0; })
+                    .sort(function (a, b) { return b.roi - a.roi; })[0];
+      if (best && best.roi > t.roi) {
+        acts.push({
+          level: 'low',
+          title: '给「' + best.name + '」加预算测试',
+          detail: 'ROI ' + f2(best.roi) + ' 高于全店 ' + f2(t.roi) + '，当前花费仅 ¥' + f2(best.spend)
+        });
+      }
+    }
+
+    /* 7) 高 ROI 计划 */
+    if (x.plan && x.plan.reps) {
+      var hi = x.plan.reps.filter(function (r) { return r.label === '高 ROI'; })[0];
+      if (hi && hi.item) {
+        acts.push({
+          level: 'low',
+          title: '给高 ROI 计划「' + short(hi.item.name) + '」加量',
+          detail: 'ROI ' + f2(hi.item.roi) + '，花费 ¥' + f2(hi.item.spend) + '，曝光 ' + Math.round(hi.item.imp).toLocaleString('en-US')
+        });
+      }
+    }
+    return acts;
+  }
+
+  function short(s) {
+    s = String(s || '');
+    return s.length > 18 ? s.slice(0, 18) + '…' : s;
+  }
+
+  /* classifySheet 也导出 —— 报告页要用它给多份数据「按维度去重合并」 */
+  var api = { analyzeReport: analyzeReport, classifySheet: classifySheet, median: median, fmt: { f2: f2, pct: fPct, pp: fPp } };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+  root.WBReportEngine = api;
+})(typeof window !== 'undefined' ? window : globalThis);
+</script>
+<script>/* 付费推广分析 · 渲染器
+   输入：analyzeReport() 的输出 → 输出 HTML 字符串。
+   复用原报告的 CSS 类名（.hero / .section / .card / .plan-group / .act-item …），
+   所以样式层不用动。 */
+(function (root) {
+  'use strict';
+
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+  function money(v) { return '¥' + (Math.round(v * 100) / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+  function money0(v) { return '¥' + Math.round(v).toLocaleString('en-US'); }
+  function int(v) { return Math.round(v).toLocaleString('en-US'); }
+  function f2(v) { return (Math.round(v * 100) / 100).toFixed(2); }
+  function pct1(v) { return (Math.round(v * 1000) / 10).toFixed(1) + '%'; }
+  function pct2(v) { return (Math.round(v * 10000) / 100).toFixed(2) + '%'; }
+  function pp(v) { return (v >= 0 ? '+' : '') + f2(v) + 'pp'; }
+  function roiCls(v, base) { return v >= base ? 'good-cell' : (v <= 0 ? 'bad-cell' : ''); }
+  function shortName(s, n) { s = String(s || ''); n = n || 22; return s.length > n ? s.slice(0, n) + '…' : s; }
+
+  function help(text) {
+    return '<button type="button" class="metric-help" aria-label="查看计算口径" aria-expanded="false">?' +
+           '<span class="metric-help-tip" aria-hidden="true">' + esc(text) + '</span></button>';
+  }
+
+  /* ── 折线图（纯 SVG，不引图表库） ── */
+  function lineChart(points, opts) {
+    opts = opts || {};
+    var w = 720, h = opts.h || 150, pad = { t: 12, r: 12, b: 22, l: 44 };
+    var vals = points.map(function (p) { return p.v; });
+    var max = Math.max.apply(null, vals.concat([0.0001]));
+    var min = Math.min.apply(null, vals.concat([0]));
+    var span = (max - min) || 1;
+    var iw = w - pad.l - pad.r, ih = h - pad.t - pad.b;
+    var step = points.length > 1 ? iw / (points.length - 1) : 0;
+    function X(i) { return pad.l + i * step; }
+    function Y(v) { return pad.t + ih - ((v - min) / span) * ih; }
+    var d = points.map(function (p, i) { return (i ? 'L' : 'M') + f2(X(i)) + ' ' + f2(Y(p.v)); }).join(' ');
+    var area = d + ' L' + f2(X(points.length - 1)) + ' ' + (pad.t + ih) + ' L' + f2(X(0)) + ' ' + (pad.t + ih) + ' Z';
+    var s = '<svg class="trend-svg" viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none" role="img">';
+    /* 网格 + 刻度 */
+    for (var g = 0; g <= 3; g++) {
+      var y = pad.t + (ih / 3) * g;
+      var v = max - (span / 3) * g;
+      s += '<line x1="' + pad.l + '" y1="' + f2(y) + '" x2="' + (w - pad.r) + '" y2="' + f2(y) + '" stroke="currentColor" stroke-opacity=".12"/>';
+      s += '<text x="' + (pad.l - 6) + '" y="' + f2(y + 4) + '" text-anchor="end" font-size="10" fill="currentColor" fill-opacity=".55">' +
+           (opts.money ? money0(v) : int(v)) + '</text>';
+    }
+    s += '<path d="' + area + '" fill="var(--primary)" fill-opacity=".10"/>';
+    s += '<path d="' + d + '" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linejoin="round"/>';
+    points.forEach(function (p, i) {
+      s += '<circle cx="' + f2(X(i)) + '" cy="' + f2(Y(p.v)) + '" r="3" fill="var(--primary)"><title>' + esc(p.label + '：' + (opts.money ? money(p.v) : int(p.v))) + '</title></circle>';
+      s += '<text x="' + f2(X(i)) + '" y="' + (h - 6) + '" text-anchor="middle" font-size="10" fill="currentColor" fill-opacity=".55">' + esc(p.label) + '</text>';
+    });
+    s += '</svg>';
+    return s;
+  }
+
+  /* ── 主渲染 ── */
+  function renderReport(R, meta) {
+    meta = meta || {};
+    var k = R.kpi, out = [];
+
+    /* ── Hero ──
+       版式对齐「沟通分析报告」：.hero 是透明容器，渐变在 .hero-inner 上（居中卡），
+       顶部带一行 eyebrow 小标签。2026-09-20 用户要求两个报告页视觉一致。 */
+    out.push('<section class="hero report-anchor" id="overview">');
+    out.push('<div class="hero-inner">');
+    out.push('<div class="hero-eyebrow">PAID PROMOTION ANALYSIS</div>');
+    out.push('<div class="hero-left">');
+    out.push('<div class="product-title">付费推广分析</div>');
+    out.push('<div class="meta">分析周期：' + esc(R.period.from) + ' 至 ' + esc(R.period.to) +
+             '（共 ' + R.period.days + ' 天）' + (meta.fileName ? ' · 数据源：' + esc(meta.fileName) : '') + '</div>');
+    out.push('<div class="hero-tags">');
+    out.push('<span class="tag">广告花费 ' + money(k.spend) + '</span>');
+    out.push('<span class="tag">成交 ' + money(k.gmv) + '</span>');
+    out.push('<span class="tag' + (k.roi >= 3 ? '' : ' danger') + '">ROI ' + f2(k.roi) + '</span>');
+    out.push('<span class="tag">' + R.period.days + ' 天数据</span>');
+    /* 只覆盖部分维度时明说 —— 否则用户会以为「怎么少了几章」 */
+    if (R.coverage && R.coverage.length && R.coverage.length < 5) {
+      out.push('<span class="tag">仅含 ' + esc(R.coverage.join(' / ')) + ' 维度</span>');
+    }
+    out.push('</div>');
+    if (R.coverage && R.coverage.length && R.coverage.length < 5) {
+      out.push('<div class="meta" style="opacity:.75;margin-top:4px;">' +
+        '这份数据只包含 ' + esc(R.coverage.join(' / ')) + ' 维度，报告只展示有数据对应的章节。' +
+        '想看完整分析（投放计划 / 商品 / 人群 / 营销场景），请上传完整的「店铺推广数据汇总」。</div>');
+    }
+    out.push('</div>');
+    out.push('<div class="hero-kpis" data-kpi-count="6">');
+    var heroKpi = [
+      ['广告总花费', money(k.spend), '广告实际扣费金额（源报表「花费」列求和）。'],
+      ['总成交金额', money(k.gmv), '广告点击后的归因成交金额 = 直接成交金额 + 间接成交金额。注意与生意参谋的支付金额口径不同，不可直接互相印证。'],
+      ['曝光', int(k.imp), '源自「展现量」，统计全部广告位的展现次数。'],
+      ['点击量', int(k.click), '源自「点击量」，统计全部广告位的点击次数。'],
+      ['成交订单数', int(k.orders), '源自「总成交笔数」，广告归因口径的成交笔数。'],
+      ['投产比 ROI', f2(k.roi), '成交金额 ÷ 广告花费；表示每 1 元广告带来的归因成交金额。']
+    ];
+    heroKpi.forEach(function (x) {
+      out.push('<div class="hero-kpi"><div class="hero-kpi-label"><span>' + x[0] + '</span>' + help(x[2]) + '</div><b>' + x[1] + '</b></div>');
+    });
+    out.push('</div>');        /* 关 .hero-kpis */
+    out.push('</div>');        /* 关 .hero-inner */
+    out.push('</section>');
+
+    /* ── 01 数据洞察 ── */
+    if (R.insights && R.insights.length) {
+      out.push('<section class="section report-anchor" id="mod1">');
+      out.push('<div class="section-title-row"><div class="section-no">01</div><div class="section-title">数据洞察</div></div>');
+      out.push('<div class="insight-block">');
+      R.insights.forEach(function (ins, i) {
+        out.push('<div class="insight-box">');
+        out.push('<div class="c-title">洞察' + '一二三四五'[i] + '：' + esc(ins.title) + '</div>');
+        out.push('<ul class="c-points">');
+        ins.points.forEach(function (p) { out.push('<li>' + esc(p) + '</li>'); });
+        out.push('</ul></div>');
+      });
+      out.push('</div></section>');
+    }
+
+    /* ── 02 店铺总览：ROI ── */
+    out.push('<section class="section report-anchor" id="mod2">');
+    out.push('<div class="section-title-row"><div class="section-no">02</div><div class="section-title">店铺总览：ROI</div></div>');
+    out.push('<div class="card"><div class="kpi-row">');
+    [
+      ['投产比 ROI', f2(k.roi), '成交金额 ÷ 广告花费。'],
+      ['成交订单数', int(k.orders), '源自「总成交笔数」。'],
+      ['加购数', int(k.carts), '直接购物车数 + 间接购物车数（次数口径，不等同于去重加购人数）。'],
+      ['点击到加购率', pct2(k.cartRate * 100), '加购数 ÷ 点击量 × 100%。']
+    ].forEach(function (x) {
+      out.push('<div class="kpi-card"><div class="kpi-card-label"><span>' + x[0] + '</span>' + help(x[2]) + '</div><b>' + x[1] + '</b></div>');
+    });
+    out.push('</div>');
+
+    /* 日趋势 */
+    if (R.trend && R.trend.length > 1) {
+      out.push('<div class="trend-block core-trend">');
+      out.push('<div class="chart-title">效率趋势</div>');
+      out.push('<div class="chart-wrap">');
+      out.push(lineChart(R.trend.map(function (t) { return { label: t.d.slice(5), v: t.spend }; }), { money: true }));
+      out.push('</div>');
+      out.push('<div class="table-caption">花费日趋势（' + R.period.from + ' ~ ' + R.period.to + '）</div>');
+      out.push('<div class="table-wrap"><table class="data-table sortable-table"><thead><tr>' +
+        '<th>日期</th><th class="num">花费</th><th class="num">成交金额</th><th class="num">展现量</th>' +
+        '<th class="num">点击量</th><th class="num">成交笔数</th><th class="num">ROI</th><th class="num">CTR</th>' +
+        '<th class="num">CVR</th><th class="num">CPC</th></tr></thead><tbody>');
+      R.trend.forEach(function (t) {
+        out.push('<tr><td>' + esc(t.d) + '</td>' +
+          '<td class="num">' + money(t.spend) + '</td>' +
+          '<td class="num">' + money(t.gmv) + '</td>' +
+          '<td class="num">' + int(t.imp) + '</td>' +
+          '<td class="num">' + int(t.click) + '</td>' +
+          '<td class="num">' + int(t.orders) + '</td>' +
+          '<td class="num ' + roiCls(t.roi, k.roi) + '">' + f2(t.roi) + '</td>' +
+          '<td class="num">' + pct2(t.ctr * 100) + '</td>' +
+          '<td class="num">' + pct2(t.cvr * 100) + '</td>' +
+          '<td class="num">' + money(t.cpc) + '</td></tr>');
+      });
+      out.push('<tr class="is-total"><td>总计</td><td class="num">' + money(k.spend) + '</td><td class="num">' + money(k.gmv) +
+        '</td><td class="num">' + int(k.imp) + '</td><td class="num">' + int(k.click) + '</td><td class="num">' + int(k.orders) +
+        '</td><td class="num">' + f2(k.roi) + '</td><td class="num">' + pct2(k.ctr * 100) + '</td><td class="num">' +
+        pct2(k.cvr * 100) + '</td><td class="num">' + money(k.cpc) + '</td></tr>');
+      out.push('</tbody></table></div>');
+      out.push('<div class="glossary-note">比率类指标的总计按「合计分子 ÷ 合计分母」重算，不是各日简单相加。</div>');
+      out.push('</div>');
+    }
+
+    /* 分营销场景下钻 */
+    if (R.scenes && R.scenes.length > 1) {
+      out.push('<div class="module-subhead">分营销场景下钻</div>');
+      out.push('<div class="table-wrap"><table class="data-table sortable-table"><thead><tr>' +
+        '<th>营销场景</th><th class="num">花费</th><th class="num">占比</th><th class="num">成交金额</th>' +
+        '<th class="num">展现量</th><th class="num">点击量</th><th class="num">ROI</th><th class="num">CTR</th></tr></thead><tbody>');
+      R.scenes.forEach(function (s) {
+        out.push('<tr><td>' + esc(s.name) + '</td>' +
+          '<td class="num">' + money(s.spend) + '</td>' +
+          '<td class="num">' + pct1(s.spend / k.spend * 100) + '</td>' +
+          '<td class="num">' + money(s.gmv) + '</td>' +
+          '<td class="num">' + int(s.imp) + '</td>' +
+          '<td class="num">' + int(s.click) + '</td>' +
+          '<td class="num ' + roiCls(s.roi, k.roi) + '">' + f2(s.roi) + '</td>' +
+          '<td class="num">' + pct2(s.ctr * 100) + '</td></tr>');
+      });
+      out.push('</tbody></table></div>');
+    }
+    out.push('</div></section>');
+
+    /* ── 03 投放计划 ── */
+    if (R.plan) {
+      var P = R.plan;
+      out.push('<section class="section report-anchor" id="modplan">');
+      out.push('<div class="section-title-row"><div class="section-no">03</div><div class="section-title">投放计划：钱压在哪些计划上</div></div>');
+      out.push('<div class="card">');
+      out.push('<p class="section-intro">按渠道分组展示 ' + P.total + ' 个投放计划的表现，店铺整体 ROI ' + f2(k.roi) +
+               '。渠道汇总会掩盖计划级差异，本模块用于定位同一渠道内部的效率落差与零成交漏损。</p>');
+      out.push('<div class="kpi-row">');
+      out.push('<div class="kpi-card"><div class="kpi-card-label"><span>计划总数</span></div><b>' + P.total + '</b>' +
+               '<div class="mini-note">' + P.groups.length + ' 个渠道</div></div>');
+      out.push('<div class="kpi-card"><div class="kpi-card-label"><span>有成交计划</span></div><b>' + P.withGmv + '</b>' +
+               '<div class="mini-note">零成交 ' + P.zero + ' 个</div></div>');
+      out.push('<div class="kpi-card"><div class="kpi-card-label"><span>零成交计划花费</span></div><b>' + money(P.zeroSpend) + '</b>' +
+               '<div class="mini-note">占总花费 ' + pct1(P.zeroSpend / k.spend * 100) + '</div></div>');
+      out.push('<div class="kpi-card"><div class="kpi-card-label"><span>计划 ROI 区间</span></div><b>' +
+               (P.withGmv ? (f2(P.roiMin) + ' ~ ' + f2(P.roiMax)) : '—') + '</b>' +
+               '<div class="mini-note">仅统计有成交计划</div></div>');
+      out.push('</div>');
+
+      /* 代表性计划 */
+      if (P.reps && P.reps.length) {
+        out.push('<div class="module-subhead">代表性计划投入产出对比 · ' + P.reps.length + '/' + P.total + ' 个</div>');
+        out.push('<div class="roi-compare">');
+        P.reps.forEach(function (r) {
+          var it = r.item;
+          out.push('<div class="roi-compare-row">');
+          out.push('<div class="roi-compare-head"><span class="rc-tag ' +
+                   (r.label === '高投入' || r.label === '规模化低 ROI' ? 'rc-tag-bad' : 'rc-tag-good') + '">' +
+                   esc(r.label) + '</span>' +
+                   '<span class="roi-compare-meta">' + esc(r.hint) + '</span></div>');
+          out.push('<div class="roi-compare-meta">' + esc(shortName(it.name, 40)) + '（' + esc(it.scene || '—') + '）</div>');
+          out.push('<div class="roi-compare-eff"><span>投产比 ROI</span><b>' + f2(it.roi) + '</b></div>');
+          out.push('<div class="roi-compare-meta">花费 ' + money(it.spend) + ' · 成交金额 ' + money(it.gmv) +
+                   ' · 曝光 ' + int(it.imp) + ' · 平均点击花费 ' + money(it.cpc) + '</div>');
+          out.push('</div>');
+        });
+        out.push('</div>');
+      }
+
+      /* 按渠道折叠 */
+      P.groups.forEach(function (g) {
+        out.push('<details class="plan-group" open>');
+        out.push('<summary class="plan-group-head"><span class="plan-group-name">' + esc(g.scene) + '</span>' +
+                 '<span class="plan-group-meta">' + g.items.length + ' 个计划 · 花费 ' + money(g.spend) +
+                 '（占 ' + pct1(g.share) + '） · ROI ' + f2(g.roi) + '</span></summary>');
+        out.push('<div class="table-wrap"><table class="plan-table sortable-table"><thead><tr>' +
+          '<th>计划名称</th><th>投放周期</th><th class="num">展现量</th><th class="num">点击量</th>' +
+          '<th class="num">花费</th><th class="num">点击率</th><th class="num">平均点击花费</th>' +
+          '<th class="num">成交金额</th><th class="num">成交笔数</th><th class="num">点击转化率</th>' +
+          '<th class="num">投产比 ROI</th></tr></thead><tbody>');
+        g.items.forEach(function (it) {
+          out.push('<tr' + (it.gmv <= 0 ? ' class="is-zero"' : '') + '>' +
+            '<td class="plan-name" title="' + esc(it.name) + '"><div>' + esc(shortName(it.name, 26)) + '</div>' +
+            '<div class="entity-id">ID: ' + esc(it.id) + '</div></td>' +
+            '<td class="plan-period"><div class="plan-period-range">' + esc(it.period) + '</div>' +
+            '<div class="plan-period-days">共 ' + it.dayCount + ' 天</div></td>' +
+            '<td class="num">' + int(it.imp) + '</td>' +
+            '<td class="num">' + int(it.click) + '</td>' +
+            '<td class="num">' + money(it.spend) + '</td>' +
+            '<td class="num">' + pct2(it.ctr * 100) + '</td>' +
+            '<td class="num">' + money(it.cpc) + '</td>' +
+            '<td class="num">' + money(it.gmv) + '</td>' +
+            '<td class="num">' + int(it.orders) + '</td>' +
+            '<td class="num">' + pct2(it.cvr * 100) + '</td>' +
+            '<td class="num ' + roiCls(it.roi, k.roi) + '">' + f2(it.roi) + '</td></tr>');
+        });
+        out.push('<tr class="is-total"><td>合计</td><td></td><td class="num">' + int(g.items.reduce(function (a, x) { return a + x.imp; }, 0)) +
+          '</td><td class="num">' + int(g.items.reduce(function (a, x) { return a + x.click; }, 0)) +
+          '</td><td class="num">' + money(g.spend) + '</td><td></td><td></td>' +
+          '<td class="num">' + money(g.gmv) + '</td><td class="num">' +
+          int(g.items.reduce(function (a, x) { return a + x.orders; }, 0)) + '</td><td></td>' +
+          '<td class="num">' + f2(g.roi) + '</td></tr>');
+        out.push('</tbody></table></div></details>');
+      });
+      out.push('</div></section>');
+    }
+
+    /* ── 04 预算错配 ── */
+    if (R.prod && R.prod.mismatch && R.prod.mismatch.length) {
+      out.push('<section class="section report-anchor" id="mod3">');
+      out.push('<div class="section-title-row"><div class="section-no">04</div><div class="section-title">预算错配：钱花在哪 vs 钱赚在哪</div></div>');
+      out.push('<div class="card">');
+      out.push('<p class="section-intro"><b>错配度 = 花费占比 − 成交金额占比</b>。' +
+               '<span class="neg">负得越多越好</span>：少花钱多出货，值得加投；' +
+               '<span class="pos">正得越多越差</span>：钱花出去没换回相应产出。</p>');
+      out.push('<div class="table-wrap"><table class="data-table sortable-table"><thead><tr>' +
+        '<th>商品</th><th class="num">花费</th><th class="num">花费占比</th><th class="num">成交金额</th>' +
+        '<th class="num">成交占比</th><th class="num">错配度</th><th class="num">ROI</th></tr></thead><tbody>');
+      R.prod.mismatch.slice(0, 20).forEach(function (m) {
+        out.push('<tr><td class="product-cell" title="' + esc(m.name) + '"><div class="product-cell-main">' +
+          esc(shortName(m.name, 30)) + '</div><div class="entity-id">ID: ' + esc(m.id) + '</div></td>' +
+          '<td class="num">' + money(m.spend) + '</td>' +
+          '<td class="num">' + pct1(m.spendPct) + '</td>' +
+          '<td class="num">' + money(m.gmv) + '</td>' +
+          '<td class="num">' + pct1(m.gmvPct) + '</td>' +
+          '<td class="num ' + (m.diff < 0 ? 'good-cell' : 'bad-cell') + '">' + pp(m.diff) + '</td>' +
+          '<td class="num ' + roiCls(m.roi, k.roi) + '">' + f2(m.roi) + '</td></tr>');
+      });
+      out.push('</tbody></table></div>');
+      out.push('<div class="glossary-note">按 |错配度| 从大到小排前 20 个商品。</div>');
+      out.push('</div></section>');
+    }
+
+    /* ── 05 商品维度：四象限 ── */
+    if (R.prod && R.prod.quad) {
+      var q = R.prod.quad;
+      out.push('<section class="section report-anchor" id="mod4">');
+      out.push('<div class="section-title-row"><div class="section-no">05</div><div class="section-title">商品维度：谁该加钱，谁该停</div></div>');
+      out.push('<div class="card">');
+      out.push('<p class="section-intro">按「有花费且有成交」的商品集合<b>中位数</b>划分四象限：' +
+               '花费中位数 ' + money(R.prod.medSpend) + '，ROI 中位数 ' + f2(R.prod.medRoi) + '。</p>');
+      out.push('<div class="kpi-row">');
+      [['高投入 / 高 ROI', q.hh, '加量'], ['高投入 / 低 ROI', q.hl, '压降'],
+       ['低投入 / 高 ROI', q.lh, '加钱测试'], ['低投入 / 低 ROI', q.ll, '观察']].forEach(function (x) {
+        out.push('<div class="kpi-card"><div class="kpi-card-label"><span>' + x[0] + '</span></div><b>' + x[1].length + '</b>' +
+                 '<div class="mini-note">' + x[2] + '</div></div>');
+      });
+      out.push('</div>');
+      [['高投入 / 低 ROI（优先压降）', q.hl, 'bad'], ['低投入 / 高 ROI（值得加钱）', q.lh, 'good'],
+       ['高投入 / 高 ROI（保持）', q.hh, 'neutral']].forEach(function (x) {
+        if (!x[1].length) return;
+        out.push('<div class="module-subhead">' + x[0] + ' · ' + x[1].length + ' 个</div>');
+        out.push('<div class="table-wrap"><table class="data-table"><thead><tr>' +
+          '<th>商品</th><th class="num">花费</th><th class="num">成交金额</th><th class="num">ROI</th>' +
+          '<th class="num">展现量</th><th class="num">点击量</th></tr></thead><tbody>');
+        x[1].slice(0, 10).forEach(function (p) {
+          out.push('<tr><td class="product-cell" title="' + esc(p.name) + '">' + esc(shortName(p.name, 30)) + '</td>' +
+            '<td class="num">' + money(p.spend) + '</td><td class="num">' + money(p.gmv) + '</td>' +
+            '<td class="num ' + roiCls(p.roi, k.roi) + '">' + f2(p.roi) + '</td>' +
+            '<td class="num">' + int(p.imp) + '</td><td class="num">' + int(p.click) + '</td></tr>');
+        });
+        out.push('</tbody></table></div>');
+      });
+      out.push('</div></section>');
+    }
+
+    /* ── 06 关键词 ── */
+    if (R.kw) {
+      var K = R.kw;
+      out.push('<section class="section report-anchor" id="modkw">');
+      out.push('<div class="section-title-row"><div class="section-no">06</div><div class="section-title">关键词维度：哪些词在花钱，哪些词在出货</div></div>');
+      out.push('<div class="card">');
+      out.push('<p class="section-intro">共 ' + K.total + ' 个词对象，其中 ' + K.withGmv + ' 个有成交。' +
+               '关键词报表只覆盖关键词推广场景，是与营销场景平行的观察投影，不与全店花费相加。</p>');
+      out.push('<div class="kpi-row">');
+      out.push('<div class="kpi-card"><div class="kpi-card-label"><span>关键词数</span></div><b>' + K.total + '</b>' +
+               '<div class="mini-note">含关键词与词包</div></div>');
+      out.push('<div class="kpi-card"><div class="kpi-card-label"><span>有成交词数</span></div><b>' + K.withGmv + '</b>' +
+               '<div class="mini-note">占 ' + pct1(K.total ? K.withGmv / K.total * 100 : 0) + '</div></div>');
+      out.push('<div class="kpi-card"><div class="kpi-card-label"><span>零成交词花费</span></div><b>' + money(K.zeroSpend) + '</b>' +
+               '<div class="mini-note">' + K.zeroCount + ' 个词有花费无成交</div></div>');
+      out.push('<div class="kpi-card"><div class="kpi-card-label"><span>零成交词点击</span></div><b>' + int(K.zeroClick) + '</b>' +
+               '<div class="mini-note">白花的点击</div></div>');
+      out.push('</div>');
+
+      if (K.types && K.types.length) {
+        out.push('<div class="module-subhead">词类型花费占比</div>');
+        out.push('<div class="kw-share">');
+        K.types.forEach(function (t) {
+          out.push('<div class="kw-share-row"><i>' + esc(t.type) + '</i>' +
+                   '<span class="kw-share-pct">' + pct1(t.pct) + '</span></div>');
+        });
+        out.push('</div>');
+      }
+
+      /* 明细表 */
+      out.push('<div class="module-subhead">词明细 · 按花费倒序</div>');
+      out.push('<div class="table-wrap"><table class="data-table sortable-table"><thead><tr>' +
+        '<th>词 / 词包</th><th>类型</th><th class="num">展现量</th><th class="num">点击量</th><th class="num">花费</th>' +
+        '<th class="num">点击率</th><th class="num">平均点击花费</th><th class="num">成交金额</th>' +
+        '<th class="num">成交笔数</th><th class="num">ROI</th></tr></thead><tbody>');
+      K.items.slice(0, 60).forEach(function (it) {
+        out.push('<tr' + (it.gmv <= 0 && it.spend > 0 ? ' class="is-zero"' : '') + '>' +
+          '<td class="plan-name" title="' + esc(it.name) + '">' + esc(shortName(it.name, 26)) + '</td>' +
+          '<td>' + esc(it.type || '—') + '</td>' +
+          '<td class="num">' + int(it.imp) + '</td><td class="num">' + int(it.click) + '</td>' +
+          '<td class="num">' + money(it.spend) + '</td><td class="num">' + pct2(it.ctr * 100) + '</td>' +
+          '<td class="num">' + money(it.cpc) + '</td><td class="num">' + money(it.gmv) + '</td>' +
+          '<td class="num">' + int(it.orders) + '</td>' +
+          '<td class="num ' + roiCls(it.roi, k.roi) + '">' + f2(it.roi) + '</td></tr>');
+      });
+      out.push('</tbody></table></div>');
+      if (K.items.length > 60) {
+        out.push('<div class="glossary-note">共 ' + K.items.length + ' 个词对象，此处按花费展示前 60 个。完整明细见「经营分析 → 店铺推广」。</div>');
+      }
+      out.push('</div></section>');
+    }
+
+    /* ── 07 人群 ── */
+    if (R.crowd && R.crowd.items.length) {
+      var W = R.crowd;
+      out.push('<section class="section report-anchor" id="modcrowd">');
+      out.push('<div class="section-title-row"><div class="section-no">07</div><div class="section-title">人群维度：钱花在拉新还是复购</div></div>');
+      out.push('<div class="card">');
+      out.push('<p class="section-intro">人群定向覆盖 ' + money(W.spend) + ' 花费（占全店花费 ' + pct1(W.share) +
+               '），其余为无人群定向的流量；人群层 ROI ' + f2(W.roi) +
+               '。人群报表是与营销场景平行的观察投影，不与全店花费相加。</p>');
+      out.push('<div class="kpi-row">');
+      out.push('<div class="kpi-card"><div class="kpi-card-label"><span>人群包数</span></div><b>' + W.total + '</b>' +
+               '<div class="mini-note">有展现或花费的人群</div></div>');
+      out.push('<div class="kpi-card"><div class="kpi-card-label"><span>人群覆盖花费</span></div><b>' + money(W.spend) + '</b>' +
+               '<div class="mini-note">占全店花费 ' + pct1(W.share) + '</div></div>');
+      out.push('<div class="kpi-card"><div class="kpi-card-label"><span>新客成交占比</span></div><b>' + pct1(W.newRatio * 100) + '</b>' +
+               '<div class="mini-note">人群层成交新客占比</div></div>');
+      out.push('<div class="kpi-card"><div class="kpi-card-label"><span>人群 ROI 区间</span></div><b>' +
+               (W.roiMax ? (f2(W.roiMin) + ' ~ ' + f2(W.roiMax)) : '—') + '</b>' +
+               '<div class="mini-note">仅统计有成交人群</div></div>');
+      out.push('</div>');
+      out.push('<div class="table-wrap"><table class="data-table sortable-table"><thead><tr>' +
+        '<th>人群</th><th class="num">花费</th><th class="num">占比</th><th class="num">展现量</th>' +
+        '<th class="num">点击量</th><th class="num">成交金额</th><th class="num">成交笔数</th>' +
+        '<th class="num">ROI</th><th class="num">加购数</th></tr></thead><tbody>');
+      W.items.forEach(function (it) {
+        out.push('<tr><td title="' + esc(it.name) + '">' + esc(shortName(it.name, 24)) + '</td>' +
+          '<td class="num">' + money(it.spend) + '</td><td class="num">' + pct1(it.share) + '</td>' +
+          '<td class="num">' + int(it.imp) + '</td><td class="num">' + int(it.click) + '</td>' +
+          '<td class="num">' + money(it.gmv) + '</td><td class="num">' + int(it.orders) + '</td>' +
+          '<td class="num ' + roiCls(it.roi, k.roi) + '">' + f2(it.roi) + '</td>' +
+          '<td class="num">' + int(it.carts) + '</td></tr>');
+      });
+      out.push('</tbody></table></div>');
+      out.push('</div></section>');
+    }
+
+    /* ── 08 行动清单 ── */
+    if (R.actions && R.actions.length) {
+      out.push('<section class="section report-anchor" id="modact">');
+      out.push('<div class="section-title-row"><div class="section-no">08</div><div class="section-title">行动清单</div></div>');
+      out.push('<div class="card">');
+      out.push('<ol class="act-list">');
+      R.actions.forEach(function (a, i) {
+        var cls = a.level === 'high' ? 'act-p0' : (a.level === 'mid' ? 'act-p1' : 'act-p2');
+        var lbl = a.level === 'high' ? 'P0' : (a.level === 'mid' ? 'P1' : 'P2');
+        out.push('<li class="act-item"><div class="act-flag ' + cls + '">' + lbl + '</div>' +
+          '<div class="act-body"><div class="act-title">' + esc(a.title) + '</div>' +
+          '<div class="act-desc">' + esc(a.detail) + '</div></div></li>');
+      });
+      out.push('</ol>');
+      out.push('</div></section>');
+    }
+
+    return out.join('\n');
+  }
+
+  var api = { renderReport: renderReport };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+  root.WBReportRender = api;
+})(typeof window !== 'undefined' ? window : globalThis);
+</script>
+<script>
+(function(){
+  'use strict';
+  var APP = 'promo';
+  var root = document.getElementById('reportRoot');
+  var srcBox = document.getElementById('rpSrc');
+  var picker = document.getElementById('srcPicker');
+  var spTables = document.getElementById('spTables');
+  var periodEl = document.getElementById('rpPeriod');
+  var printBtn = document.getElementById('rpPrint');
+  var rpToc = document.getElementById('rpToc');
+  var rpTocTrack = document.getElementById('rpTocTrack');
+  printBtn.addEventListener('click', function(){ window.print(); });
+
+  /* 维度中文名（跟引擎的 classifySheet 返回值对应） */
+  var KIND_NAME = { plan:'投放计划', kw:'关键词', crowd:'人群', prod:'商品', scene:'营销场景' };
+
+  function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function fmtTime(iso){
+    var d = new Date(iso);
+    if(isNaN(d.getTime())) return '';
+    function p(n){ return String(n).padStart(2,'0'); }
+    return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+' '+p(d.getHours())+':'+p(d.getMinutes());
+  }
+  function rowsOf(sh){ return (sh && sh.rows && sh.rows.length) || 0; }
+
+  /* ★★★ 把**所有**数据源的表合并起来一起分析（2026-09-20 改）
+     用户的真实用法：把同一批数据的多个维度**导成多个文件**
+     （计划报表.csv / 关键词报表.csv / 商品报表.csv / 人群报表.csv / 营销场景报表.csv），
+     这些要一起进引擎才能出一份完整报告 —— 之前做成「下拉单选」是理解错了需求。
+     去重规则：同一个维度只取**最新上传**的那份（sources 已按上传时间倒序，
+     防止重复导出累积成重复数据）。 */
+  function collectSheets(sources){
+    var seen = {}, used = [];
+    sources.forEach(function(s){
+      (s.sheets || []).forEach(function(sh){
+        var kind = null;
+        try{ kind = WBReportEngine.classifySheet(sh); }catch(e){}
+        var key = kind || ('sheet:' + sh.name);
+        if(seen[key]) return;
+        seen[key] = 1;
+        used.push({ kind: kind, key: key, sheet: sh, from: s.name, at: s.uploadedAt });
+      });
+    });
+    return used;
+  }
+
+  function empty(msg, hintHtml){
+    root.innerHTML =
+      '<section class="hero report-anchor"><div class="hero-left">' +
+      '<div class="product-title">付费推广分析</div>' +
+      '<div class="meta">这一页会根据你上传的推广数据自动生成分析报告</div>' +
+      '</div></section>' +
+      '<section class="section"><div class="card" style="padding:44px 24px;text-align:center;">' +
+      '<div style="font-size:15px;font-weight:600;margin-bottom:10px;">' + esc(msg) + '</div>' +
+      '<div style="color:var(--muted);font-size:13.5px;line-height:1.9;">' + hintHtml + '</div>' +
+      '</div></section>';
+  }
+  var LINK_PROMO = '<a href="店铺推广.html" style="color:var(--primary);text-decoration:underline;">经营分析 → 店铺推广</a>';
+  var HINT_NO_DATA = '请先到 ' + LINK_PROMO +
+    ' 上传淘宝「店铺推广数据汇总」导出的表格（Excel 或 CSV，<b>多个文件可以一起传</b>），<br>回来这里就能看到完整分析报告。';
+  var HINT_BAD_DATA = '这些文件里没有找到推广口径的数据表（需要「投放计划 / 关键词 / 商品 / 人群 / 营销场景」这类表）。<br>' +
+    '请确认上传的是淘宝「店铺推广数据汇总」导出的文件。也可以到 ' + LINK_PROMO + ' 核对一下。';
+
+  /* 口径提示：点「?」展开 —— DOM 是动态生成的，所以用事件委托 */
+  document.addEventListener('click', function(ev){
+    var btn = ev.target.closest ? ev.target.closest('.metric-help') : null;
+    var opened = document.querySelectorAll('.metric-help[aria-expanded="true"]');
+    if(btn){
+      var wasOn = btn.getAttribute('aria-expanded') === 'true';
+      opened.forEach(function(b){ b.setAttribute('aria-expanded','false'); });
+      if(!wasOn) btn.setAttribute('aria-expanded','true');
+      ev.stopPropagation();
+      return;
+    }
+    opened.forEach(function(b){ b.setAttribute('aria-expanded','false'); });
+  });
+
+  function renderSourceBar(used){
+    if(!used.length){ picker.hidden = true; return; }
+    picker.hidden = false;
+    var total = used.reduce(function(a, x){ return a + rowsOf(x.sheet); }, 0);
+    var parts = used.map(function(x){
+      var label = x.kind ? KIND_NAME[x.kind] : x.sheet.name;
+      return '<span class="sp-tag">' + esc(label) + '<i>' + rowsOf(x.sheet).toLocaleString('en-US') + '</i></span>';
+    });
+    spTables.innerHTML = parts.join('') +
+      '<span class="sp-sum">合并分析 ' + used.length + ' 张表 · 共 ' +
+      total.toLocaleString('en-US') + ' 行</span>';
+  }
+
+  function render(){
+    var used = collectSheets(sources);
+    if(!used.length){
+      empty('还没有推广数据', HINT_NO_DATA);
+      picker.hidden = true;
+      if(periodEl) periodEl.textContent = '暂无数据';
+      return;
+    }
+
+    var sheets = used.map(function(x){ return x.sheet; });
+    var R = null;
+    try{ R = WBReportEngine.analyzeReport(sheets); }
+    catch(e){ console.error('分析失败', e); empty('分析时出错：' + (e && e.message), HINT_BAD_DATA); return; }
+    if(!R){ empty('这些数据算不出报告', HINT_BAD_DATA); return; }
+
+    var first = used[0];
+    root.innerHTML = WBReportRender.renderReport(R, { fileName: used.map(function(x){ return x.from; }).join('、') });
+    renderSourceBar(used);
+    if(periodEl){
+      periodEl.textContent = R.period.from + ' ~ ' + R.period.to + '（' + R.period.days + ' 天）';
+    }
+
+    srcBox.hidden = false;
+    srcBox.innerHTML =
+      '<b>数据来源</b>：' + used.length + ' 个文件合并分析（' +
+      used.map(function(x){ return esc(x.from); }).join('、') + '）' +
+      '<br>覆盖维度：' + esc(R.coverage.join(' / ')) +
+      ' · 分析周期 ' + esc(R.period.from) + ' ~ ' + esc(R.period.to) + '（' + R.period.days + ' 天）' +
+      ' · 最近上传 ' + esc(fmtTime(first.at)) +
+      '<br>报告由本机根据原始表格实时计算生成，不调用任何模型；' +
+      '原始表格可在 ' + '<a href="店铺推广.html">经营分析 → 店铺推广</a> 里查看与更新。';
+  }
+
+  var sources = [];
+  function load(){
+    fetch('/api/backup?app=' + APP, { cache: 'no-store' })
+      .then(function(r){ return r.status === 204 ? null : r.json(); })
+      .then(function(j){
+        sources = (j && j.sources) || [];
+        if(!sources.length){ empty('还没有推广数据', HINT_NO_DATA); picker.hidden = true; return; }
+        render();
+      })
+      .catch(function(e){
+        console.error(e);
+        empty('读取数据失败：' + (e && e.message), HINT_NO_DATA);
+      });
+  }
+
+  /* ═══════════ 报告目录（吸顶导航）═══════════
+     2026-09-22：报告约 10 屏且无任何内部跳转 → 加目录。
+     设计要点：
+     1) 目录项**从 DOM 反推**（扫描 .section-title-row），不是写死的数组 →
+        模块随数据缺失而消失时目录自动同步，杜绝死链。
+     2) 当前章节高亮：统一用「最后一个标题越过吸顶线下沿」的算法
+        （scroll 事件实现；不用 IntersectionObserver —— 多节同时可见时
+         它的回调顺序不稳定，反而会闪）。
+     3) 点击目录项平滑滚动；目标 section 已有 .report-anchor，配合 CSS scroll-margin-top
+        避开吸顶条遮挡。吸顶条高度由 JS 写进 --toc-h / --topbar-h，不写死像素。 */
+
+  /* 收集「章节」：每个 .section-title-row 属于哪个 section */
+  function collectToc(){
+    var items = [];
+    var rows = root.querySelectorAll('.section-title-row');
+    Array.prototype.forEach.call(rows, function(row){
+      var sec = row.closest('section');
+      if(!sec) return;
+      var no = row.querySelector('.section-no');
+      var title = row.querySelector('.section-title');
+      if(!sec.id) sec.id = 'autosec-' + items.length;
+      items.push({
+        id: sec.id,
+        no: no ? no.textContent.trim() : '',
+        title: title ? title.textContent.trim() : sec.id,
+        el: sec
+      });
+    });
+    return items;
+  }
+
+  var tocItems = [], tocActive = -1;
+
+  function buildToc(){
+    tocItems = collectToc();
+    if(tocItems.length < 2){ rpToc.hidden = true; return; }  /* 只有 1 节就没必要做目录 */
+
+    rpToc.hidden = false;
+    rpTocTrack.innerHTML = tocItems.map(function(it){
+      /* 目录标签取标题冒号前的主干（如「店铺总览：ROI」→「店铺总览」），太长会撑爆吸顶条 */
+      var short = it.title.split(/[：:（(]/)[0].slice(0, 10);
+      return '<button class="rp-toc-item" type="button" data-toc="' + it.id + '"' +
+        ' title="' + esc(it.title) + '">' +
+        (it.no ? '<em>' + esc(it.no) + '</em>' : '') +
+        '<span>' + esc(short) + '</span></button>';
+    }).join('');
+  }
+
+  function setTocActive(idx){
+    if(idx === tocActive || idx < 0) return;
+    tocActive = idx;
+    var nodes = rpTocTrack.querySelectorAll('.rp-toc-item');
+    Array.prototype.forEach.call(nodes, function(n, i){
+      n.classList.toggle('is-active', i === idx);
+    });
+    /* 让当前项始终露在吸顶条视野内（目录项多时横向滚动） */
+    var cur = nodes[idx];
+    if(cur && cur.scrollIntoView){
+      try{ cur.scrollIntoView({ block:'nearest', inline:'nearest' }); }catch(e){}
+    }
+  }
+
+  /* 吸顶条实际高度 → 写进 CSS 变量，给 scroll-margin-top 用，避免写死像素 */
+  function syncTocHeight(){
+    var bar = document.querySelector('.rp-topbar');
+    var tb = bar ? Math.round(bar.getBoundingClientRect().height) : 56;
+    document.documentElement.style.setProperty('--topbar-h', tb + 'px');
+    var h = rpToc.hidden ? 0 : Math.round(rpToc.getBoundingClientRect().height);
+    document.documentElement.style.setProperty('--toc-h', h + 'px');
+  }
+
+  function tocScrollHandler(){
+    /* ★ 判定「当前章节」的规则（2026-09-22 修）：
+       取「最后一个 顶部已越过判定线 的章节」，判定线 = 两条吸顶条下沿 + 一点余量。
+       早先版本用 `top - barH <= 0` 且余量只给 4px → 点击跳转后目标章节的 top
+       刚好落在 121px（略低于 111px 的条高），**差几像素就判给了上一节**；
+       滚到底时最后一节也可能因高度不足而永远点不亮。所以：
+       ① 余量放宽到 24px（给平滑滚动的落点误差留空间）；
+       ② **到底强制选中最后一节** —— 页面已滚到底就没有「下一节」可切了。 */
+    var margin = (rpToc.getBoundingClientRect().height +
+                  (document.querySelector('.rp-topbar') ? document.querySelector('.rp-topbar').getBoundingClientRect().height : 56) + 24);
+    var atBottom = window.pageYOffset + window.innerHeight >= document.body.scrollHeight - 4;
+    if(atBottom){ setTocActive(tocItems.length - 1); return; }
+    var best = 0;
+    for(var i = 0; i < tocItems.length; i++){
+      if(tocItems[i].el.getBoundingClientRect().top <= margin) best = i;
+    }
+    setTocActive(best);
+  }
+
+  function setupToc(){
+    buildToc();
+    syncTocHeight();
+    if(rpToc.hidden) return;
+
+    /* 点击跳转 */
+    rpTocTrack.addEventListener('click', function(ev){
+      var btn = ev.target.closest ? ev.target.closest('.rp-toc-item') : null;
+      if(!btn) return;
+      var id = btn.getAttribute('data-toc');
+      var target = document.getElementById(id);
+      if(!target) return;
+      var off = rpToc.getBoundingClientRect().height +
+                (document.querySelector('.rp-topbar') ? document.querySelector('.rp-topbar').getBoundingClientRect().height : 56) + 10;
+      var top = target.getBoundingClientRect().top + window.pageYOffset - off;
+      window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+      /* 立即高亮，不等滚动事件（否则平滑滚动期间高亮会来回跳） */
+      var idx = -1;
+      tocItems.forEach(function(it, i){ if(it.id === id) idx = i; });
+      setTocActive(idx);
+    });
+
+    window.addEventListener('scroll', tocScrollHandler, { passive: true });
+    window.addEventListener('resize', function(){ syncTocHeight(); tocScrollHandler(); });
+    tocScrollHandler();
+  }
+
+  /* render() 里生成完 innerHTML 后调用 */
+  var _renderInner = render;
+  render = function(){
+    _renderInner();
+    try{ setupToc(); }catch(e){ console.warn('目录生成失败（不影响正文）', e); rpToc.hidden = true; }
+  };
+
+  load();
+})();
+</script>
+<script src="mobile-adapter.js"></script>
+</body>
+</html>

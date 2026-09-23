@@ -127,6 +127,13 @@
   /* 表头标记：这几列可以手动填写 */
   thead th.th-manual::after{content:'✎'; font-size:10px; margin-left:4px; opacity:.55; font-weight:400;}
   tbody tr:hover{background:var(--panel);}
+  /* 同商品折叠（2026-09-20）：同一商品ID多 SKU 折叠成一行 */
+  tr.g-head td{background:var(--panel);}
+  tr.g-sib td{background:var(--panel2);}
+  .fold-ctl{margin-left:8px; padding:1px 9px; font-size:11.5px; line-height:18px; border-radius:999px;
+    border:1px solid var(--line2); background:var(--panel2); color:var(--accent); cursor:pointer;
+    font-family:inherit; vertical-align:middle; white-space:nowrap; transition:background .15s, border-color .15s;}
+  .fold-ctl:hover{background:var(--accent-soft); border-color:rgba(249,115,10,.4);}
   .empty{text-align:center; color:var(--muted); padding:48px 0; font-size:14px;}
   /* 图片列（2 列）：缩略图 + 点击看大图。
      第 1 列「商品主图」= 商品级（r.productImg）；第 8 列「SKU搜索主图」= SKU 级（r.imgUrl）。
@@ -225,6 +232,7 @@
     <span class="filter-hint" id="filterHint" style="display:none"></span>
     <button class="btn" id="btnDelStore" title="删除当前选中的店铺及其全部数据">删除店铺</button>
     <button class="btn" id="btnClearFilter">清空筛选</button>
+    <button class="btn" id="btnFold" title="同一商品ID的多个 SKU 折叠成一行，点此处展开全部">折叠同商品</button>
     <span class="spacer" style="flex:1"></span>
     <button class="btn" id="btnCsv">导出 CSV</button>
     <button class="btn" id="btnJson">导出 JSON</button>
@@ -300,6 +308,9 @@
   var manualByKey = {};
   var page = 1;
   var pageSize = 100;
+  /* 同商品折叠（2026-09-20）：true=按 store||itemId 折叠成一行；foldOpen 记录被单独展开的组 */
+  var foldSame = true;
+  var foldOpen = {};
 
   // 可手动填写的 9 列（顺序与表头一致）
   // ⚠️ 2026-09-15 调整：原「售价」列改名「价格」（它是插件抓来的原始数据，不可改），
@@ -711,7 +722,23 @@
       td.textContent = allRecords.length ? '没有符合筛选条件的记录' : '暂无数据，请先用浏览器扩展导出 SKU 并「发送到运营工作台」';
       tr.appendChild(td); tbody.appendChild(tr);
     } else {
-      slice.forEach(function (r) {
+      /* 同商品折叠：foldSame 时按 store||itemId 分组；组内第一行作组头，其余 SKU 行隐藏（除非已单独展开） */
+      var grouped = [];
+      if (foldSame) {
+        var gm = {}, gi = [];
+        slice.forEach(function (r) {
+          var k = keyOf(r);
+          if (!gm[k]) { gm[k] = []; gi.push(gm[k]); }
+          gm[k].push(r);
+        });
+        grouped = gi;
+      } else {
+        grouped = slice.map(function (r) { return [r]; });
+      }
+      grouped.forEach(function (grp) {
+        var gk = keyOf(grp[0]);
+        var headRow = null;
+        grp.forEach(function (r, ri) {
         var tr = document.createElement('tr');
         // 1. 商品主图（商品级 —— 插件 SKU 导出第 1 列）
         tr.appendChild(imgCell(r.productImg, '商品主图'));
@@ -806,8 +833,24 @@
           tr.appendChild(td);
         });
         // 合计：1(商品主图) + 1(商品标题) + 5(ID/编码/描述/SKUID/状态标签) + 1(SKU搜索主图)
-        //       + 4(搜索标题/价格/库存/属性) + 9(可填) = 21 个 td ✔
-        tbody.appendChild(tr);
+          //       + 4(搜索标题/价格/库存/属性) + 9(可填) = 21 个 td ✔
+          if (foldSame) {
+            tr.setAttribute('data-gkey', gk);
+            if (ri === 0) { headRow = tr; tr.classList.add('g-head'); }
+            else { tr.classList.add('g-sib'); tr.hidden = !foldOpen[gk]; }
+          }
+          tbody.appendChild(tr);
+        });
+        /* 折叠态：给组头的「商品ID」格追加一个展开/收起按钮 */
+        if (foldSame && grp.length > 1 && headRow) {
+          var idCell = headRow.children[2];
+          var ctl = document.createElement('button');
+          ctl.type = 'button'; ctl.className = 'fold-ctl';
+          ctl.setAttribute('data-gkey', gk);
+          ctl.textContent = (foldOpen[gk] ? '▾ ' : '▸ ') + grp.length + '个SKU';
+          ctl.title = '点击展开 / 收起该商品下的全部 SKU';
+          idCell.appendChild(ctl);
+        }
       });
     }
 
@@ -1022,6 +1065,23 @@
 
     $('btnCsv').addEventListener('click', exportCsv);
     $('btnJson').addEventListener('click', exportJson);
+
+    /* 同商品折叠/展开（2026-09-20） */
+    function updateFoldBtn(b){ if(!b) return; b.textContent = foldSame ? '展开全部' : '折叠同商品'; b.title = foldSame ? '当前已按商品ID折叠，点击展开全部 SKU' : '点击按商品ID折叠（同一商品的多个 SKU 折叠成一行）'; }
+    var bf = $('btnFold');
+    if (bf) bf.addEventListener('click', function () {
+      foldSame = !foldSame;
+      if (!foldSame) foldOpen = {};
+      page = 1; render(); updateFoldBtn(bf);
+    });
+    updateFoldBtn(bf);
+    var tby = $('tbody');
+    if (tby) tby.addEventListener('click', function (e) {
+      var c = e.target && (e.target.closest ? e.target.closest('.fold-ctl') : null);
+      if (!c) return;
+      var k = c.getAttribute('data-gkey');
+      if (k) { foldOpen[k] = !foldOpen[k]; render(); }
+    });
   }
 
   bind();

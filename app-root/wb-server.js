@@ -26,6 +26,8 @@ var net = require('net');
 var PassThrough = require('stream').PassThrough;
 var zlib = require('zlib');
 var crypto = require('crypto');
+var os = require('os');
+var execFile = require('child_process').execFile;
 
 var PORT = parseInt(process.env.WB_PORT, 10) || 8787;
 var ROOT = __dirname;
@@ -55,8 +57,25 @@ function _readConfigFile() {
   } catch (e) {}
   return null;
 }
-/* 数据目录优先级：环境变量 WB_DATA_DIR > wb-config.json(dataDir) > wb-datadir.txt(单行) > 默认 <ROOT>/data
- * 每次备份请求都实时解析，因此通过界面改了存储位置后无需重启服务即可生效。 */
+/* 数据目录优先级：环境变量 WB_DATA_DIR > wb-config.json(dataDir) > wb-datadir.txt(单行)
+ *                   > ★ 客户端数据目录（若存在）> 默认 <ROOT>/data
+ * 每次备份请求都实时解析，因此通过界面改了存储位置后无需重启服务即可生效。
+ *
+ * ★★ 2026-09-23 事故与修复：以前没有「客户端数据目录」这一层，兜底是 <ROOT>/data，
+ *   而 ROOT = __dirname（服务端脚本所在目录）。于是**从哪个目录启动就写哪份数据**：
+ *     · 双击项目根 `启动工作台.bat`   → Desktop\运营工作台\data\
+ *     · 双击安装目录的 .bat           → ...\运营工作台\app\data\
+ *     · 客户端（带 WB_DATA_DIR）      → %LOCALAPPDATA%\com.workbench.client\data\
+ *   三个目录并存 → 用户看到「数据时有时无 / 手填的丢了」。
+ *   现在兜底前先探客户端数据目录：存在就用它，让所有启动方式收敛到同一份。 */
+function _clientDataDir() {
+  try {
+    var la = process.env.LOCALAPPDATA;
+    if (!la) return null;
+    var d = path.join(la, 'com.workbench.client', 'data');
+    return fs.existsSync(d) ? d : null;
+  } catch (e) { return null; }
+}
 function _resolveDataDir() {
   if (process.env.WB_DATA_DIR) return process.env.WB_DATA_DIR;
   var cfg = _readConfigFile();
@@ -68,6 +87,8 @@ function _resolveDataDir() {
       if (line) return line;
     }
   } catch (e) {}
+  var cd = _clientDataDir();
+  if (cd) return cd;
   return path.join(ROOT, 'data');
 }
 var DATA_DIR = _resolveDataDir();
@@ -105,7 +126,10 @@ _dataDirSelfCheck();
 
 /* 自动导入文件夹：把导出的 Excel 放到对应子文件夹，店铺分析页轮询后自动导入 */
 var AUTO_IMPORT_DIR = path.join(ROOT, '自动导入');
-var AUTO_IMPORT_SUBS = ['店铺-整体数据', '店铺-订单数据', '店铺-搜索词数据', '店铺-全店商品数据', '单品-商品数据', '单品-搜索词数据'];
+/* 2026-09-20 新增「推广-报表数据」：淘宝推广后台导出的 5 类报表
+   （计划 / 关键词 / 营销场景 / 商品 / 人群）丢进这个文件夹即可自动导入到「店铺推广」页。
+   这 5 类是同一批数据的不同维度，页面会**合并**成一份分析报告（不是互相覆盖）。 */
+var AUTO_IMPORT_SUBS = ['店铺-整体数据', '店铺-订单数据', '店铺-搜索词数据', '店铺-全店商品数据', '单品-商品数据', '单品-搜索词数据', '推广-报表数据'];
 var AUTO_IMPORT_DONE_DIR = path.join(AUTO_IMPORT_DIR, '已导入');
 function _ensureAutoImportDirs() {
   try { fs.mkdirSync(AUTO_IMPORT_DONE_DIR, { recursive: true }); } catch (e) {}
@@ -113,6 +137,10 @@ function _ensureAutoImportDirs() {
     try { fs.mkdirSync(path.join(AUTO_IMPORT_DIR, s), { recursive: true }); } catch (e) {}
   });
 }
+/* ★ 启动时就建好子文件夹 —— 不能只靠接口调用时才建：
+   用户第一次用「自动导入」时，得能直接看到「推广-报表数据」这个文件夹在哪、往哪放文件。
+   （2026-09-20 发现：原来只有调了 /api/auto-import/list 才建，目录会“凭空出现”。） */
+_ensureAutoImportDirs();
 
 /* 仅允许白名单内的 app 名，杜绝路径穿越。
    键名为磁盘文件名 <app>.json.gz；值为对应的「旧 localStorage 键」（仅用于文档/语义，落盘本身不再依赖 localStorage）。 */
@@ -131,7 +159,8 @@ var BACKUP_APPS = {
   product: 'qianniu_product_export', // 千牛商品导出（由浏览器扩展 POST 导入）
   review: 'qianniu_review_export',  // 千牛评价导出（由浏览器扩展 POST 导入）
   ask: 'qianniu_ask_export',        // 千牛「问大家」导出（由浏览器扩展 POST 导入）
-  itemcollect: 'qianniu_item_collect' // 商品详情页信息采集（竞品分析，由浏览器扩展 v1.2.33+ POST 导入）
+  itemcollect: 'qianniu_item_collect', // 商品详情页信息采集（竞品分析，由浏览器扩展 v1.2.33+ POST 导入）
+  promo: 'wb_promo'   // 店铺推广数据（淘宝「店铺推广数据汇总」xlsx，页面内解析后落盘；2026-09-20 新增）
 };
 function _backupFile(app) {
   if (!BACKUP_APPS[app]) return null;
@@ -163,11 +192,19 @@ function ts() {
 /* 仅当来源是 localhost 时才回显，杜绝跨站读取 */
 function setRestrictedCORS(res, req) {
   var o = req && req.headers && req.headers.origin;
-  if (o && /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(o)) {
+  if (!o) return;
+  /* http(s) localhost：精确回显（安全策略不变） */
+  if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(o)) {
     res.setHeader('Access-Control-Allow-Origin', o);
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
   }
+  /* ★ 2026-09-21：桌面客户端（Tauri / Electron）用 file:// / tauri:// / app:// 加载页面 → 跨域被挡。
+     非 http origin 在浏览器里设 '*' 不通过，但设 'null' 合法（CORS 规范允许特殊 origin）。
+     → 客户端集成：浏览器直接访问 http://localhost 仍走第一条规则；客户端内嵌页面走第二条。 */
+  else if (/^(file|tauri|app):\/\//i.test(o) || o === 'null') {
+    res.setHeader('Access-Control-Allow-Origin', 'null');
+  }
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
 }
 
 /* 判断 IP 是否为私有 / 保留网段 */
@@ -432,6 +469,66 @@ function serveNews(req, res) {
   });
 }
 
+/* ---------- ★★ 变更广播（SSE）：让独立悬浮球窗口做到「实时」同步 ----------
+ * 2026-09-23：待办悬浮球是**独立窗口**（悬浮球.html），主窗口的 postMessage 到不了它，
+ * 原先只能 60 秒轮询一次 → 用户改完待办要等十几秒到一分钟。
+ * 压到 1 秒轮询后够快了，但本质仍是「定时去问」。
+ * 这里加一条真正的推送通道：任何数据被 POST 写入后，立刻通知所有订阅者。
+ *
+ * 用 SSE（Server-Sent Events）而不是 WebSocket：
+ *   · 服务端零依赖（就是一条长连的 HTTP 响应），不用引入 ws 库
+ *   · 浏览器端一行 `new EventSource(url)` 即可，断线自动重连（内置）
+ *   · 单向推送正好符合需求（服务端 → 页面）
+ */
+var _sseClients = [];   /* [{ res, app }] —— app 为 null 表示订阅全部 */
+
+function _sseHandler(req, res) {
+  var q = url.parse(req.url, true).query;
+  var wantApp = (q && typeof q.app === 'string' && q.app) ? q.app : null;
+
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream; charset=utf-8',
+    'Cache-Control': 'no-store',
+    'Connection': 'keep-alive',
+    'X-Accel-Buffering': 'no'
+  });
+  /* 首包：告诉客户端已连上（EventSource 收到任意数据才触发 onopen 语义） */
+  res.write(': connected\n\n');
+
+  var client = { res: res, app: wantApp };
+  _sseClients.push(client);
+
+  /* 心跳：每 25 秒一个注释包，防止代理/系统把长连接掐掉 */
+  var hb = setInterval(function () {
+    try { res.write(': ping\n\n'); } catch (e) {}
+  }, 25000);
+
+  function cleanup() {
+    clearInterval(hb);
+    var i = _sseClients.indexOf(client);
+    if (i >= 0) _sseClients.splice(i, 1);
+  }
+  req.on('close', cleanup);
+  req.on('error', cleanup);
+}
+
+/* 广播「某个 app 的数据变了」。app 为 null 时发给所有订阅者 */
+function _sseBroadcast(app, extra) {
+  var payload = JSON.stringify(Object.assign({ app: app, at: Date.now() }, extra || {}));
+  var dead = [];
+  _sseClients.forEach(function (c) {
+    if (c.app && app && c.app !== app) return;      /* 订阅了特定 app 的，只收自己那份 */
+    try {
+      c.res.write('event: change\ndata: ' + payload + '\n\n');
+    } catch (e) { dead.push(c); }
+  });
+  /* 写失败的连接顺手清掉 */
+  dead.forEach(function (c) {
+    var i = _sseClients.indexOf(c);
+    if (i >= 0) _sseClients.splice(i, 1);
+  });
+}
+
 function serveBackup(req, res) {
   setRestrictedCORS(res, req);
   var q = url.parse(req.url, true).query;
@@ -440,8 +537,7 @@ function serveBackup(req, res) {
     res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
     res.end(JSON.stringify({ error: 'bad app' }));
     return;
-  }
-  if (req.method === 'GET') {
+  }  if (req.method === 'GET') {
     fs.stat(file, function (err, st) {
       if (err || !st.isFile()) {
         // 用 204 而非 404，避免浏览器在「首次启动、尚无备份」时打印 404 报错
@@ -477,6 +573,8 @@ function serveBackup(req, res) {
         } catch (be) { console.warn('[backup] 上一版留档失败(不影响保存):', be && be.message); }
         fs.writeFile(file, gz, function (werr) {
           if (werr) { res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' }); res.end(JSON.stringify({ error: 'write failed' })); return; }
+          /* ★ 落盘成功 → 立刻广播，让订阅者（独立悬浮球窗口）零延迟同步 */
+          try { _sseBroadcast(q.app, { mtime: Date.now() }); } catch (e) {}
           res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
           res.end(JSON.stringify({ ok: true, bytes: raw.length }));
         });
@@ -484,7 +582,10 @@ function serveBackup(req, res) {
     });
     req.on('error', function () { res.writeHead(400); res.end(''); });
   } else if (req.method === 'DELETE') {
-    fs.unlink(file, function () { res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' }); res.end(JSON.stringify({ ok: true })); });
+    fs.unlink(file, function () {
+      try { _sseBroadcast(q.app, { mtime: Date.now() }); } catch (e) {}
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' }); res.end(JSON.stringify({ ok: true }));
+    });
   } else {
     res.writeHead(405, { 'Content-Type': 'application/json; charset=utf-8' });
     res.end(JSON.stringify({ error: 'method not allowed' }));
@@ -574,6 +675,68 @@ function serveConfig(req, res) {
 /* 千牛聊天记录导入：接收浏览器扩展 POST 的记录，与已有记录合并去重后落盘。
    数据文件 <DATA_DIR>/qchat.json.gz，格式 { records:[...], meta:{...}, updatedAt }。
    每条记录带 store 字段（多店铺区分），未指定时归入「默认店铺」。 */
+/* ============ 离线 OCR（POST /api/ocr）============
+   为什么做（2026-09-18 用户诉求）：希望「没配视觉大模型也能识别截图」。
+   Windows 10/11 自带 Windows.Media.Ocr，纯离线、不要 Key、实测 250ms 左右（1440x900 截图）。
+   为什么放服务端而不是浏览器：① 浏览器拿不到 WinRT OCR；② 网页版和客户端都连这个服务，
+   一处实现两边都能用。
+
+   请求：{ image: 'data:image/png;base64,...' }
+   响应：{ ok: true, text: '识别出的纯文本' } / { ok: false, error: '...' }
+
+   ⚠️ 只在系统临时目录写一个输入文件 + 一个输出文件，跑完立刻删；**绝不碰 data/**。
+   ⚠️ 非 Windows 直接返回不支持，由前端回落到「提示用户配置模型」。 */
+function serveOcr(req, res) {
+  setRestrictedCORS(res, req);
+  if (req.method !== 'POST') { res.writeHead(405, { 'Content-Type': 'application/json; charset=utf-8' }); res.end(JSON.stringify({ ok: false, error: 'method not allowed' })); return; }
+
+  var script = path.join(__dirname, 'wb-ocr.ps1');
+  if (process.platform !== 'win32' || !fs.existsSync(script)) {
+    sendJson(res, req, { ok: false, error: '本机不支持离线 OCR（依赖 Windows 自带的 OCR 引擎）' });
+    return;
+  }
+
+  var chunks = [], size = 0, MAX = 16 * 1024 * 1024;   // 截图 base64 可能好几 MB
+  req.on('data', function (c) { size += c.length; chunks.push(c); if (size > MAX) req.destroy(); });
+  req.on('end', function () {
+    if (size > MAX) { res.writeHead(413); res.end(''); return; }
+    var body = {};
+    try { body = JSON.parse(Buffer.concat(chunks).toString('utf8')) || {}; } catch (e) { body = {}; }
+    var dataUrl = (body && typeof body.image === 'string') ? body.image : '';
+    var m = /^data:image\/(png|jpeg|jpg|bmp|gif|webp);base64,([A-Za-z0-9+/=\s]+)$/i.exec(dataUrl);
+    if (!m) { sendJson(res, req, { ok: false, error: '需要 data:image/<png|jpeg|bmp>;base64,... 形式的图片' }); return; }
+    var ext = m[1].toLowerCase();
+    if (ext === 'jpeg') ext = 'jpg';
+
+    var stamp = process.pid + '-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8);
+    var tmpIn = path.join(os.tmpdir(), 'wb-ocr-in-' + stamp + '.' + ext);
+    var tmpOut = path.join(os.tmpdir(), 'wb-ocr-out-' + stamp + '.txt');
+
+    try { fs.writeFileSync(tmpIn, Buffer.from(m[2].replace(/\s+/g, ''), 'base64')); }
+    catch (e) { sendJson(res, req, { ok: false, error: '临时文件写入失败：' + e.message }); return; }
+
+    function cleanup() {
+      try { fs.unlinkSync(tmpIn); } catch (e) {}
+      try { fs.unlinkSync(tmpOut); } catch (e) {}
+    }
+
+    var args = ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass',
+      '-File', script, '-Image', tmpIn, '-OutFile', tmpOut];
+    execFile('powershell.exe', args, { timeout: 45000, windowsHide: true, maxBuffer: 4 * 1024 * 1024 },
+      function (err, stdout, stderr) {
+        var text = '';
+        try { text = fs.readFileSync(tmpOut, 'utf8'); } catch (e) { text = ''; }
+        cleanup();
+        if (/^OCR_ERROR:/.test(text)) { sendJson(res, req, { ok: false, error: text.replace(/^OCR_ERROR:\s*/, '') }); return; }
+        if (!text && err) {
+          sendJson(res, req, { ok: false, error: 'OCR 执行失败：' + String(stderr || err.message || '').slice(0, 300) });
+          return;
+        }
+        sendJson(res, req, { ok: true, text: text });
+      });
+  });
+}
+
 function serveQianniuChat(req, res) {
   setRestrictedCORS(res, req);
   var file = _backupFile('qchat');
@@ -2094,6 +2257,12 @@ var server = http.createServer(function (req, res) {
     return;
   }
 
+  /* 离线 OCR：用 Windows 自带引擎识别截图里的文字，不联网、不需要 API Key */
+  if (pathname === '/api/ocr') {
+    serveOcr(req, res);
+    return;
+  }
+
   /* 数据存储位置配置（界面「设置 → 数据存储位置」写入，实时生效无需重启） */
   if (pathname === '/api/config') {
     serveConfig(req, res);
@@ -2112,6 +2281,12 @@ var server = http.createServer(function (req, res) {
   }
 
   /* 待办数量（桌面悬浮球轮询用，只读：今日 / 进行中 / 逾期） */
+  /* ★★ 变更推送（SSE）——独立悬浮球窗口订阅它做实时同步，无需轮询 */
+  if (pathname === '/api/events') {
+    _sseHandler(req, res);
+    return;
+  }
+
   if (pathname === '/api/todo-count') {
     serveTodoCount(req, res);
     return;

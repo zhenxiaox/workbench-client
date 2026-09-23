@@ -327,7 +327,18 @@
           var em = t.urgent ? '<span class="em">紧急</span>' : '';
           var dd = '';
           if(t.dueAt){
-            try{ dd = '截止 ' + new Date(t.dueAt).toLocaleString('zh-CN',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}); }catch(err){}
+            /* ★ 2026-09-18 修：dueAt 是纯日期串（'2026-09-18'），new Date() 会按
+               UTC 零点解析 → 东八区下 toLocaleString 出来是「9/18 08:00」这种假时间。
+               纯日期就只显示日期，别编一个时间出来。 */
+            try{
+              var ds = String(t.dueAt);
+              var dm = ds.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+              if(dm){ dd = '截止 ' + (+dm[2]) + '月' + (+dm[3]) + '日'; }
+              else {
+                var dv = new Date(ds);
+                dd = isNaN(dv.getTime()) ? '' : '截止 ' + (dv.getMonth()+1) + '月' + dv.getDate() + '日';
+              }
+            }catch(err){}
           }
           html.push(
             '<div class="titem">' +
@@ -349,12 +360,23 @@
   }
   function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
 
-  /* badge 轮询 */
-  function refresh(){
+  /* badge 刷新
+     ★★ 2026-09-23 演进史（三代方案）：
+       一代：setInterval(refresh, 60000) —— 60 秒轮询，用户体感「过十几秒才刷新」。
+       二代：压到 1 秒 + mtime 短路 —— 够快了，但本质仍是「定时去问」。
+       三代（当前）：**SSE 实时推送** —— 服务端在数据落盘那一刻主动推过来，真正的零延迟。
+            保留一个 10 秒的低频轮询作兜底：万一 SSE 连接因休眠/断网挂掉，
+            或者服务端是旧版本（没有 /api/events），角标也不会一直不更新。
+     ★ 悬浮球是独立窗口，主窗口的 postMessage 到不了它，所以推送必须走服务端。 */
+  var lastMtime = -1;
+  function refresh(force){
     if(which !== 'todo') return;
     fetch('/api/todo-count', { cache:'no-store' })
       .then(function(r){ if(!r.ok) throw new Error('bad'); return r.json(); })
       .then(function(d){
+        /* mtime 没变 → 数据没动过，直接返回（省掉所有 DOM 操作） */
+        if(!force && d.mtime !== undefined && d.mtime === lastMtime) return;
+        lastMtime = (d.mtime === undefined ? -1 : d.mtime);
         var t=d.today||0, dn=d.doing||0, over=d.overdue||0;
         if(todoNum) todoNum.textContent = t>99?'99+':String(t);
         if(doing){ doing.hidden=dn<=0; doing.textContent=dn>99?'99+':String(dn); }
@@ -367,6 +389,29 @@
       .catch(function(){});
   }
 
+  /* ---- ★ 三代：SSE 实时推送 ---- */
+  var sseOk = false;
+  function initSSE(){
+    if(which !== 'todo') return;
+    /* 旧浏览器 / 不支持时直接放弃，靠下面的兜底轮询 */
+    if(typeof window.EventSource !== 'function') return;
+    try{
+      var es = new EventSource('/api/events?app=ctodo');
+      es.addEventListener('open', function(){ sseOk = true; });
+      es.addEventListener('change', function(ev){
+        sseOk = true;
+        /* 收到推送 → 立刻拉一次最新数字（数据已经落盘，这次拉到的必然是新值） */
+        lastMtime = -1;            /* 清掉短路标记，确保真的会重算 DOM */
+        refresh(true);
+      });
+      es.addEventListener('error', function(){
+        /* EventSource 断线会**自动重连**，这里不用手动处理；
+           只是把 sseOk 标记清掉，让兜底轮询承担这段时间的刷新 */
+        sseOk = false;
+      });
+    }catch(e){ sseOk = false; }
+  }
+
   function fabMenu(ev){
     ev.preventDefault();
     if(hasTauri){ invoke('fab_menu', { which: which }).catch(function(){}); }
@@ -376,8 +421,18 @@
     if(e.key==='Enter' || e.key===' '){ e.preventDefault(); handleClick(); }
   });
 
-  refresh();
-  setInterval(refresh, 60000);
+  refresh(true);
+  initSSE();
+  /* 兜底轮询：SSE 正常时每 10 秒一次（开销 ~2ms），SSE 断了则加速到 1 秒 */
+  setInterval(function(){ refresh(false); }, 10000);
+  /* 若 SSE 一直没建立成功（比如服务端是旧版），退回 1 秒轮询 */
+  setTimeout(function(){
+    if(!sseOk){
+      setInterval(function(){ refresh(false); }, 1000);
+    }
+  }, 5000);
+  /* 窗口重新获得焦点时立刻刷新一次 —— 用户切回来马上就是最新的 */
+  window.addEventListener('focus', function(){ refresh(true); });
 })();
 </script>
 </body>

@@ -81,6 +81,8 @@
   }
   .ttb-btn:hover{background:var(--accent-soft); color:var(--accent); border-color:rgba(249,115,10,.35);}
   .ttb-btn svg{width:18px; height:18px;}
+  .tb-logo{width:26px; height:26px; flex:0 0 26px; margin:0 4px 0 2px; border-radius:7px; overflow:hidden; display:flex; align-items:center; justify-content:center; box-shadow:inset 0 0 0 1px rgba(0,0,0,.06);}
+  .tb-logo svg{width:100%; height:100%; display:block;}
   #collapseBtn svg{transition:transform .2s;}
   body.collapsed #collapseBtn svg{transform:rotate(180deg);}
   .ttb-drag{flex:1 1 auto; align-self:stretch;}
@@ -163,6 +165,10 @@
   .brand .title{font-size:16px; font-weight:700; line-height:1.2;}
   .brand .sub{font-size:11px; color:var(--muted2);}
   .nav-label{font-size:11px; color:var(--muted2); padding:5px 10px 1px; letter-spacing:.04em; flex:0 0 auto;}
+  /* 侧栏顶部品牌名（2026-09-18）：AI 胶囊上方的「运营工作台」文字
+     2026-09-18 二次调整：再放大一点，更醒目。 */
+  .side-brand{flex:0 0 auto; font-size:16px; font-weight:800; color:var(--ink); padding:0 10px 10px; letter-spacing:.02em; line-height:1;}
+  body.collapsed .side-brand{text-align:center; padding:0 0 10px; font-size:12px;}
   /* 可折叠分组头 */
   .nav-group{
     display:flex; align-items:center; justify-content:space-between; gap:6px;
@@ -209,8 +215,8 @@
   /* AI 助手置顶高亮入口
      2026-09-16：随侧栏收窄一起缩小一档（padding/图标/字号），和下面「首页 / 复盘」保持同一视觉重量。 */
   .ai-pill{
-    display:flex; align-items:center; gap:10px;
-    margin:2px 0 8px; padding:7px 10px; border-radius:11px; cursor:pointer;
+    display:flex; align-items:center; gap:8px;
+    margin:0 0 6px; padding:5px 9px; border-radius:10px; cursor:pointer;
     background:var(--accent-soft);
     color:var(--accent); border:1px solid transparent;
     transition:.15s; user-select:none; flex:0 0 auto;
@@ -219,55 +225,54 @@
   .ai-pill:active{transform:scale(.985);}
   .ai-pill:focus-visible{outline:2px solid var(--accent-d); outline-offset:2px;}
   .ai-pill.active{background:var(--accent); color:#1a1206; border-color:var(--accent);}
-  .ai-pill .ai-ico{width:30px; height:30px; flex:0 0 30px; display:flex; align-items:center; justify-content:center;}
-  .ai-pill .ai-ico svg{width:19px; height:19px;}
+  .ai-pill .ai-ico{width:26px; height:26px; flex:0 0 26px; display:flex; align-items:center; justify-content:center;}
+  .ai-pill .ai-ico svg{width:17px; height:17px;}
   .ai-pill .ai-t{flex:1; min-width:0; text-align:left; line-height:1.3;}
-  .ai-pill .ai-nm{display:block; font-size:13.5px; font-weight:700;}
+  .ai-pill .ai-nm{display:block; font-size:13px; font-weight:700;}
   /* 2026-09-16：常驻条目（首页 / 复盘）与浮层二级条目共用这套基础样式，整体缩小一档。
      浮层里另有 .nav-flyout .nav-item 的覆盖（padding/图标/字号），不受这里的改动影响。 */
   .nav-item{
-    display:flex; align-items:center; gap:10px; padding:7px 10px; border-radius:11px;
+    display:flex; align-items:center; gap:8px; padding:5px 9px; border-radius:10px;
     cursor:pointer; border:1px solid transparent; transition:.15s; user-select:none; flex:0 0 auto;
   }
   .nav-item:hover{background:var(--panel2);}
   .nav-item.active{background:var(--accent-soft); position:relative;}
   .nav-item.active::before{
     content:""; position:absolute; left:3px; top:50%; transform:translateY(-50%);
-    width:3px; height:18px; border-radius:2px; background:var(--accent);
+    width:3px; height:16px; border-radius:2px; background:var(--accent);
   }
   .nav-item .ico{
-    width:30px; height:30px; flex:0 0 30px; border-radius:10px; background:transparent;
-    display:flex; align-items:center; justify-content:center; font-size:17px; color:var(--muted);
+    width:26px; height:26px; flex:0 0 26px; border-radius:9px; background:transparent;
+    display:flex; align-items:center; justify-content:center; font-size:16px; color:var(--muted);
     transition:.15s;
   }
-  .nav-item .ico svg{width:19px; height:19px;}
+  .nav-item .ico svg{width:17px; height:17px;}
   .nav-item:hover .ico{color:var(--ink);}
   .nav-item.active .ico{background:var(--accent-soft); color:var(--accent);}
-  .nav-item .nm{font-size:13.5px; font-weight:600; color:var(--ink);}
+  .nav-item .nm{font-size:13px; font-weight:600; color:var(--ink);}
   .nav-item .ds{display:none;}
+  /* 置顶区（2026-09-18）：悬停二级菜单右侧「置顶」→ 固定出现在「复盘」下面 */
+  .pinned-nav{display:flex; flex-direction:column; gap:4px; flex:0 0 auto;}
+  body.collapsed .pinned-nav{align-items:center; width:100%;}
+  .pin-btn{
+    width:24px; height:24px; flex:0 0 24px; margin-left:auto; border-radius:8px;
+    border:1px solid transparent; background:transparent; color:var(--muted2); cursor:pointer;
+    display:flex; align-items:center; justify-content:center; padding:0; opacity:0; transition:.12s;
+  }
+  .nav-item:hover .pin-btn, .pin-btn.is-pinned{opacity:1;}
+  .pin-btn:hover{color:var(--accent); background:var(--accent-soft); border-color:rgba(249,115,10,.35); box-shadow:0 1px 4px rgba(249,115,10,.15);}
+  .pin-btn svg{width:15px; height:15px;}
+  .pin-btn.is-pinned{opacity:1; color:var(--accent); background:var(--accent-soft); border-color:rgba(249,115,10,.3);}
+  body.collapsed .pin-btn{display:none;}
+  .pinned-nav .nav-item{padding-right:4px;}
   .nav-sep{height:1px; background:var(--line); margin:8px 14px;}
   body.collapsed .nav-sep{margin:8px auto; width:32px;}
   .spacer{flex:1;}
-  .side-tools{flex:0 0 auto; display:flex; flex-direction:column; gap:6px; padding:6px 10px 8px; align-self:stretch;}
-  .side-tool{
-    display:flex; align-items:center; gap:9px; width:100%; padding:8px 11px;
-    border-radius:10px; border:1px solid transparent; background:transparent;
-    color:var(--muted); cursor:pointer; transition:.15s; font-size:13px; text-align:left;
-  }
-  .side-tool:hover{color:var(--accent); background:var(--accent-soft);}
-  .side-tool svg{width:19px; height:19px; flex:0 0 auto;}
-  .side-tool-txt{line-height:1; white-space:nowrap;}
-  .side-tool.active{color:var(--accent); background:var(--accent-soft); border-color:rgba(249,115,10,0.35);}
-  /* 侧栏底部版本信息（2026-09-15：从顶栏搬到这里，放在「使用说明」下方） */
-  .side-meta{display:flex; flex-direction:column; gap:3px; margin-top:4px; padding:9px 12px 2px; border-top:1px solid var(--line);}
-  .side-ver{font-size:11.5px; color:var(--muted2); letter-spacing:.03em; font-variant-numeric:tabular-nums;}
-  .side-offline{font-size:11px; color:var(--muted2); line-height:1.35;}
-  body.collapsed .side-meta{padding:9px 0 2px; align-items:center; text-align:center;}
-  body.collapsed .side-ver{font-size:10px;}
-  body.collapsed .side-offline{display:none;}
-  body.collapsed .side-tools{padding:6px 6px 8px;}
-  body.collapsed .side-tool{justify-content:center; padding:9px 0; gap:0;}
-  body.collapsed .side-tool-txt{display:none;}
+  /* 2026-09-18 清理：侧栏底部整块（工具区 .side-tools/.side-tool/.side-tool-txt +
+     版本信息 .side-meta/.side-ver/.side-offline）已随 0.1.16 的自定义标题栏全部移除
+     —— 设置搬到标题栏 #tbSettingsBtn，版本号只在设置弹窗里显示。
+     对应 CSS 与 3 处 JS 引用（querySelectorAll('.side-tool') / navTip 的 SEL）一并删掉，
+     这些类名在 DOM 里已无任何元素使用（可用「style 块类名 × 全文」交叉检查复现）。 */
   /* 图标条模式的「悬停显示名字」提示（2026-09-16）
      只在 body.collapsed 下由 JS 显示，跟在图标右侧。
      配色用 --ink/--panel 反转：浅色主题=深底白字，暗色主题=浅底深字，三个主题都自动适配。
@@ -355,12 +360,12 @@
   .stage[data-page="qanalysis"] .frame, .stage[data-page="qreport"] .frame, .stage[data-page="qworkload"] .frame, .stage[data-page="sku"] .frame,
   .stage[data-page="ctodo"] .frame,
   .stage[data-page="review"] .frame, .stage[data-page="ask"] .frame, .stage[data-page="product"] .frame,
-  .stage[data-page="rival"] .frame{display:block;}
+  .stage[data-page="rival"] .frame,
+  .stage[data-page="adreport"] .frame, .stage[data-page="promo"] .frame{display:block;}
   .page{position:relative; min-height:100%; padding:0 40px 30px; display:none; max-width:none; box-sizing:border-box;}
   .stage[data-page="overview"] .page-overview,
   .stage[data-page="worklog"] .page-worklog,
-  .stage[data-page="idea"] .page-idea,
-  .stage[data-page="kb"] .page-kb,
+  .stage[data-page="notes"] .page-notes,
   .stage[data-page="kbp"] .page-kbp{display:block;}
   /* 多标签页（布局 B：侧栏 + 打开的页面标签）—— 浏览器标签风格
      2026-09-15：原左侧的「常用页」三个字已去掉（用户反馈占位置，标签本身已能自解释） */
@@ -1203,18 +1208,46 @@
   .wl-edit:hover{color:var(--accent); border-color:var(--accent);}
   .wl-bar-actions{display:flex; gap:8px; margin-left:auto;}
   #wlReportBody{width:100%; min-height:340px; resize:vertical; font-family:ui-monospace,Consolas,Menlo,monospace; font-size:12.5px; line-height:1.75;}
-  /* 灵感速记 */
-  .idea-add{background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px; margin-bottom:18px; display:flex; flex-direction:column; gap:10px; max-width:880px;}
-  .idea-add textarea{min-height:64px; resize:vertical;}
-  .idea-add-row{display:flex; gap:10px;}
-  .idea-add-row .inp{flex:1;}
-  .idea-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:14px; max-width:1040px;}
-  .idea-card{background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px; display:flex; flex-direction:column; gap:8px;}
-  .idea-body{font-size:13.5px; color:var(--ink); white-space:pre-wrap; word-break:break-word; line-height:1.5;}
-  .idea-meta{display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
-  .idea-time{font-size:11px; color:var(--muted2); margin-left:auto;}
-  .idea-acts{display:flex; gap:14px; border-top:1px solid var(--line); padding-top:8px;}
-  /* 知识库 */
+  /* 笔记（2026-09-22：原「灵感速记」+「知识库」两套样式合并为一套 .nt-*） */
+  .nt-quick{background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px; margin-bottom:14px; display:flex; flex-direction:column; gap:10px; max-width:880px;}
+  .nt-quick textarea{min-height:64px; resize:vertical; font-family:inherit;}
+  .nt-quick-row{display:flex; gap:10px;}
+  .nt-quick-row .inp{flex:1;}
+  .nt-bar{display:flex; gap:10px; margin-bottom:12px; flex-wrap:wrap; align-items:center; max-width:1040px;}
+  .nt-bar .nt-search{flex:1; min-width:180px;}
+  .nt-views{display:flex; gap:4px; background:var(--panel2); border:1px solid var(--line); border-radius:10px; padding:3px;}
+  .nt-view{appearance:none; border:0; background:transparent; color:var(--muted); font-family:inherit; font-size:12.5px; font-weight:600; padding:5px 12px; border-radius:8px; cursor:pointer; transition:.15s;}
+  .nt-view:hover{color:var(--ink);}
+  .nt-view.is-on{background:var(--panel); color:var(--accent); box-shadow:0 1px 3px rgba(0,0,0,.07);}
+  .nt-count{font-size:12px; color:var(--muted2); margin-bottom:10px; max-width:1040px;}
+  .nt-list{display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:14px; max-width:1040px;}
+  .nt-card{background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px; cursor:pointer; display:flex; flex-direction:column; gap:8px; transition:.15s;}
+  .nt-card:hover{border-color:var(--line2);}
+  /* 结构化笔记左侧加一道橙边，一眼区分两种类型 */
+  .nt-card.is-note{border-left:3px solid var(--accent);}
+  .nt-title{font-size:14.5px; font-weight:700; color:var(--ink);}
+  .nt-body{font-size:13.5px; color:var(--ink); white-space:pre-wrap; word-break:break-word; line-height:1.5;}
+  .nt-card.is-note .nt-body{font-size:12.5px; color:var(--muted);}
+  .nt-meta{display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
+  .nt-time{font-size:11px; color:var(--muted2); margin-left:auto;}
+  .nt-acts{display:flex; gap:14px; border-top:1px solid var(--line); padding-top:8px; margin-top:2px;}
+  .nt-kind{font-weight:600;}
+  .nt-kind.is-note{background:var(--accent-soft); color:var(--accent-d); border-color:var(--accent-border,var(--line2));}
+  /* 空态 + 示例卡（空页给引导，而不是一句话） */
+  .nt-empty{grid-column:1/-1; padding:34px 20px 8px; text-align:center;}
+  .nt-empty-title{font-size:15px; font-weight:600; color:var(--ink); margin-bottom:8px;}
+  .nt-empty-sub{font-size:12.5px; color:var(--muted); line-height:1.8; margin-bottom:20px;}
+  .nt-samples{display:flex; gap:12px; flex-wrap:wrap; justify-content:center; max-width:720px; margin:0 auto;}
+  .nt-sample{appearance:none; text-align:left; cursor:pointer; font-family:inherit;
+    background:var(--panel); border:1px dashed var(--line2); border-radius:12px; padding:12px 14px;
+    display:flex; flex-direction:column; gap:5px; max-width:320px; transition:.15s;}
+  .nt-sample:hover{border-style:solid; border-color:var(--accent); background:var(--accent-soft);}
+  .nt-sample b{font-size:13px; color:var(--ink); font-weight:600;}
+  .nt-sample span{font-size:12px; color:var(--muted); line-height:1.6;}
+  /* ★ 产品知识库（kbp）仍在用 .kb-* 这一套类名 ——
+     2026-09-22 合并笔记页时**只把「个人知识库」的样式换成了 .nt-*，
+     kbp 的 JS 还是 .kb-card/.kb-title/.kb-meta/.kb-acts/.idea-time**，
+     所以这几条必须保留，别跟着一起删。 */
   .kb-bar{display:flex; gap:10px; margin-bottom:18px; flex-wrap:wrap; max-width:1040px;}
   .kb-bar .inp{flex:1; min-width:180px;}
   .kb-list{display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:14px; max-width:1040px;}
@@ -1224,6 +1257,7 @@
   .kb-snippet{font-size:12.5px; color:var(--muted); line-height:1.5; white-space:pre-wrap;}
   .kb-meta{display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
   .kb-acts{display:flex; gap:14px; border-top:1px solid var(--line); padding-top:8px; margin-top:2px;}
+  .idea-time{font-size:11px; color:var(--muted2); margin-left:auto;}
   /* 模态 */
   .modal{position:absolute; inset:0; background:rgba(2,6,16,0.6); display:none; align-items:center; justify-content:center; z-index:30; padding:16px;}
   .modal.open{display:flex;}
@@ -1279,7 +1313,7 @@
     .ov-head h1{font-size:20px;}
     .chat{height:380px;}
     .chat-tools{width:100%;}
-    .todo-add .inp, .idea-add-row, .kb-bar .inp{flex:1 1 100%;}
+    .todo-add .inp, .nt-quick-row, .nt-bar .nt-search{flex:1 1 100%;}
   }
   /* 每日热点 */
   .stage[data-page="hot"] .page-hot{display:block;}
@@ -1415,8 +1449,10 @@
 </head>
 <body>
   <header class="titlebar">
+    <span class="tb-logo" data-tauri-drag-region title="运营工作台" aria-hidden="true"><svg viewBox="0 0 1024 1024"><defs><linearGradient id="wbtbgg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFB067"/><stop offset="0.55" stop-color="#F97316"/><stop offset="1" stop-color="#E4660A"/></linearGradient></defs><rect x="0" y="0" width="1024" height="1024" rx="220" ry="220" fill="url(#wbtbgg)"/><path d="M 536.4 233.1 A 280.0 280.0 0 0 1 790.9 487.6" fill="none" stroke="#fff" stroke-width="44" stroke-linecap="round"/><path d="M 790.9 536.4 A 280.0 280.0 0 0 1 536.4 790.9" fill="none" stroke="#fff" stroke-width="44" stroke-linecap="round"/><path d="M 487.6 790.9 A 280.0 280.0 0 0 1 233.1 536.4" fill="none" stroke="#fff" stroke-width="44" stroke-linecap="round"/><path d="M 233.1 487.6 A 280.0 280.0 0 0 1 487.6 233.1" fill="none" stroke="#fff" stroke-width="44" stroke-linecap="round"/><rect x="370.0" y="500.0" width="64" height="120" rx="30" fill="#fff"/><rect x="480.0" y="444.0" width="64" height="176" rx="30" fill="#fff"/><rect x="590.0" y="388.0" width="64" height="232" rx="30" fill="#fff"/><path d="M 622.0 382.0 L 692.0 442.0 L 722.0 408.0" fill="none" stroke="#fff" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"/><path d="M 814.0 316.0 L 766.4 346.6 L 790.2 302.4 Z" fill="#fff"/></svg></span>
     <button class="ttb-btn" id="collapseBtn" type="button" title="收起侧栏" aria-label="收起侧栏"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></svg></button>
     <button class="ttb-btn" id="tbSearchBtn" type="button" title="搜索页面 / 功能" aria-label="搜索"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></button>
+    <button class="ttb-btn" id="tbSettingsBtn" type="button" title="设置" aria-label="设置"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.06-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.06.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg></button>
     <div class="ttb-drag" data-tauri-drag-region></div>
     <div class="ttb-win" id="tbWinControls" hidden>
       <button class="ttb-btn" id="tbMin" type="button" title="最小化" aria-label="最小化"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></svg></button>
@@ -1436,6 +1472,7 @@
   </div>
   <aside class="sidebar">
     <div class="nav-scroll">
+    <div class="side-brand">运营工作台</div>
     <div class="ai-pill" data-tool="ai" role="button" tabindex="0" title="AI 助手">
       <span class="ai-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5 H20 V15 H13 L8 19 V15 H4 Z"/><circle cx="9" cy="10" r="1" fill="currentColor" stroke="none"/><circle cx="12" cy="10" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="10" r="1" fill="currentColor" stroke="none"/></svg></span>
       <span class="ai-t"><span class="ai-nm">AI 助手</span></span>
@@ -1449,6 +1486,7 @@
       <div><div class="nm">复盘</div><div class="ds">完成记录与操作日志</div></div>
       <span class="nav-badge" id="bdWorklog"></span>
     </div>
+    <div class="pinned-nav" id="pinnedNav"></div>
     <div class="nav-sep" aria-hidden="true"></div>
     <div class="nav-group" data-group="biz" role="button" tabindex="0" title="鼠标悬停展开二级菜单">
       <span class="g-name">经营分析</span>
@@ -1475,17 +1513,24 @@
       <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M4 10 H20"/><path d="M10 4 V20"/></svg></div>
       <div><div class="nm">SKU明细</div><div class="ds">SKU 明细查看/筛选/导出</div></div>
     </div>
-    <div class="nav-item" data-tool="compare">
-      <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6 H21"/><path d="M3 6 L8 18 H16 L21 6"/><path d="M3 6 L12 12 L21 6"/></svg></div>
-      <div><div class="nm">同款比价</div><div class="ds">同款价格带/竞争力分析</div></div>
+    <div class="nav-item" data-tool="promo" data-src="店铺推广.html">
+      <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11 L14 4 V20 L3 13 Z"/><path d="M6 12.5 V18 a2 2 0 0 0 2 2 h1"/><path d="M17.5 9 a4.5 4.5 0 0 1 0 6"/></svg></div>
+      <div><div class="nm">店铺推广</div><div class="ds">推广数据表上传/明细查看</div></div>
     </div>
-    <div class="nav-item" data-tool="profit">
-      <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7 V12 L15.5 14"/></svg></div>
-      <div><div class="nm">利润计算</div><div class="ds">单品利润/保本/月利润</div></div>
     </div>
-    <div class="nav-item" data-tool="revprice">
-      <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12 a9 9 0 1 1 3.2 6.2"/><path d="M6.2 18.2 l-3.2 -3.2 3.2 -3.2"/><path d="M12 7 V17"/></svg></div>
-      <div><div class="nm">定价工具</div><div class="ds">目标毛利/利润反算定价</div></div>
+    <div class="nav-group" data-group="report" role="button" tabindex="0" title="鼠标悬停展开二级菜单">
+      <span class="g-name">分析报告</span>
+      <svg class="g-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6 L15 12 L9 18"/></svg>
+    </div>
+    <div class="grp-items">
+    <div class="nav-item" data-tool="adreport" data-src="付费推广分析.html">
+      <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2 H6 a2 2 0 0 0 -2 2 v16 a2 2 0 0 0 2 2 h12 a2 2 0 0 0 2 -2 V8 Z"/><path d="M14 2 V8 H20"/><path d="M8 17 v-3"/><path d="M12 17 v-6"/><path d="M16 17 v-4"/></svg></div>
+      <div><div class="nm">付费推广分析</div><div class="ds">ROI/投放计划/关键词/人群</div></div>
+    </div>
+    <!-- 2026-09-20 x 要求：报告类页面统一收到「分析报告」下，看报告只来这一个位置 -->
+    <div class="nav-item" data-tool="qreport" data-src="沟通分析报告.html">
+      <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3 H15 L19 7 V21 H6 Z"/><path d="M14.5 3 V7.5 H19"/><path d="M9 12 H16"/><path d="M9 15.5 H16"/><path d="M9 19 H13"/></svg></div>
+      <div><div class="nm">沟通分析报告</div><div class="ds">卡点诊断/挽留话术/原声墙</div></div>
     </div>
     </div>
     <div class="nav-group" data-group="cs" role="button" tabindex="0" title="鼠标悬停展开二级菜单">
@@ -1501,10 +1546,6 @@
       <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 20 V12"/><path d="M12 20 V5"/><path d="M19 20 V9"/><path d="M3 20 H21"/></svg></div>
       <div><div class="nm">需求洞察</div><div class="ds">高频问题/隐性需求/痛点洞察</div></div>
     </div>
-    <div class="nav-item" data-tool="qreport" data-src="沟通分析报告.html">
-      <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3 H15 L19 7 V21 H6 Z"/><path d="M14.5 3 V7.5 H19"/><path d="M9 12 H16"/><path d="M9 15.5 H16"/><path d="M9 19 H13"/></svg></div>
-      <div><div class="nm">沟通分析报告</div><div class="ds">卡点诊断/挽留话术/原声墙</div></div>
-    </div>
     <div class="nav-item" data-tool="qworkload" data-src="客服分析.html">
       <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0 1 12 0"/><path d="M16 6a3 3 0 0 1 0 6"/><path d="M21 20a5 5 0 0 0-5-5"/></svg></div>
       <div><div class="nm">客服分析</div><div class="ds">客服工作量与接待分析</div></div>
@@ -1519,7 +1560,7 @@
     </div>
     </div>
     <div class="nav-group" data-group="mine" role="button" tabindex="0" title="鼠标悬停展开二级菜单">
-      <span class="g-name">我的工作台</span>
+      <span class="g-name">效率工具</span>
       <svg class="g-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6 L15 12 L9 18"/></svg>
     </div>
     <div class="grp-items">
@@ -1527,14 +1568,11 @@
       <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2.5" width="8" height="3.5" rx="1"/><path d="M16 4.2h2a2 2 0 0 1 2 2v13.3a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6.2a2 2 0 0 1 2-2h2"/><path d="M8.5 12.5 11 15l4.5-5"/></svg></div>
       <div><div class="nm">待办事项</div><div class="ds">客户待办 · 加急 / 延期 / 截图识别</div></div>
     </div>
-    <div class="nav-item" data-tool="idea">
-      <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="10" r="6"/><path d="M9 18 H15"/><path d="M10 21 H14"/></svg></div>
-      <div><div class="nm">灵感速记</div><div class="ds">想法收集</div></div>
+    <!-- 笔记（2026-09-22：原「灵感速记」+「个人知识库」合并为一条入口） -->
+    <div class="nav-item" data-tool="notes">
+      <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4 H15 L19 8 V20 H5 Z"/><path d="M14.5 4 V8.5 H19"/><path d="M8.5 12 H15.5"/><path d="M8.5 15.5 H13"/></svg></div>
+      <div><div class="nm">笔记</div><div class="ds">速记想法 · 整理成结构化笔记</div></div>
       <span class="nav-badge" id="bdIdea"></span>
-    </div>
-    <div class="nav-item" data-tool="kb">
-      <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6 C10 4 6 4 4 5 V19 C6 18 10 18 12 20 C14 18 18 18 20 19 V5 C18 4 14 4 12 6 Z"/></svg></div>
-      <div><div class="nm">个人知识库</div><div class="ds">笔记沉淀</div></div>
     </div>
     <div class="nav-item" data-tool="kbp">
       <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 L20 7 V17 L12 21 L4 17 V7 Z"/><path d="M4 7 L12 11 L20 7"/><path d="M12 11 V21"/></svg></div>
@@ -1544,19 +1582,19 @@
       <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c.6 3.4 4 4.4 4 8.4A4 4 0 0 1 8 11.4c0-1.3.4-2.3 1-3.1.3 1.7 1.3 2.1 1.9.3C9.4 10 9.2 11 12 3Z"/><path d="M12 21a4.6 4.6 0 0 0 4.6-4.6c0-2.1-1.4-3.3-2.6-4.6"/></svg></div>
       <div><div class="nm">每日热点</div><div class="ds">多源热点速览</div></div>
     </div>
+    <div class="nav-item" data-tool="compare">
+      <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6 H21"/><path d="M3 6 L8 18 H16 L21 6"/><path d="M3 6 L12 12 L21 6"/></svg></div>
+      <div><div class="nm">同款比价</div><div class="ds">同款价格带/竞争力分析</div></div>
+    </div>
+    <div class="nav-item" data-tool="profit">
+      <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7 V12 L15.5 14"/></svg></div>
+      <div><div class="nm">利润计算</div><div class="ds">单品利润/保本/月利润</div></div>
+    </div>
+    <div class="nav-item" data-tool="revprice">
+      <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12 a9 9 0 1 1 3.2 6.2"/><path d="M6.2 18.2 l-3.2 -3.2 3.2 -3.2"/><path d="M12 7 V17"/></svg></div>
+      <div><div class="nm">定价工具</div><div class="ds">目标毛利/利润反算定价</div></div>
     </div>
     </div>
-    <div class="side-tools">
-      <button class="side-tool" id="sideGear" title="设置" aria-label="设置" data-tool="settings">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.06-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.06.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
-        <span class="side-tool-txt">设置</span>
-      </button>
-      <!-- 版本信息（2026-09-15 从顶栏搬来）
-           2026-09-15 晚：「使用说明」按钮已移除 —— 说明文档并入设置弹窗（设置 → 使用说明）。 -->
-      <div class="side-meta" id="sideMeta">
-        <span class="side-ver" id="appVersion" title="当前版本"></span>
-        <span class="side-offline">本地工具 · 离线可用</span>
-      </div>
     </div>
   </aside>
   <!-- 一级菜单悬停时浮出的二级菜单（内容由 JS 从 .grp-items 克隆，位置跟着组头走） -->
@@ -1700,26 +1738,38 @@
           </div>
         </div>
       </div>
-      <!-- 灵感速记 -->
-      <div class="page page-idea">
-        <div class="ov-head"><h1>灵感速记</h1><p>想法随时记，可一键升级到知识库。</p></div>
-        <div class="idea-add">
-          <textarea id="ideaText" class="inp" placeholder="记一条灵感…"></textarea>
-          <div class="idea-add-row">
-            <input id="ideaTag" class="inp" placeholder="标签（可选）">
-            <button id="ideaAdd" class="btn-open">添加</button>
+      <!-- 笔记（2026-09-22 由「灵感速记」+「个人知识库」合并而来）
+           合并理由：两页职责重叠（都是「写下来→打标签→以后能搜」），
+           区别只有「能不能升级成结构化笔记」—— 那就做成同一页的两种视图，而不是两个页面。
+           存储统一走 notes 槽位（旧 kb 数据在启动时迁移进来，见 migrateKbToNotes()）。 -->
+      <div class="page page-notes">
+        <div class="ov-head">
+          <h1>笔记</h1>
+          <p>随手记想法，需要时再整理成结构化笔记 —— 一套数据，两种看法。</p>
+        </div>
+
+        <!-- 顶部：快记（原「灵感速记」的输入区） -->
+        <div class="nt-quick">
+          <textarea id="ntQuickText" class="inp" placeholder="记一条…（Ctrl + Enter 快速保存）"></textarea>
+          <div class="nt-quick-row">
+            <input id="ntQuickTag" class="inp" placeholder="标签（可选）">
+            <button id="ntQuickAdd" class="btn-open">记下来</button>
           </div>
         </div>
-        <div class="idea-grid" id="ideaGrid"></div>
-      </div>
-      <!-- 个人知识库 -->
-      <div class="page page-kb">
-        <div class="ov-head"><h1>个人知识库</h1><p>结构化笔记沉淀，支持分类 / 类型 / 状态元数据与搜索。</p></div>
-        <div class="kb-bar">
-          <input id="kbSearch" class="inp" placeholder="搜索标题 / 正文 / 标签 / 分类 / 类型 / 状态…">
-          <button id="kbNew" class="btn-open">新建笔记</button>
+
+        <!-- 工具条：视图切换 + 搜索 + 新建 -->
+        <div class="nt-bar">
+          <div class="nt-views" role="tablist" aria-label="视图">
+            <button class="nt-view is-on" data-view="all" type="button">全部</button>
+            <button class="nt-view" data-view="quick" type="button">速记</button>
+            <button class="nt-view" data-view="note" type="button">结构化</button>
+          </div>
+          <input id="ntSearch" class="inp nt-search" placeholder="搜索标题 / 正文 / 标签 / 分类…">
+          <button id="ntNew" class="btn-open">新建结构化笔记</button>
         </div>
-        <div class="kb-list" id="kbList"></div>
+
+        <div class="nt-count" id="ntCount"></div>
+        <div class="nt-list" id="ntList"></div>
       </div>
       <!-- 产品知识库 -->
       <div class="page page-kbp">
@@ -1859,7 +1909,7 @@
             <div class="set-frow">
               <div class="set-frow-main">
                 <div class="set-frow-t">模型名称</div>
-                <div class="set-frow-d">免费推荐 <code>glm-4-flash</code>（永久免费、基本不限流、最稳）。</div>
+                <div class="set-frow-d">免费推荐 <code>glm-4-flash</code>（永久免费、基本不限流、最稳）。<b>要粘截图识图</b>请选带「（支持识图）」的模型，如 <code>glm-4v-flash</code>（同样免费）。</div>
               </div>
               <div class="set-frow-ctl">
                 <select id="cfgModel" class="sel"></select>
@@ -1951,11 +2001,10 @@
 
             <h3>1. 工作台首页（工作台.html）</h3>
             <ul>
-              <li>左侧「运营工作台」导航栏，图标统一为简洁线条风格：顶部是「AI 助手」橙色高亮入口；其下常驻两项——<b>首页</b>（数据概览与今日待办）与<b>复盘</b>（完成记录与操作日志）。再往下是三个分组：经营分析（店铺分析 / 单品分析 / 商品管理 / SKU明细 / 同款比价 / 利润计算 / 定价工具）、客服中心（客服会话 / 需求洞察 / 沟通分析报告 / 客服分析 / 评价管理 / 问大家）、我的工作台（待办事项 / 灵感速记 / 个人知识库 / 产品知识库 / 每日热点）。<b>鼠标滑到分组标题上，二级菜单会在右侧弹出</b>；待办事项与灵感速记带数量徽标。「设置」在侧边栏底部（齿轮图标），「使用说明」也在设置里。</li>
-              <li>品牌栏右上角有折叠按钮，可把侧栏收成只显示图标的窄轨，再次点击展开。</li>
+              <li>左侧「运营工作台」导航栏，图标统一为简洁线条风格：顶部是「AI 助手」橙色高亮入口；其下常驻两项——<b>首页</b>（数据概览与今日待办）与<b>复盘</b>（完成记录与操作日志）。再往下是四个分组：经营分析（店铺分析 / 单品分析 / 商品管理 / SKU明细 / 店铺推广）、分析报告（付费推广分析：ROI / 投放计划 / 关键词 / 人群 / 行动清单）、客服中心（客服会话 / 需求洞察 / 沟通分析报告 / 客服分析 / 评价管理 / 问大家）、效率工具（待办事项 / 灵感速记 / 个人知识库 / 产品知识库 / 每日热点 / 同款比价 / 利润计算 / 定价工具）。<b>鼠标滑到分组标题上，二级菜单会在右侧弹出</b>；待办事项与灵感速记带数量徽标。「设置」在窗口顶部标题栏的齿轮图标（logo 右侧、放大镜旁边），「使用说明」也在设置里；标题栏最左边是「收起侧栏」按钮，可把侧栏收成只显示图标的窄轨，再次点击展开。</li>
               <li>点卡片或导航即在内嵌窗口打开工具。</li>
               <li>右下角有两个可拖动的<b>悬浮球</b>：<b>AI 助手球</b>（橙色，点开对话面板）与<b>待办事项球</b>（显示今天要处理的条数；今天有事会转成<b>黄色并呼吸闪烁</b>，有逾期则转<b>红色</b>呼吸）。<b>右键</b>任一悬浮球可快速「隐藏浮球」或直接跳到设置；被隐藏后可在「设置 → 通用 → 悬浮球」重新打开。</li>
-              <li>分析数据仅存于本机（通过「启动工作台.bat」时存到本机磁盘指定文件夹，可在「设置 → 数据存储」改存任意盘），不上传；AI 功能会按设置将对话内容发往所选云模型接口。</li>
+              <li>分析数据仅存于本机磁盘（客户端版自动保存在系统用户数据目录；网页版保存在工作台文件夹的 data/ 下。两种形态都可在「设置 → 数据存储」改存任意盘），不上传；AI 功能会按设置将对话内容发往所选云模型接口。</li>
               <li><b>外观主题</b>：支持「暗色 / 亮色 / 护眼 / 自动」四种主题，自动模式可按自定义时段切换；护眼模式为暖米黄低蓝光配色，长时间看数据更舒服、看产品图偏色也小。在任一页面切换后所有工具页即时同步，图表（含转化漏斗图）自动适配当前主题配色，亮色模式下采用更柔和的浅色调。</li>
               <li><b>品牌 Logo 自定义</b>：首页左上角黄色品牌图标支持自定义——鼠标悬停会浮现编辑按钮，点击即可修改品牌文字（中文最多 2 字、英文最多 6 字，也可留空），修改后即时生效并记忆，方便按客户/品牌个性化。</li>
             </ul>
@@ -1966,6 +2015,8 @@
               <li>Base URL 一律<b>保持服务商官方地址</b>，不需要填任何代理地址，本地服务会自动中转。</li>
               <li>支持的主流服务商（OpenAI 兼容 /chat/completions）：OpenAI、DeepSeek、通义千问（阿里）、豆包（火山方舟）、智谱 GLM、Kimi（Moonshot）、Google Gemini，以及本地 Ollama 和任意自定义接口。选好服务商后 Base URL 与模型名会自动带出。</li>
               <li>免费方案推荐：服务商选「智谱 GLM」，模型选 <code>glm-4-flash</code>（永久免费、基本不限流、最稳）；想要更强可选 <code>glm-4.7-flash</code>（免费但高峰易 429），去 bigmodel.cn 领 Key 填入，点「测试连接」显示「连接成功 ✓」即可。</li>
+              <li><b>要粘截图识别图片</b>：模型必须选下拉框里带「<b>（支持识图）</b>」的视觉模型 —— 智谱 <code>glm-4v-flash</code>（免费）、通义 <code>qwen-vl-max</code>、OpenAI <code>gpt-4o</code>、本地 Ollama <code>llava</code> 等；文本模型（如 glm-4-flash）喂图片会报错，此时程序会自动改用下面的离线 OCR 重试。</li>
+              <li><b>不配任何模型也能识别截图</b>：程序会自动用 Windows 自带的离线 OCR（不联网、不需要 Key、不花钱），识别出的文字进「备注」、要点与日期由本地规则提取。质量不如视觉模型，但完全不出本机 —— 对隐私敏感的场景优先用它。</li>
               <li>对话可勾选：「参考知识库」（让助手检索产品 / 个人知识库回答，适合查卖点 / 规格 / 话术）、「基于已导入数据」（结合生意参谋数据作答）。</li>
               <li>AI 回复采用平铺文章式排版（无气泡），支持简易 Markdown（加粗、列表、编号、行内代码），生成中有闪烁光标提示，每条回复悬停可一键复制。</li>
               <li>AI 可以「动手」操作（智谱 GLM / DeepSeek / 通义 / 豆包 / Kimi 等支持函数调用的服务商）：直接说「帮我切到暗色模式」「打开店铺分析」「帮我记一条待办：明早 9 点开会」即可执行，执行结果显示在回复上方。可执行动作仅限本工作台白名单内的本地操作（切主题、跳转功能页、添加待办 / 灵感、开关对话选项），不会执行其它操作。</li>
@@ -2380,15 +2431,16 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
     ask: { name:'问大家', desc:'买家提问 / 回答正文查看导出', src:'千牛问大家.html' },
     product: { name:'商品管理', desc:'商品明细 / 在线时间 / 无动销分析', src:'千牛商品.html' },
     rival: { name:'竞品采集', desc:'详情页采价 / 销量 / SKU 对比', src:'竞品采集.html' },
-    ctodo: { name:'待办事项', desc:'客户待办 · 加急 / 延期 / 截图识别', src:'客户待办.html' }
+    ctodo: { name:'待办事项', desc:'客户待办 · 加急 / 延期 / 截图识别', src:'客户待办.html' },
+    promo: { name:'店铺推广', desc:'推广数据表上传 / 明细查看', src:'店铺推广.html' },
+    adreport: { name:'付费推广分析', desc:'ROI / 投放计划 / 关键词 / 人群分析报告', src:'付费推广分析.html' }
   };
   var pageMeta = {
     overview:{name:'首页', desc:'数据概览与今日待办'},
     ai:{name:'AI 助手', desc:'大模型辅助分析与知识查询'},
     todo:{name:'待办事项', desc:'任务清单'},
     worklog:{name:'复盘', desc:'完成记录与操作日志'},
-    idea:{name:'灵感速记', desc:'想法收集'},
-    kb:{name:'个人知识库', desc:'笔记沉淀'},
+    notes:{name:'笔记', desc:'速记想法 · 整理成结构化笔记'},
     kbp:{name:'产品知识库', desc:'产品资料沉淀'},
     settings:{name:'设置', desc:'模型与存储'},
     hot:{name:'每日热点', desc:'多源热点速览'},
@@ -2403,8 +2455,10 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
      而 stage 里既没有 .page-help、也没有 .stage[data-page="help"] .frame 显影规则
      → **主区整个空白，看起来像"所有页面都打不开"**。
      教训：删页面 ≠ 删干净。老用户 localStorage 里的入口必须靠代码过滤掉。
-     ⚠️ 以后每删一个页面：① key 加到这里 ② 从 pageMeta / valid 里清掉 ③ 检查 AI_PAGES / open_page enum。 */
-  var WB_DEAD_PAGES = { help:true, juhe:true };
+     ⚠️ 以后每删一个页面：① key 加到这里 ② 从 pageMeta / valid 里清掉 ③ 检查 AI_PAGES / open_page enum。
+     2026-09-22：idea（灵感速记）+ kb（个人知识库）合并成 notes（笔记）→ 这两个 key 必须进死亡名单，
+     否则老用户标签栏里残留的「灵感速记」「个人知识库」标签点进去就是主区一片空白。 */
+  var WB_DEAD_PAGES = { help:true, juhe:true, idea:true, kb:true, alimama:true };
   function wbIsRealPage(p){ return !!p && !WB_DEAD_PAGES[p]; }
 
   function showLoading(){ loading.classList.remove('hide'); }
@@ -2473,9 +2527,6 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
     });
     var pill = document.querySelector('.ai-pill');
     if(pill) pill.classList.toggle('active', page === 'ai');
-    document.querySelectorAll('.side-tool').forEach(function(t){
-      t.classList.toggle('active', t.getAttribute('data-tool') === page);
-    });
     /* ★ iframe 类页面白名单。2026-09-14：补上一直漏掉的 ask ——
        这就是「问大家页面点了没反应 / 内容一直不显示」的真正原因：不在白名单里就会落进
        else 分支，frame.src 从不被赋值，iframe 一直停在上一个页面。
@@ -2485,7 +2536,7 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
        本白名单、valid 恢复白名单三处全漏，表现就是「点进去主区一片空白」。
        同时清掉已失效的 efftools（效率工具现用 juhe，且 meta 里没有 efftools，
        一旦被切到会走到 meta[page].src 直接抛错）。 */
-    if(page==='item'||page==='store'||page==='qchat'||page==='qanalysis'||page==='qreport'||page==='qworkload'||page==='sku'||page==='review'||page==='ask'||page==='product'||page==='rival'||page==='ctodo'){
+    if(page==='item'||page==='store'||page==='qchat'||page==='qanalysis'||page==='qreport'||page==='qworkload'||page==='sku'||page==='review'||page==='ask'||page==='product'||page==='rival'||page==='ctodo'||page==='promo'||page==='adreport'){
       var src = meta[page].src;
       /* ★ 带筛选跳转：拼 'filter=xxx'（见上面的 ovPendingQuery）。用完立刻清空。 */
       var q = ovPendingQuery || '';
@@ -2500,6 +2551,7 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
       ovPendingQuery = '';
       if(page==='overview') renderOverview();
       if(page==='hot') renderHot();
+      if(page==='notes') renderNotes();   /* 2026-09-22：idea/kb 合并而来 */
       var sy = 0; try{ sy = parseInt(localStorage.getItem('wb_scroll_'+page)||'0',10)||0; }catch(e){}
       setTimeout(function(){ try{ stage.scrollTop = sy; }catch(e){} }, 30);
     }
@@ -3498,6 +3550,8 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
       fly.querySelectorAll('.nav-item').forEach(function(n){
         n.classList.toggle('active', !!activeTool && n.getAttribute('data-tool') === activeTool);
       });
+      /* 浮层条目右侧挂「置顶/取消置顶」按钮（2026-09-18） */
+      if(typeof window.__attachNavPin === 'function') window.__attachNavPin(fly);
       fly.hidden = false;
       var r = g.getBoundingClientRect();
       /* ⚠️ 左边距按「侧栏右边界」算，不能按组头右边界 ——
@@ -3563,24 +3617,87 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
     markActiveGroup();
   })();
 
+  /* 二级菜单「置顶」（2026-09-18）
+     悬停二级菜单每条右侧出现定位针按钮 → 点击固定在「复盘」下面（且持久化到 localStorage）；
+     再点一次取消置顶，回到原来的分组。浮层条目与置顶区条目共用同一套 pin 按钮状态。 */
+  (function wbNavPin(){
+    var SAVE_ID = 'pinnedNav';
+    var KEY = 'wb_pinned_nav';
+    var save = document.getElementById(SAVE_ID);
+    var PIN_OUTLINE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21c-4-4-8-8-8-12a8 8 0 0 1 16 0c0 4-4 8-8 12Z"/><circle cx="12" cy="9" r="2.6"/></svg>';
+    var PIN_FILLED = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21c-4-4-8-8-8-12a8 8 0 0 1 16 0c0 4-4 8-8 12Z" fill="currentColor"/><circle cx="12" cy="8" r="2.3" fill="var(--panel)"/></svg>';
+    var registry = [];
+    function read(){ try{ var v = JSON.parse(localStorage.getItem(KEY)||'[]'); return Array.isArray(v) ? v : []; }catch(e){ return []; } }
+    function write(list){ try{ localStorage.setItem(KEY, JSON.stringify(list)); }catch(e){} }
+    function isPinned(k){ return read().indexOf(k) >= 0; }
+    function togglePin(k){
+      var list = read(), i = list.indexOf(k);
+      if(i >= 0) list.splice(i,1); else list.push(k);
+      write(list);
+      renderPinned();
+      var fly = document.getElementById('navFlyout');
+      if(fly && !fly.hidden && typeof window.__attachNavPin === 'function') window.__attachNavPin(fly);
+    }
+    document.querySelectorAll('.grp-items .nav-item[data-tool]').forEach(function(n){
+      registry.push({ key: n.getAttribute('data-tool'), node: n });
+    });
+    function makePinBtn(k){
+      var pinned = isPinned(k);
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'pin-btn' + (pinned ? ' is-pinned' : '');
+      b.title = pinned ? '取消置顶' : '置顶';
+      b.setAttribute('aria-label', b.title);
+      b.innerHTML = pinned ? PIN_FILLED : PIN_OUTLINE;
+      b.addEventListener('click', function(ev){ ev.stopPropagation(); ev.preventDefault(); togglePin(k); });
+      return b;
+    }
+    function renderPinned(){
+      if(!save) return;
+      save.innerHTML = '';
+      read().forEach(function(k){
+        var src = null;
+        for(var i = 0; i < registry.length; i++){ if(registry[i].key === k){ src = registry[i].node; break; } }
+        if(!src) return;
+        var it = src.cloneNode(true);
+        it.classList.add('pinned');
+        it.title = '';
+        it.appendChild(makePinBtn(k));
+        it.addEventListener('click', function(ev){
+          if(ev.target.closest('.pin-btn')) return;
+          setPage(k);
+        });
+        save.appendChild(it);
+      });
+    }
+    window.__attachNavPin = function(fly){
+      if(!fly) return;
+      fly.querySelectorAll('.nav-item[data-tool]').forEach(function(n){
+        var k = n.getAttribute('data-tool');
+        if(n.querySelector('.pin-btn')) return;
+        n.appendChild(makePinBtn(k));
+      });
+    };
+    renderPinned();
+  })();
+
   /* 图标条模式：鼠标悬停图标 → 右侧浮出该图标的名字（2026-09-16）
      为什么不用原生 title：延迟约 1 秒、样式不可控、和主题不搭，侧栏窄了以后更明显。
      只在 body.collapsed 下生效；展开态本来就有文字，不需要。
-     名字来源优先级：data-tip 属性 > 条目内部的文字节点（.nm / .ai-nm / .side-tool-txt）> 原生 title。
+     名字来源优先级：data-tip 属性 > 条目内部的文字节点（.nm / .ai-nm）> 原生 title。
      内部文字节点在 collapsed 下是 display:none，但 textContent 照样能读到，不用另外维护一份文案。 */
   (function navTipInit(){
     var tip = document.getElementById('navTip');
     var side = document.querySelector('.sidebar');
     if(!tip || !side) return;
     var cur = null;
-    /* 会触发提示的条目：二级菜单项 / AI 胶囊 / 底部工具 */
-    var SEL = '.nav-item, .ai-pill, .side-tool';
+    /* 会触发提示的条目：二级菜单项 / AI 胶囊 */
+    var SEL = '.nav-item, .ai-pill';
 
     function nameOf(el){
       if(!el) return '';
       var dt = el.getAttribute('data-tip');
       if(dt) return dt;
-      var n = el.querySelector('.nm, .ai-nm, .side-tool-txt');
+      var n = el.querySelector('.nm, .ai-nm');
       if(n && n.textContent.trim()) return n.textContent.trim();
       return el.getAttribute('title') || '';
     }
@@ -3663,9 +3780,8 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
     var b = document.getElementById('ovReload');
     if(b) b.addEventListener('click', function(){ renderOverview(); });
   })();
-  document.querySelectorAll('.side-tool').forEach(function(t){
-    t.addEventListener('click', function(){ setPage(t.getAttribute('data-tool')); });
-  });
+  /* 标题栏设置按钮（2026-09-18：设置从侧栏移到这里，紧挨放大镜） */
+  (function(){ var g = document.getElementById('tbSettingsBtn'); if(g) g.addEventListener('click', function(){ setPage('settings'); }); })();
   /* 设置弹窗：左侧分组导航 ↔ 右侧面板（2026-09-15 晚改版，原为顶部 .set-tab 页签） */
   function setSettingsTab(tab){
     if(!tab) return;
@@ -3795,19 +3911,19 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
   var OV_GROUPS = [
     { cap:'经营分析', items:[
       ['store','店铺分析','全店经营多维分析'], ['item','单品分析','单商品流量/转化'],
-      ['product','商品管理','商品明细/无动销'], ['sku','SKU明细','SKU 明细与导出'],
-      ['compare','同款比价','同款价格带分析'], ['profit','利润计算','单品利润/保本'],
-      ['revprice','定价工具','目标毛利反算定价']
+      ['product','商品管理','商品明细/无动销'], ['sku','SKU明细','SKU 明细与导出']
     ]},
     { cap:'客服中心', items:[
       ['qchat','客服会话','会话查看/导出'], ['qanalysis','需求洞察','高频问题/痛点'],
       ['qreport','沟通分析报告','卡点诊断/话术'], ['qworkload','客服分析','工作量与接待'],
       ['review','评价管理','买家评价'], ['ask','问大家','提问与回答正文']
     ]},
-    { cap:'我的工作台', items:[
+    { cap:'效率工具', items:[
       ['ctodo','待办事项','客户待办 · 加急/延期'], ['idea','灵感速记','想法收集'],
       ['kb','个人知识库','笔记沉淀'], ['kbp','产品知识库','产品资料沉淀'],
-      ['worklog','复盘','完成记录与日志'], ['hot','每日热点','多源热点速览']
+      ['worklog','复盘','完成记录与日志'], ['hot','每日热点','多源热点速览'],
+      ['compare','同款比价','同款价格带分析'], ['profit','利润计算','单品利润/保本'],
+      ['revprice','定价工具','目标毛利反算定价']
     ]}
   ];
   function ovPaintGroups(){
@@ -4703,15 +4819,47 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
   function detectWbServer(){
     var local = (location.hostname==='localhost'||location.hostname==='127.0.0.1');
     if(!local){ __WB_SERVER=false; return; }
-    if(location.port==='8787'){ __WB_SERVER=true; initLiveHot(); return; }   // 默认端口：同步即可确定
+    if(location.port==='8787'){ __WB_SERVER=true; initLiveHot(); initWbEvents(); return; }   // 默认端口：同步即可确定
     /* 异步确认：兼容自定义 WB_PORT，同时排除其它本地预览等无关 localhost。
        仅当响应确为 wb-server 的标记 JSON 时才认定为本地服务。 */
     try{
       fetch('/__wb',{cache:'no-store'})
         .then(function(r){ return r.ok ? r.json().catch(function(){ return null; }) : null; })
-        .then(function(j){ if(j && j.server==='workbench'){ __WB_SERVER=true; refreshAiGuide(); try{ /* 设置已改弹窗：可见性判断从 .page-settings 换成 #setModal */ var _sm=document.getElementById('setModal'); if(typeof applyProvider==='function' && cfgProvider && _sm && _sm.offsetParent){ applyProvider(cfgProvider.value); } }catch(_){} initLiveHot(); wbHydrateAll(); } })
+        .then(function(j){ if(j && j.server==='workbench'){ __WB_SERVER=true; refreshAiGuide(); try{ /* 设置已改弹窗：可见性判断从 .page-settings 换成 #setModal */ var _sm=document.getElementById('setModal'); if(typeof applyProvider==='function' && cfgProvider && _sm && _sm.offsetParent){ applyProvider(cfgProvider.value); } }catch(_){} initLiveHot(); wbHydrateAll(); initWbEvents(); } })
         .catch(function(){ /* 非 wb-server（如其它本地预览），保持 false */ });
     }catch(_){}
+  }
+  /* ★★ 2026-09-23：订阅服务端变更推送（SSE）。
+     场景：桌面独立悬浮球窗口（悬浮球.html）收不到主窗口的 postMessage，原先只能轮询；
+     多标签页 / 手机端同开时，一侧改了数据另一侧也看不到。
+     现在服务端在数据落盘那一刻广播，所有订阅者都能立刻刷新。
+     EventSource 断线会自动重连，失败时静默降级（各页面本来就有自己的兜底刷新）。 */
+  function initWbEvents(){
+    if(typeof window.EventSource !== 'function') return;
+    if(window.__wbEventsBound) return;
+    window.__wbEventsBound = true;
+    /* ★ 只订阅「轻量且需要即时反馈」的槽位。
+       store/sku/qchat/promo 动辄几百 KB~几 MB，每次变更都全量重拉不划算 ——
+       那些页面本来就有自己的加载路径（切页面时会重新 hydrate）。 */
+    var watched = { ctodo:true, worklog:true };
+    try{
+      var es = new EventSource('/api/events');
+      es.addEventListener('change', function(ev){
+        var app = null;
+        try{ app = JSON.parse(ev.data).app; }catch(e){}
+        if(!app || !watched[app]) return;
+        try{
+          if(app === 'ctodo'){
+            wbHydrate('ctodo','wb_ctodo', function(){
+              if(typeof window.__wbUpdateTodoFab === 'function') window.__wbUpdateTodoFab();
+              try{ var n = wlSinkCustTodo(); if(n){ renderWorklog(); if(typeof renderOverview === 'function') renderOverview(); } }catch(e){}
+            });
+          } else if(app === 'worklog'){
+            wbHydrate('worklog','wb_worklog', function(){ renderWorklog(); if(typeof renderOverview === 'function') renderOverview(); });
+          }
+        }catch(e){}
+      });
+    }catch(e){}
   }
   /* 在确定本地服务状态后才尝试加载 AI Hot 实时热点；若非本地服务则显示提示。 */
   function initLiveHot(){ try{ fetchLiveHot(false); }catch(_){} }
@@ -4810,10 +4958,12 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
     });
   }
   /* ===== AI 动手能力：白名单工具（函数调用） ===== */
-  var AI_PAGES = ['overview','item','store','sku','qchat','qanalysis','qreport','qworkload','ctodo','review','ask','product','rival','idea','kb','kbp','hot','settings','ai'];
+  var AI_PAGES = ['overview','item','store','sku','qchat','qanalysis','qreport','qworkload','ctodo','review','ask','product','rival','promo','adreport','notes','kbp','hot','settings','ai'];
+  /* 页面 key → 中文名（AI 工具调用时回显用）。idea/kb 已合并进 notes（2026-09-22） */
+  var AI_PAGE_NAMES = { overview:'首页', item:'单品分析', store:'店铺分析', sku:'SKU明细', product:'商品管理', qchat:'客服会话', qanalysis:'需求洞察', qreport:'沟通分析报告', qworkload:'客服分析', review:'评价管理', ask:'问大家', ctodo:'待办事项', rival:'竞品采集', promo:'店铺推广', adreport:'付费推广分析', notes:'笔记', kbp:'产品知识库', hot:'每日热点', settings:'设置', ai:'AI 助手' };
   var AI_TOOLS = [
     { type:'function', function:{ name:'set_theme', description:'切换工作台界面主题。当用户要求切换主题、颜色模式、亮度、外观时，必须调用此工具完成，禁止只文字回复。参数 theme 使用 dark（暗色/深色/黑色）、light（亮色/浅色/白色）、auto（自动）。', parameters:{ type:'object', properties:{ theme:{ type:'string', enum:['dark','light','auto','eye'], description:'目标主题：dark=暗色/深色/黑色, light=亮色/浅色/白色, auto=自动' } }, required:['theme'] } } },
-    { type:'function', function:{ name:'open_page', description:'跳转打开工作台的某个功能页，例如店铺分析、单品分析、待办事项、灵感速记、知识库、每日热点等', parameters:{ type:'object', properties:{ page:{ type:'string', enum:AI_PAGES, description:'功能页标识：overview 首页 / item 单品分析 / store 店铺分析 / sku SKU明细 / product 商品管理 / qchat 客服会话 / qanalysis 需求洞察 / qreport 沟通分析报告 / qworkload 客服分析 / review 评价管理 / ask 问大家 / ctodo 待办事项（客户待办 · 加急 / 延期 / 截图识别） / rival 竞品采集（详情页采价 / 销量 / SKU 对比） / idea 灵感速记 / kb 个人知识库 / kbp 产品知识库 / hot 每日热点 / settings 设置 / ai AI 助手' } }, required:['page'] } } },
+    { type:'function', function:{ name:'open_page', description:'跳转打开工作台的某个功能页，例如店铺分析、单品分析、待办事项、灵感速记、知识库、每日热点等', parameters:{ type:'object', properties:{ page:{ type:'string', enum:AI_PAGES, description:'功能页标识：overview 首页 / item 单品分析 / store 店铺分析 / sku SKU明细 / product 商品管理 / qchat 客服会话 / qanalysis 需求洞察 / qreport 沟通分析报告 / qworkload 客服分析 / review 评价管理 / ask 问大家 / ctodo 待办事项（客户待办 · 加急 / 延期 / 截图识别） / rival 竞品采集（详情页采价 / 销量 / SKU 对比） / promo 店铺推广（推广数据表上传 / 明细查看） / adreport 付费推广分析（ROI / 投放计划 / 关键词 / 人群报告） / notes 笔记（速记想法 / 结构化笔记） / kbp 产品知识库 / hot 每日热点 / settings 设置 / ai AI 助手' } }, required:['page'] } } },
     { type:'function', function:{ name:'add_note', description:'添加一条灵感速记', parameters:{ type:'object', properties:{ text:{ type:'string', description:'灵感内容' }, tag:{ type:'string', description:'标签，可为空' } }, required:['text'] } } },
     { type:'function', function:{ name:'add_kb', description:'添加一条笔记到「个人知识库」', parameters:{ type:'object', properties:{ title:{ type:'string', description:'笔记标题，可为空，为空时自动取正文开头' }, text:{ type:'string', description:'笔记正文' }, tags:{ type:'string', description:'标签，逗号分隔，可为空' } }, required:['text'] } } },
     { type:'function', function:{ name:'add_kbp', description:'添加一条产品资料到「产品知识库」（卖点/规格/话术/常见问答等）', parameters:{ type:'object', properties:{ title:{ type:'string', description:'产品名称' }, text:{ type:'string', description:'产品资料正文：卖点/规格/话术/常见问答等' }, cat:{ type:'string', description:'分类，可为空' }, tags:{ type:'string', description:'标签，逗号分隔，可为空' } }, required:['title','text'] } } },
@@ -4839,37 +4989,28 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
       }
       if(name === 'add_note'){
         var n = String(args.text || '').trim();
-        if(!n) return { ok:false, msg:'灵感内容为空' };
+        if(!n) return { ok:false, msg:'内容为空' };
         var nCut = n.slice(0,500);
-        var ia = loadIdeas();
-        for(var ni=0; ni<ia.length; ni++){ if(ia[ni] && (ia[ni].text||'').trim() === nCut.trim()) return { ok:true, msg:'灵感速记里已有相同内容，未重复添加' }; }
-        ia.push({id:Date.now(), text:nCut, tag:String(args.tag || '').trim(), ts:new Date().toLocaleString('zh-CN')});
-        saveIdeas(ia); renderIdeas(); renderOverview();
-        /* 记灵感时自动同步一条到「个人知识库」（带去重，避免与 AI 单独 add_kb 重复） */
-        try{
-          var kbBody = nCut.trim();
-          var ka2 = loadKb();
-          var dupKb = false;
-          for(var ki2=0; ki2<ka2.length; ki2++){ if(ka2[ki2] && (ka2[ki2].body||'').trim() === kbBody){ dupKb = true; break; } }
-          if(!dupKb){
-            var kbTag = String(args.tag || '').trim();
-            var kbTitle = (kbTag ? '[' + kbTag + '] ' : '') + kbBody.slice(0,20);
-            ka2.push({id:Date.now(), title:kbTitle, body:kbBody, tags:kbTag, type:'灵感', status:'草稿', priority:'P3', source:'AI 记灵感', updated:new Date().toISOString().slice(0,10), ts:new Date().toLocaleString('zh-CN')});
-            saveKb(ka2); renderKb(); renderOverview();
-          }
-        }catch(_){}
-        return { ok:true, msg:'已记入灵感速记：' + n.slice(0,50) };
+        /* 2026-09-22：idea/kb 合并成 notes 后，AI 只写一条速记即可
+           （原来还会往 kb 再同步一份，那是「两个页面」时代的补偿动作，现在同一条数据，会造成重复） */
+        var ia = loadNotes();
+        for(var ni=0; ni<ia.length; ni++){
+          if(ia[ni] && (ia[ni].text||ia[ni].body||'').trim() === nCut.trim()) return { ok:true, msg:'笔记里已有相同内容，未重复添加' };
+        }
+        ia.push({id:Date.now(), kind:NT_KIND_QUICK, text:nCut, tag:String(args.tag || '').trim(), ts:new Date().toLocaleString('zh-CN')});
+        saveNotes(ia); renderNotes(); renderOverview();
+        return { ok:true, msg:'已记入笔记：' + n.slice(0,50) };
       }
       if(name === 'add_kb'){
         var kbBody = String(args.text || '').trim();
         if(!kbBody) return { ok:false, msg:'笔记正文为空' };
         var kbCut = kbBody.slice(0,1000);
-        var ka = loadKb();
-        for(var ki=0; ki<ka.length; ki++){ if(ka[ki] && (ka[ki].body||'').trim() === kbCut.trim()) return { ok:true, msg:'个人知识库已有相同笔记，未重复添加' }; }
+        var ka = loadNotes();
+        for(var ki=0; ki<ka.length; ki++){ if(ka[ki] && (ka[ki].body||'').trim() === kbCut.trim()) return { ok:true, msg:'笔记里已有相同内容，未重复添加' }; }
         var kbTitle = String(args.title || '').trim() || kbCut.slice(0,20);
-        ka.push({id:Date.now(), title:kbTitle, body:kbCut, tags:String(args.tags || '').trim(), type:args.type || '问答/复盘', status:'草稿', priority:'P3', source:args.source || 'AI', updated:new Date().toISOString().slice(0,10), ts:new Date().toLocaleString('zh-CN')});
-        saveKb(ka); renderKb(); renderOverview();
-        return { ok:true, msg:'已加入个人知识库：' + kbTitle };
+        ka.push({id:Date.now(), kind:NT_KIND_NOTE, title:kbTitle, body:kbCut, tags:String(args.tags || '').trim(), type:args.type || '问答/复盘', status:'草稿', priority:'P3', source:args.source || 'AI', updated:new Date().toISOString().slice(0,10), ts:new Date().toLocaleString('zh-CN')});
+        saveNotes(ka); renderNotes(); renderOverview();
+        return { ok:true, msg:'已加入笔记（结构化）：' + kbTitle };
       }
       if(name === 'add_kbp'){
         var pb = String(args.text || '').trim();
@@ -5163,9 +5304,6 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
     var af = document.getElementById('aiFab'), tf = document.getElementById('todoFab');
     if(af && !af.hidden) af.hidden = true;
     if(tf && !tf.hidden) tf.hidden = true;
-    /* 顺手把桌面悬浮球的初始显隐同步为当前开关状态（开关关掉→桌面球也隐藏） */
-    wbSyncDesktopFab('ai');
-    wbSyncDesktopFab('todo');
   }
   /* 让某个桌面悬浮球窗口跟随（which: 'ai'/'todo'），状态取自上一步 wbApplyFabs 已落盘的 localStorage */
   function wbSyncDesktopFab(which){
@@ -5174,10 +5312,16 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
     var visible = wbFabOn(key);
     try{ window.__TAURI__.core.invoke('fab_set_visible', { which: which, visible: visible }).catch(function(){}); }catch(e){}
   }
+  function wbSyncDesktopFabs(){ wbSyncDesktopFab('ai'); wbSyncDesktopFab('todo'); }
   wbApplyFabs();
   (function wbWaitClientHideFabs(tries){
     if(wbIsClient()){
       wbClientHideFabs();
+      /* ★ 桌面球窗口是 Rust 在 setup() 里建的，可能晚于本脚本执行 ——
+         首次 invoke 会因「找不到窗口」静默落空，于是出现
+         「设置里开关写着已隐藏、球却还在桌面上」。
+         这里补几次幂等推送（Rust 侧启动时也会按存档恢复），确保两边一定一致。 */
+      [0, 300, 900, 2000].forEach(function(ms){ setTimeout(wbSyncDesktopFabs, ms); });
       return;
     }
     if((tries||0) < 80){ setTimeout(function(){ wbWaitClientHideFabs((tries||0)+1); }, 100); }
@@ -5595,17 +5739,21 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
     window.__wbHideFabMenu = hideMenu;
   })();
 
-  /* 设置：服务商预设 */
+  /* 设置：服务商预设
+     ⚠️ vision 里列的是「支持识图（视觉）」的模型 —— 值必须与真实 API 模型名**完全一致**，
+        只有下拉框的**显示标签**会加「（支持识图）」后缀，绝不能改 value。
+     2026-09-18 补：以前所有预设里一个视觉模型都没有 → 用户选推荐的服务商后，
+     粘截图必然失败并提示「要接视觉模型」（用户报障）。智谱的 glm-4v-flash 是**免费**的视觉模型。 */
   var PROVIDERS = {
-    openai:{ label:'OpenAI', base:'https://api.openai.com/v1', models:['gpt-4o','gpt-4o-mini','gpt-4-turbo','o1'], tip:'获取 API Key：https://platform.openai.com/api-keys' },
-    deepseek:{ label:'DeepSeek', base:'https://api.deepseek.com/v1', models:['deepseek-chat','deepseek-reasoner'], tip:'获取 API Key：https://platform.deepseek.com/api_keys' },
-    qwen:{ label:'通义千问（阿里）', base:'https://dashscope.aliyuncs.com/compatible-mode/v1', models:['qwen-plus','qwen-max','qwen-turbo','qwen-long','qwen2.5-72b-instruct'], tip:'获取 API Key：阿里云百炼控制台（dashscope）' },
-    doubao:{ label:'豆包（火山方舟）', base:'https://ark.cn-beijing.volces.com/api/v3', models:['doubao-pro-32k','doubao-pro-256k','doubao-lite-32k'], tip:'获取 API Key：火山方舟控制台；模型名填接入点 Endpoint ID' },
-    zhipu:{ label:'智谱 GLM', base:'https://open.bigmodel.cn/api/paas/v4', models:['glm-4-flash','glm-4-plus','glm-4.7-flash','glm-4.5-flash','glm-4-air'], tip:'获取 API Key：智谱开放平台 bigmodel.cn（glm-4-flash 永久免费、最稳，但晚高峰共享池偶尔 429；glm-4-plus 是付费旗舰、限额高，被限流时切它最稳）' },
-    moonshot:{ label:'Kimi（Moonshot）', base:'https://api.moonshot.cn/v1', models:['moonshot-v1-8k','moonshot-v1-32k','moonshot-v1-128k'], tip:'获取 API Key：Moonshot 开放平台' },
-    gemini:{ label:'Google Gemini', base:'https://generativelanguage.googleapis.com/v1beta/openai', models:['gemini-1.5-pro','gemini-1.5-flash','gemini-2.0-flash'], tip:'获取 API Key：Google AI Studio' },
-    ollama:{ label:'Ollama 本地', base:'http://localhost:11434/v1', models:['llama3','qwen2.5','qwen2','deepseek-r1'], tip:'本机运行 Ollama 后，默认地址 http://localhost:11434/v1' },
-    custom:{ label:'自定义（OpenAI 兼容）', base:'', models:[], tip:'填入任意兼容 /chat/completions 的接口地址与模型名' }
+    openai:{ label:'OpenAI', base:'https://api.openai.com/v1', models:['gpt-4o','gpt-4o-mini','gpt-4-turbo','o1'], vision:['gpt-4o','gpt-4o-mini','gpt-4-turbo'], tip:'获取 API Key：https://platform.openai.com/api-keys' },
+    deepseek:{ label:'DeepSeek', base:'https://api.deepseek.com/v1', models:['deepseek-chat','deepseek-reasoner'], vision:[], tip:'获取 API Key：https://platform.deepseek.com/api_keys<br><b>注意：DeepSeek 目前没有视觉模型</b>，粘截图识图请换智谱 glm-4v-flash（免费）或通义 qwen-vl 系列。' },
+    qwen:{ label:'通义千问（阿里）', base:'https://dashscope.aliyuncs.com/compatible-mode/v1', models:['qwen-plus','qwen-max','qwen-turbo','qwen-long','qwen-vl-max','qwen-vl-plus','qwen2.5-72b-instruct'], vision:['qwen-vl-max','qwen-vl-plus'], tip:'获取 API Key：阿里云百炼控制台（dashscope）' },
+    doubao:{ label:'豆包（火山方舟）', base:'https://ark.cn-beijing.volces.com/api/v3', models:['doubao-pro-32k','doubao-pro-256k','doubao-lite-32k'], vision:[], tip:'获取 API Key：火山方舟控制台；模型名填接入点 Endpoint ID<br>豆包的视觉模型也是填 Endpoint ID（开通带视觉的接入点即可），名称不固定，这里不预设。' },
+    zhipu:{ label:'智谱 GLM', base:'https://open.bigmodel.cn/api/paas/v4', models:['glm-4-flash','glm-4v-flash','glm-4-plus','glm-4.7-flash','glm-4.5-flash','glm-4-air'], vision:['glm-4v-flash'], tip:'获取 API Key：智谱开放平台 bigmodel.cn（glm-4-flash 永久免费、最稳，但晚高峰共享池偶尔 429；glm-4-plus 是付费旗舰、限额高，被限流时切它最稳）<br><b>要粘截图识图 → 选 glm-4v-flash（免费视觉模型）。</b>' },
+    moonshot:{ label:'Kimi（Moonshot）', base:'https://api.moonshot.cn/v1', models:['moonshot-v1-8k','moonshot-v1-32k','moonshot-v1-128k'], vision:[], tip:'获取 API Key：Moonshot 开放平台' },
+    gemini:{ label:'Google Gemini', base:'https://generativelanguage.googleapis.com/v1beta/openai', models:['gemini-1.5-pro','gemini-1.5-flash','gemini-2.0-flash'], vision:['gemini-1.5-pro','gemini-1.5-flash','gemini-2.0-flash'], tip:'获取 API Key：Google AI Studio' },
+    ollama:{ label:'Ollama 本地', base:'http://localhost:11434/v1', models:['llama3','qwen2.5','qwen2','deepseek-r1','llava','qwen2.5-vl'], vision:['llava','qwen2.5-vl'], tip:'本机运行 Ollama 后，默认地址 http://localhost:11434/v1<br>要识图选 llava / qwen2.5-vl（本地跑，图片不出本机）。' },
+    custom:{ label:'自定义（OpenAI 兼容）', base:'', models:[], vision:[], tip:'填入任意兼容 /chat/completions 的接口地址与模型名' }
   };
   var cfgProvider = document.getElementById('cfgProvider');
   var cfgBase = document.getElementById('cfgBase');
@@ -5642,7 +5790,12 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
       cfgModel.style.display='none';
       cfgModelCustom.style.display='';
     }else{
-      (p.models||[]).forEach(function(m){ var o=document.createElement('option'); o.value=m; o.textContent=m; cfgModel.appendChild(o); });
+      (p.models||[]).forEach(function(m){
+        var o=document.createElement('option');
+        o.value=m;   /* ★ value 必须是真实模型名 —— 后缀只加在显示标签上，否则调用会 404 */
+        o.textContent=m + (((p.vision||[]).indexOf(m)>=0) ? '（支持识图）' : '');
+        cfgModel.appendChild(o);
+      });
       if(p.models && p.models.length) cfgModel.value = p.models[0];
     }
     var rt = runModeInfo();
@@ -5801,7 +5954,7 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
   })();
 
   /* 首页页 AI 启用引导状态 + 版本号 */
-  var APP_VERSION = 'v1.0.9';
+  var APP_VERSION = 'v1.1.0';
   function refreshAiGuide(){
     var el = document.getElementById('aiGuideStatus');
     if (el && typeof runModeInfo === 'function') {
@@ -6735,9 +6888,30 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
       });
     }catch(e){}
   }
+  /* ★★★ 2026-09-23：待办页变更通知。
+     ★ 消息里**带上了完整列表**（`d.tasks`）—— 收到就直接更新内存缓存 + 重算悬浮球角标，
+       不再「收到消息 → 发 GET 拿数据 → 才刷角标」。
+     旧做法的问题：那次 GET 常常先于 POST 落库返回（本地实测第一次 GET 返回 0 条），
+     于是要靠待办页补发第二次通知 + 第二次 GET 才纠正 → 用户感知成「过一会才同步」。
+     现在带上数据后：**零网络往返**，角标与刚保存的内容必然一致。
+     兼容：老版本待办页只发 `{type}` 不带 tasks → 退回原来的 hydrate 路径（不破坏兼容）。 */
   window.addEventListener('message', function(ev){
     var d = ev && ev.data;
-    if(d && (d.type === 'wb-ctodo-changed' || d.type === 'ctodo-changed')) wlResink();
+    if(!d || (d.type !== 'wb-ctodo-changed' && d.type !== 'ctodo-changed')) return;
+    var arr = d.tasks;
+    if(Array.isArray(arr)){
+      /* 有数据 → 直接喂给内存缓存，立刻重算角标（同步，无延迟） */
+      _mem.ctodo = arr;
+      try{ if(typeof window.__wbUpdateTodoFab === 'function') window.__wbUpdateTodoFab(); }catch(e){}
+      /* 复盘页的「已完成待办沉淀」需要读 ctodo，同理直接用这份数据，不再多一次 GET */
+      try{
+        var n = wlSinkCustTodo();
+        if(n){ renderWorklog(); if(typeof renderOverview === 'function') renderOverview(); }
+      }catch(e){}
+      return;
+    }
+    /* 无数据（老版本待办页）→ 退回原来的网络拉取路径 */
+    wlResink();
   });
   function renderWorklog(){
     if(!wlList) return;
@@ -6913,45 +7087,284 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
   });
   renderWorklog();
 
-  /* 灵感速记 */
-  var ideaGrid = document.getElementById('ideaGrid');
-  var ideaText = document.getElementById('ideaText');
-  var ideaTag = document.getElementById('ideaTag');
-  var ideaAdd = document.getElementById('ideaAdd');
-  function loadIdeas(){ return wbLoad('notes','wb_notes'); }
-  function saveIdeas(a){ wbSave('notes','wb_notes',a); }
-  function renderIdeas(){
-    var a = loadIdeas();
-    ideaGrid.innerHTML = '';
-    if(!a.length){ ideaGrid.innerHTML = '<div class="empty">还没有灵感，记一条吧。</div>'; updateNavBadges(); return; }
+  /* ── 通用「复制到剪贴板 + 提示」助手（2026-09-22 从原个人知识库块提出来，
+       因为复盘报告、产品知识库 AI 索引、索引块三处都在用，不属于笔记逻辑） ── */
+  function kbCopyText(t, label){
+    if(!t){ alert('没有可复制的内容'); return; }
+    function done(){
+      var d=document.createElement('span'); d.className='ok-msg'; d.textContent='已复制 '+label+' ✓';
+      var btn=document.querySelector('.modal.open .modal-actions .btn-open')||document.body;
+      btn.parentNode.appendChild(d); setTimeout(function(){ d.remove(); },1800);
+    }
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(t).then(done, function(){ kbCopyFallback(t, done); });
+    } else kbCopyFallback(t, done);
+  }
+  function kbCopyFallback(t, done){
+    var ta=document.createElement('textarea'); ta.value=t; document.body.appendChild(ta); ta.select();
+    try{ document.execCommand('copy'); done(); }catch(e){ alert('复制失败，请手动选择复制'); }
+    document.body.removeChild(ta);
+  }
+
+  /* ══════════════════════════════════════════════════════════════════
+     笔记（2026-09-22：由「灵感速记」+「个人知识库」合并而来）
+     ══════════════════════════════════════════════════════════════════     合并理由：两页都是「写下来 → 打标签 → 以后能搜」，职责重叠；
+     唯一区别是「有没有结构化元数据」。那就做成**同一页的两种视图**，而不是两个页面。
+
+     数据模型（统一存 notes 槽位）：
+       { id, kind:'quick'|'note', text, tag|tags, title, body, cat, type, status,
+         priority, source, updated, related, ts }
+       · kind:'quick' = 速记（只有 text/tag）
+       · kind:'note'  = 结构化笔记（有 title/cat/type/status…）
+
+     ★ 迁移：老数据在 kb 槽位（wb_kb），启动时合并进 notes —— **只搬不删源槽位**，
+       万一迁移逻辑出问题还能从 kb.json.gz 找回。见 migrateKbToNotes()。
+     ★ 兼容：老 notes 记录（灵感）没有 kind 字段 → 一律视为 'quick'。
+     ★ 侧栏徽标口径同步改为 notes（原 'bdIdea' 元素保留 id 不动，避免改 HTML/CSS）。 */
+
+  var NT_KIND_QUICK = 'quick';
+  var NT_KIND_NOTE  = 'note';
+
+  var ntList     = document.getElementById('ntList');
+  var ntCount    = document.getElementById('ntCount');
+  var ntSearch   = document.getElementById('ntSearch');
+  var ntNew      = document.getElementById('ntNew');
+  var ntQuickText= document.getElementById('ntQuickText');
+  var ntQuickTag = document.getElementById('ntQuickTag');
+  var ntQuickAdd = document.getElementById('ntQuickAdd');
+
+  /* 视图状态：'all' | 'quick' | 'note'（存在 localStorage，切页回来保持） */
+  var ntView = 'all';
+  try{ ntView = localStorage.getItem('nt_view') || 'all'; }catch(e){}
+
+  function loadNotes(){ return wbLoad('notes','wb_notes'); }
+  function saveNotes(a){ wbSave('notes','wb_notes',a); }
+  function ntKindOf(x){ return (x && x.kind === NT_KIND_NOTE) ? NT_KIND_NOTE : NT_KIND_QUICK; }
+  function ntTagStr(x){
+    if(!x) return '';
+    if(x.tags) return String(x.tags);
+    return x.tag ? String(x.tag) : '';
+  }
+
+  /* ★ 把老「个人知识库」（kb 槽位）的数据并进 notes。
+     只搬不删源槽位 —— 源数据留着做后悔药。用 id 去重，重复调用安全（幂等）。
+
+     ⚠️ 读 kb 必须走 **服务端**：老 kb 数据在磁盘的 kb.json.gz 里，
+     而 'kb' 的 hydrator 已随页面删除一起移除 → wbLoad('kb',...) 会掉到
+     localStorage 兜底分支，读到的是空的（本地首次用从未写过 kb 时）。
+     非服务态（file:// 双击）才回退 localStorage。 */
+  function ntReadKbSlot(cb){
+    if(window.__WB_SERVER){
+      fetch('/api/backup?app=kb', { cache:'no-store' })
+        .then(function(r){ if(r.status===204) return []; if(!r.ok) throw new Error('bad'); return r.json(); })
+        .then(function(d){ cb(Array.isArray(d) ? d : []); })
+        .catch(function(){ cb(_wbSafeLs('wb_kb') || []); });
+    } else {
+      cb(_wbSafeLs('wb_kb') || []);
+    }
+  }
+  /* 迁移主体：拿到 kb 数组后并入 notes。抽出来是为了让异步读取和纯逻辑分开测。 */
+  function ntMergeKb(kb){
+    if(!Array.isArray(kb) || !kb.length) return 0;
+    var notes = loadNotes() || [];
+    var seen = {};
+    notes.forEach(function(x){ if(x && x.id != null) seen[String(x.id)] = 1; });
+    var added = 0;
+    kb.forEach(function(x){
+      if(!x) return;
+      if(x.id != null && seen[String(x.id)]) return;   /* 已存在 → 跳过（幂等） */
+      var rec = {};
+      for(var k in x) rec[k] = x[k];
+      rec.kind = NT_KIND_NOTE;
+      if(rec.id == null) rec.id = Date.now() + Math.floor(Math.random()*1000);
+      rec.migratedFrom = 'kb';
+      notes.push(rec);
+      seen[String(rec.id)] = 1;
+      added++;
+    });
+    if(added){ saveNotes(notes); }
+    return added;
+  }
+  /* 兼容旧调用名：异步读 kb 槽位后并入 notes。 */
+  function migrateKbToNotes(cb){
+    ntReadKbSlot(function(kb){
+      var added = 0;
+      try{ added = ntMergeKb(kb); }catch(e){ added = 0; }
+      if(cb) cb(added);
+    });
+  }
+
+  function ntFiltered(){
+    var a = loadNotes() || [];
+    if(ntView === NT_KIND_QUICK) a = a.filter(function(x){ return ntKindOf(x) === NT_KIND_QUICK; });
+    else if(ntView === NT_KIND_NOTE) a = a.filter(function(x){ return ntKindOf(x) === NT_KIND_NOTE; });
+    var q = (ntSearch.value||'').trim().toLowerCase();
+    if(q){
+      a = a.filter(function(x){
+        var hay = [x.title, x.text, x.body, x.tags, x.tag, x.cat, x.type, x.status, x.source]
+          .filter(Boolean).join(' ').toLowerCase();
+        return hay.indexOf(q) >= 0;
+      });
+    }
+    return a;
+  }
+
+  function ntEmptyHtml(){
+    /* 空态给「示例卡片」而不是一句话 —— 用户看到空页不知道该干嘛。
+       示例用灰色虚线卡标注，点了就填进输入区，不写进存储。 */
+    var isQuick = ntView === NT_KIND_QUICK;
+    var isNote  = ntView === NT_KIND_NOTE;
+    var samples = isNote ? [
+      { t:'竞品详情页拆解', d:'记录竞品卖点顺序、主图逻辑、评价区高频词……' },
+      { t:'大促复盘要点',   d:'流量来源、转化卡点、下次要改的 3 件事……' }
+    ] : [
+      { t:'详情页第三屏加对比表', d:'看到同行的对比表很直观，可以试试' },
+      { t:'把好评里的话术抄下来', d:'买家自己说的话比我们写的更有说服力' }
+    ];
+    /* 搜索无结果 ≠ 没有数据：前者不该再摆示例卡（用户会以为示例是搜出来的），
+       只提示换词；后者才摆示例卡做引导。 */
+    var searching = !!ntSearch.value.trim();
+    var head = searching
+      ? '没有匹配的内容'
+      : (isQuick ? '还没有速记' : (isNote ? '还没有结构化笔记' : '还没有任何笔记'));
+    var sub = searching
+      ? '换个关键词试试，或者切到「全部」看看。'
+      : '下面两条是示例 —— 点一下就能填进输入框，改完保存即可。';
+    return '<div class="nt-empty">' +
+      '<div class="nt-empty-title">' + head + '</div>' +
+      '<div class="nt-empty-sub">' + sub + '</div>' +
+      (searching ? '' : '<div class="nt-samples">' +
+        samples.map(function(s){
+          return '<button class="nt-sample" type="button" data-sample="' + esc(s.t) + '" data-sample-body="' + esc(s.d) + '">' +
+            '<b>' + esc(s.t) + '</b><span>' + esc(s.d) + '</span></button>';
+        }).join('') +
+      '</div>') +
+      '</div>';
+  }
+
+  function ntStCls(s){ if(s==='已整理') return 'ok'; if(s==='待验证') return 'wait'; if(s==='归档') return 'arch'; return 'do'; }
+
+  function renderNotes(){
+    if(!ntList) return;
+    var a = ntFiltered();
+    /* 计数：全部视图显示「速记 N · 结构化 M」；单视图显示该视图条数 */
+    var all = loadNotes() || [];
+    var qN = all.filter(function(x){ return ntKindOf(x)===NT_KIND_QUICK; }).length;
+    var nN = all.filter(function(x){ return ntKindOf(x)===NT_KIND_NOTE; }).length;
+    if(ntCount){
+      ntCount.textContent = ntSearch.value.trim()
+        ? ('匹配 ' + a.length + ' 条')
+        : (ntView === 'all' ? ('共 ' + all.length + ' 条 · 速记 ' + qN + ' · 结构化 ' + nN)
+                            : (ntView === NT_KIND_QUICK ? ('速记 ' + qN + ' 条') : ('结构化笔记 ' + nN + ' 条')));
+    }
+    /* 视图按钮态 */
+    document.querySelectorAll('.nt-view').forEach(function(b){
+      b.classList.toggle('is-on', b.getAttribute('data-view') === ntView);
+    });
+
+    ntList.innerHTML = '';
+    if(!a.length){ ntList.innerHTML = ntEmptyHtml(); updateNavBadges(); return; }
+
     a.slice().reverse().forEach(function(it){
-      var card = document.createElement('div'); card.className='idea-card';
-      var body = document.createElement('div'); body.className='idea-body'; body.textContent=it.text;
-      var meta2 = document.createElement('div'); meta2.className='idea-meta';
-      if(it.tag){ var tg=document.createElement('span'); tg.className='chip'; tg.textContent=it.tag; meta2.appendChild(tg); }
-      var tm=document.createElement('span'); tm.className='idea-time'; tm.textContent=it.ts; meta2.appendChild(tm);
-      var acts=document.createElement('div'); acts.className='idea-acts';
-      var up=document.createElement('button'); up.className='link-btn'; up.textContent='升级到知识库';
-      up.addEventListener('click', function(){ openKbModal(null, it.text, it.tag); });
+      var kind = ntKindOf(it);
+      var card = document.createElement('div');
+      card.className = 'nt-card' + (kind === NT_KIND_NOTE ? ' is-note' : '');
+
+      /* 标题：速记没有标题就不显示 */
+      if(kind === NT_KIND_NOTE && it.title){
+        var tt = document.createElement('div'); tt.className='nt-title'; tt.textContent=it.title;
+        card.appendChild(tt);
+      }
+      var body = document.createElement('div');
+      body.className = 'nt-body';
+      body.textContent = kind === NT_KIND_NOTE ? (it.body || '').slice(0, 160) : (it.text || '');
+      card.appendChild(body);
+
+      var meta = document.createElement('div'); meta.className='nt-meta';
+      /* 类型标记 */
+      var kc = document.createElement('span');
+      kc.className = 'chip nt-kind' + (kind === NT_KIND_NOTE ? ' is-note' : '');
+      kc.textContent = kind === NT_KIND_NOTE ? '结构化' : '速记';
+      meta.appendChild(kc);
+      if(kind === NT_KIND_NOTE){
+        if(it.type){ var ty=document.createElement('span'); ty.className='chip'; ty.textContent=it.type; meta.appendChild(ty); }
+        if(it.status){ var st=document.createElement('span'); st.className='chip st-'+ntStCls(it.status); st.textContent=it.status; meta.appendChild(st); }
+        if(it.priority){ var pr=document.createElement('span'); pr.className='chip'; pr.textContent=it.priority; meta.appendChild(pr); }
+        if(it.cat){ var ct=document.createElement('span'); ct.className='chip'; ct.textContent=it.cat; meta.appendChild(ct); }
+      }
+      ntTagStr(it).split(',').map(function(s){return s.trim();}).filter(Boolean).forEach(function(t){
+        var tg=document.createElement('span'); tg.className='chip'; tg.textContent=t; meta.appendChild(tg);
+      });
+      var tm=document.createElement('span'); tm.className='nt-time'; tm.textContent=it.ts||''; meta.appendChild(tm);
+      card.appendChild(meta);
+
+      var acts = document.createElement('div'); acts.className='nt-acts';
+      if(kind === NT_KIND_QUICK){
+        /* 速记 → 升级成结构化笔记（原「升级到知识库」） */
+        var up=document.createElement('button'); up.className='link-btn'; up.textContent='整理成笔记';
+        up.addEventListener('click', function(e){ e.stopPropagation(); openKbModal(null, it.text, it.tag, it.id); });
+        acts.appendChild(up);
+      }
+      var ed=document.createElement('button'); ed.className='link-btn'; ed.textContent='编辑';
+      ed.addEventListener('click', function(e){ e.stopPropagation(); openKbModal(it); });
       var del=document.createElement('button'); del.className='link-btn del'; del.textContent='删除';
-      del.addEventListener('click', function(){ saveIdeas(a.filter(function(x){return x.id!==it.id;})); renderIdeas(); });
-      acts.appendChild(up); acts.appendChild(del);
-      card.appendChild(body); card.appendChild(meta2); card.appendChild(acts);
-      ideaGrid.appendChild(card);
+      del.addEventListener('click', function(e){
+        e.stopPropagation();
+        if(!confirm('确定删除这条吗？')) return;
+        var b = loadNotes();
+        saveNotes(b.filter(function(x){ return x.id!==it.id; }));
+        renderNotes();
+      });
+      acts.appendChild(ed); acts.appendChild(del);
+      card.appendChild(acts);
+      ntList.appendChild(card);
     });
     updateNavBadges();
   }
-  ideaAdd.addEventListener('click', function(){
-    var t=ideaText.value.trim(); if(!t) return;
-    var a=loadIdeas();
-    a.push({id:Date.now(), text:t, tag:ideaTag.value.trim(), ts:new Date().toLocaleString('zh-CN')});
-    saveIdeas(a); ideaText.value=''; ideaTag.value=''; renderIdeas();
-  });
 
-  /* 个人知识库 */
-  var kbList = document.getElementById('kbList');
-  var kbSearch = document.getElementById('kbSearch');
-  var kbNew = document.getElementById('kbNew');
+  /* ── 快记（原「灵感速记」的输入区） ── */
+  function ntQuickSave(){
+    var t = ntQuickText.value.trim(); if(!t) return;
+    var b = loadNotes();
+    b.push({ id:Date.now(), kind:NT_KIND_QUICK, text:t, tag:ntQuickTag.value.trim(), ts:new Date().toLocaleString('zh-CN') });
+    saveNotes(b);
+    ntQuickText.value=''; ntQuickTag.value='';
+    /* 刚记完若在「结构化」视图会看不到 → 自动切到「全部」，避免「记了但没反应」 */
+    if(ntView === NT_KIND_NOTE){ ntView = 'all'; try{ localStorage.setItem('nt_view', ntView); }catch(e){} }
+    renderNotes();
+  }
+  if(ntQuickAdd) ntQuickAdd.addEventListener('click', ntQuickSave);
+  if(ntQuickText){
+    /* Ctrl/Cmd + Enter 快速保存（textarea 里 Enter 留给换行） */
+    ntQuickText.addEventListener('keydown', function(ev){
+      if((ev.ctrlKey||ev.metaKey) && ev.key==='Enter'){ ev.preventDefault(); ntQuickSave(); }
+    });
+  }
+  /* 点示例卡 → 填进输入区 */
+  if(ntList){
+    ntList.addEventListener('click', function(ev){
+      var s = ev.target.closest ? ev.target.closest('.nt-sample') : null;
+      if(!s) return;
+      if(ntView === NT_KIND_NOTE){ openKbModal(null, s.getAttribute('data-sample-body'), '', null, s.getAttribute('data-sample')); return; }
+      if(ntQuickText){
+        ntQuickText.value = s.getAttribute('data-sample');
+        ntQuickText.focus();
+      }
+    });
+  }
+
+  /* ── 视图切换 / 搜索 / 新建 ── */
+  document.querySelectorAll('.nt-view').forEach(function(b){
+    b.addEventListener('click', function(){
+      ntView = b.getAttribute('data-view') || 'all';
+      try{ localStorage.setItem('nt_view', ntView); }catch(e){}
+      renderNotes();
+    });
+  });
+  if(ntSearch) ntSearch.addEventListener('input', renderNotes);
+  if(ntNew) ntNew.addEventListener('click', function(){ openKbModal(null); });
+
+  /* ── 结构化笔记编辑弹窗（原「个人知识库」弹窗，复用） ── */
   var kbModal = document.getElementById('kbModal');
   var kbFTitle = document.getElementById('kbFTitle');
   var kbFCat = document.getElementById('kbFCat');
@@ -6967,52 +7380,14 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
   var kbCancel = document.getElementById('kbCancel');
   var kbModalTitle = document.getElementById('kbModalTitle');
   var editingId = null;
-  function loadKb(){ return wbLoad('kb','wb_kb'); }
-  function saveKb(a){ wbSave('kb','wb_kb',a); }
-  function kbStCls(s){ if(s==='已整理') return 'ok'; if(s==='待验证') return 'wait'; if(s==='归档') return 'arch'; return 'do'; }
-  function kbCopyText(t, label){
-    if(!t){ alert('没有可复制的内容'); return; }
-    function done(){ var d=document.createElement('span'); d.className='ok-msg'; d.textContent='已复制 '+label+' ✓'; var btn=document.querySelector('.modal.open .modal-actions .btn-open')||document.body; btn.parentNode.appendChild(d); setTimeout(function(){ d.remove(); },1800); }
-    if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(t).then(done, function(){ kbCopyFallback(t, done); }); }
-    else kbCopyFallback(t, done);
-  }
-  function kbCopyFallback(t, done){
-    var ta=document.createElement('textarea'); ta.value=t; document.body.appendChild(ta); ta.select();
-    try{ document.execCommand('copy'); done(); }catch(e){ alert('复制失败，请手动选择复制'); }
-    document.body.removeChild(ta);
-  }
-  function renderKb(){
-    var a = loadKb();
-    var q = (kbSearch.value||'').trim().toLowerCase();
-    if(q) a = a.filter(function(x){ return (x.title+' '+(x.body||'')+' '+(x.tags||'')+' '+(x.cat||'')+' '+(x.type||'')+' '+(x.status||'')+' '+(x.source||'')).toLowerCase().indexOf(q)>=0; });
-    kbList.innerHTML = '';
-    if(!a.length){ kbList.innerHTML = '<div class="empty">'+(q?'没有匹配的笔记。':'还没有笔记，点「新建笔记」。')+'</div>'; return; }
-    a.slice().reverse().forEach(function(it){
-      var card = document.createElement('div'); card.className='kb-card';
-      var tt = document.createElement('div'); tt.className='kb-title'; tt.textContent=it.title||'(无标题)';
-      var sn = document.createElement('div'); sn.className='kb-snippet'; sn.textContent=(it.body||'').slice(0,80);
-      var meta3 = document.createElement('div'); meta3.className='kb-meta';
-      if(it.type){ var ty=document.createElement('span'); ty.className='chip'; ty.textContent=it.type; meta3.appendChild(ty); }
-      if(it.status){ var st=document.createElement('span'); st.className='chip st-'+kbStCls(it.status); st.textContent=it.status; meta3.appendChild(st); }
-      if(it.priority){ var pr=document.createElement('span'); pr.className='chip'; pr.textContent=it.priority; meta3.appendChild(pr); }
-      if(it.cat){ var cat=document.createElement('span'); cat.className='chip'; cat.textContent=it.cat; meta3.appendChild(cat); }
-      (it.tags||'').split(',').map(function(s){return s.trim();}).filter(Boolean).forEach(function(t){
-        var tg=document.createElement('span'); tg.className='chip'; tg.textContent=t; meta3.appendChild(tg);
-      });
-      var tm=document.createElement('span'); tm.className='idea-time'; tm.textContent=it.ts; meta3.appendChild(tm);
-      var kbActs=document.createElement('div'); kbActs.className='kb-acts';
-      var kbDel=document.createElement('button'); kbDel.className='link-btn del'; kbDel.textContent='删除';
-      kbDel.addEventListener('click', function(e){ e.stopPropagation(); if(confirm('确定删除这条笔记吗？')){ var b=loadKb(); saveKb(b.filter(function(x){return x.id!==it.id;})); renderKb(); renderOverview(); } });
-      kbActs.appendChild(kbDel);
-      card.appendChild(tt); card.appendChild(sn); card.appendChild(meta3); card.appendChild(kbActs);
-      card.addEventListener('click', function(){ openKbModal(it); });
-      kbList.appendChild(card);
-    });
-  }
-  function openKbModal(it){
-    editingId = it ? (it.id||null) : null;
-    kbModalTitle.textContent = editingId ? '编辑笔记' : '新建笔记';
-    kbFTitle.value = (it && it.title) || '';
+  var promoteFromId = null;   /* 由某条速记「整理成笔记」而来时记下它的 id */
+
+  /* openKbModal(it, seedText, seedTag, fromQuickId, seedTitle) */
+  function openKbModal(it, seedText, seedTag, fromQuickId, seedTitle){
+    editingId = it ? (it.id!=null ? it.id : null) : null;
+    promoteFromId = fromQuickId || null;
+    kbModalTitle.textContent = editingId ? '编辑笔记' : (fromQuickId ? '整理成结构化笔记' : '新建结构化笔记');
+    kbFTitle.value = (it && it.title) || seedTitle || '';
     kbFCat.value = (it && it.cat) || '';
     kbFType.value = (it && it.type) || '';
     kbFStatus.value = (it && it.status) || '';
@@ -7020,32 +7395,44 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
     kbFSource.value = (it && it.source) || '';
     kbFUpdated.value = (it && it.updated) || '';
     kbFRelated.value = (it && it.related) || '';
-    kbFTags.value = (it && it.tags) || '';
-    kbFBody.value = (it && it.body) || '';
+    kbFTags.value = (it && (it.tags || it.tag)) || seedTag || '';
+    kbFBody.value = (it && it.body) || seedText || '';
     kbModal.classList.add('open');
     kbFTitle.focus();
   }
-  kbNew.addEventListener('click', function(){ openKbModal(null); });
-  kbCancel.addEventListener('click', function(){ kbModal.classList.remove('open'); });
-  kbModal.addEventListener('click', function(e){ if(e.target===kbModal) kbModal.classList.remove('open'); });
-  kbSave.addEventListener('click', function(){
+  if(kbCancel) kbCancel.addEventListener('click', function(){ kbModal.classList.remove('open'); });
+  if(kbModal) kbModal.addEventListener('click', function(e){ if(e.target===kbModal) kbModal.classList.remove('open'); });
+  if(kbSave) kbSave.addEventListener('click', function(){
     var title=kbFTitle.value.trim(); var body=kbFBody.value; var tags=kbFTags.value.trim();
     if(!title && !body.trim()){ kbModal.classList.remove('open'); return; }
     var md = {
       cat:kbFCat.value.trim(), type:kbFType.value, status:kbFStatus.value, priority:kbFPriority.value,
       source:kbFSource.value.trim(), updated:kbFUpdated.value.trim(), related:kbFRelated.value.trim()
     };
-    var a = loadKb();
+    var a = loadNotes();
     if(editingId){
-      a.forEach(function(x){ if(x.id===editingId){ x.title=title; x.body=body; x.tags=tags; for(var k in md) x[k]=md[k]; } });
+      a.forEach(function(x){
+        if(x.id===editingId){
+          x.kind = NT_KIND_NOTE;
+          x.title=title; x.body=body; x.tags=tags;
+          delete x.text;              /* 升级后统一用 body，清掉旧 text 免得两处渲染不一致 */
+          for(var k in md) x[k]=md[k];
+        }
+      });
     } else {
-      var rec={id:Date.now(), title:title, body:body, tags:tags, ts:new Date().toLocaleString('zh-CN')};
+      var rec={ id:Date.now(), kind:NT_KIND_NOTE, title:title, body:body, tags:tags, ts:new Date().toLocaleString('zh-CN') };
       for(var k2 in md) rec[k2]=md[k2];
+      /* 由速记升级而来 → 删掉原速记，避免同一条内容出现两份（用户意图是「升级」不是「复制」） */
+      if(promoteFromId != null){
+        a = a.filter(function(x){ return x.id !== promoteFromId; });
+        rec.migratedFrom = 'quick';
+      }
       a.push(rec);
     }
-    saveKb(a); kbModal.classList.remove('open'); renderKb();
+    saveNotes(a); kbModal.classList.remove('open'); editingId=null; promoteFromId=null;
+    if(ntView === NT_KIND_QUICK && !editingId){ ntView='all'; try{ localStorage.setItem('nt_view',ntView); }catch(e){} }
+    renderNotes();
   });
-  kbSearch.addEventListener('input', renderKb);
 
   /* 产品知识库 */
   var kbpList = document.getElementById('kbpList');
@@ -7076,17 +7463,6 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
   var kbpEditingId = null;
   function loadKbp(){ return wbLoad('kbp','wb_kbp'); }
   function saveKbp(a){ wbSave('kbp','wb_kbp',a); }
-  function seedKbp(){
-    // 服务态以内存缓存为准；非服务态以 localStorage 是否初始化为准（与旧逻辑一致）
-    var has = window.__WB_SERVER ? (_mem.kbp && _mem.kbp.length) : (localStorage.getItem('wb_kbp')!==null);
-    if(has) return;
-    var samples = [
-      {title:'北欧奶油风多层猫爬架（示例）', cat:'猫爬架', tags:'示例,北欧,奶油风', price:'299', sale:'199', stock:'有货（奶油色 S/M/L，原木色 M/L）', size:'总高 110cm，底座 40×40cm', material:'剑麻柱 + 加密绒布 + 环保密度板', color:'奶油白 / 原木色', fit:'中小型猫（≤5kg）', sell:'北欧极简奶油风，白底实拍干净无阴影；剑麻柱耐磨抗抓；多层跳台+悬挂吊床，满足攀爬/磨爪/睡觉。', scene:'客厅/卧室靠墙摆放；磨爪、登高、休息。', shiptime:'付款后 48 小时内发货', shipfee:'默认中通/圆通；满 199 包邮', after:'7 天无理由（不影响二次销售）；质量问题包退换；质保 30 天。', body:'话术：猫主子天天爬上爬下不亦乐乎。\n常见问答：会倒吗？——底盘加宽加固，不易倾倒。'},
-      {title:'控油洗发水（示例）', cat:'洗护/洗发水', tags:'示例,男士', price:'59', sale:'39', body:'卖点：氨基酸表活、无硅油、控油蓬松。\n规格：500ml/瓶。\n常见问答：敏感头皮能用吗？——温和配方可用，建议先耳后测试。'}
-    ];
-    samples.forEach(function(s){ s.id=Date.now()+Math.floor(Math.random()*1000); s.ts=new Date().toLocaleString('zh-CN'); });
-    saveKbp(samples);
-  }
   function kbpMd(it){
     var L=function(v){ return (v||'').trim(); };
     var out='【商品】'+(L(it.title)||'未命名')+'\n';
@@ -7127,7 +7503,7 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
     var q = (kbpSearch.value||'').trim().toLowerCase();
     if(q) a = a.filter(function(x){ return (x.title+' '+(x.body||'')+' '+(x.tags||'')+' '+(x.cat||'')+' '+(x.sell||'')+' '+(x.material||'')).toLowerCase().indexOf(q)>=0; });
     kbpList.innerHTML = '';
-    if(!a.length){ kbpList.innerHTML = '<div class="empty">'+(q?'没有匹配的产品。':'还没有产品资料，点「新建产品」。已内置示例，可删除。')+'</div>'; return; }
+    if(!a.length){ kbpList.innerHTML = '<div class="empty">'+(q?'没有匹配的产品。':'还没有产品资料，点右上角「新建产品」录入第一个。')+'</div>'; return; }
     a.slice().reverse().forEach(function(it){
       var card = document.createElement('div'); card.className='kb-card';
       var tt = document.createElement('div'); tt.className='kb-title'; tt.textContent=it.title||'(无标题)';
@@ -7242,9 +7618,21 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
   kbpIdxCopy.addEventListener('click', function(){ kbCopyText(window.__kbpIdxText, '索引'); });
 
   /* 初始化：先本地首屏，再以服务端磁盘数据刷新（脱离 C 盘、突破 5MB 上限） */
-  wbRegister('notes', function(){ wbHydrate('notes','wb_notes', function(a){ renderIdeas(); renderOverview(); }); });
-  wbRegister('kb', function(){ wbHydrate('kb','wb_kb', function(a){ renderKb(); renderOverview(); }); });
-  wbRegister('kbp', function(){ wbHydrate('kbp','wb_kbp', function(a){ renderKbp(); renderOverview(); if(!a || !a.length) seedKbp(); }); });
+  /* 2026-09-22：notes 槽位（速记+结构化笔记合并后）。
+     先 hydrate notes → **再**把老 kb 槽位的数据迁进来（迁移要在 hydrate 完成后，
+     否则 _mem.notes 还是空的，迁移写下去会被随后的 hydrate 覆盖）。
+     迁移读的是服务端 kb.json.gz（异步），所以 renderNotes 放在回调里。 */
+  wbRegister('notes', function(){
+    wbHydrate('notes','wb_notes', function(){
+      migrateKbToNotes(function(added){
+        if(added) console.log('[笔记] 已从个人知识库迁移 ' + added + ' 条旧数据');
+        renderNotes(); renderOverview();
+      });
+    });
+  });
+  /* ★ 不再自动播种示例数据（2026-09-23）：原先「kbp 为空就自动写入 2 条示例并落盘」，
+     用户删掉后又会长出来，还会跟着多数据目录到处复制。改为纯空态引导。 */
+  wbRegister('kbp', function(){ wbHydrate('kbp','wb_kbp', function(a){ renderKbp(); renderOverview(); }); });
   /* 店铺/单品数据 hydrate：服务态下从磁盘拉到 _mem，首页页即可读取店铺数/商品数 */
   wbRegister('store', function(){
     if(window.__WB_SERVER){
@@ -7262,7 +7650,7 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
         .catch(function(){});
     }
   });
-  renderIdeas(); renderKb(); renderKbp();
+  renderNotes(); renderKbp();
   wbHydrateAll();
 
   /* 平台选择器：内置在两个定价工具「成本与费用」卡片顶部，两工具共享同一选择 */
@@ -7289,7 +7677,7 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
   (function(){
     /* 2026-09-15：'settings' 已从恢复白名单移除 —— 设置改成弹窗后，
        刷新时不应该自动弹出设置窗口。 */
-    var valid=['overview','idea','kb','kbp','hot','compare','profit','revprice','item','store','qchat','qanalysis','qreport','qworkload','sku','ctodo','review','ask','product','rival','worklog'];
+    var valid=['overview','notes','kbp','hot','compare','profit','revprice','item','store','qchat','qanalysis','qreport','qworkload','sku','ctodo','review','ask','product','rival','worklog','promo','adreport'];
     var last=null; try{ last=localStorage.getItem('wb_last_page'); }catch(e){}
     /* ★ 双保险：valid 白名单 + wbIsRealPage（防「页面删了但 key 还留在 valid 里」） */
     if(!last || valid.indexOf(last)<0 || !wbIsRealPage(last)) last='overview';

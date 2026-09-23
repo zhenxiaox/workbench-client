@@ -306,15 +306,17 @@
       <div id="todoList"></div>
     </section>
 
-    <!-- 知识库 -->
+    <!-- 笔记（2026-09-22：原「灵感速记」+「个人知识库」合并。
+         ⚠️ id 仍沿用 p-kb（底部 tab 的 data-page="kb" 指向它），改 id 会连带改
+         switchPage / tab 绑定，不值得；只把**可见文案**统一成「笔记」。） -->
     <section class="page" id="p-kb">
-      <div class="sec-title">灵感速记 <span style="margin-left:auto;font-weight:400;color:var(--muted);font-size:11px" id="ideaCnt"></span></div>
+      <div class="sec-title">笔记速记 <span style="margin-left:auto;font-weight:400;color:var(--muted);font-size:11px" id="ideaCnt"></span></div>
       <div class="todo-add">
-        <input id="ideaInput" placeholder="记一条灵感…" />
+        <input id="ideaInput" placeholder="记一条速记…" />
         <button class="add" id="ideaAddBtn">记</button>
       </div>
       <div id="ideaList"></div>
-      <div class="sec-title">知识库</div>
+      <div class="sec-title">结构化笔记 / 知识库</div>
       <div class="grid" id="kbGrid"></div>
     </section>
 
@@ -363,11 +365,11 @@
       <h3>快速记录</h3>
       <div class="seg">
         <button data-t="todo" class="on">待办</button>
-        <button data-t="idea">灵感</button>
+        <button data-t="idea">速记</button>
       </div>
       <input id="sheetTitle" placeholder="标题 / 一句话（待办）" style="display:none" />
       <textarea id="sheetText" rows="3" placeholder="写点什么…"></textarea>
-      <input id="sheetTag" placeholder="标签（灵感可选）" style="display:none" />
+      <input id="sheetTag" placeholder="标签（速记可选）" style="display:none" />
       <div class="row2">
         <button class="cancel" id="sheetCancel">取消</button>
         <button class="send" id="sheetSend">保存</button>
@@ -381,7 +383,7 @@
   <nav class="tabbar">
     <div class="tab active" data-page="home"><div class="ti">&#x1F3E0;</div><div class="tn">首页</div></div>
     <div class="tab" data-page="todo"><div class="ti">&#x2713;</div><div class="tn">待办</div></div>
-    <div class="tab" data-page="kb"><div class="ti">&#x1F4DA;</div><div class="tn">知识库</div></div>
+    <div class="tab" data-page="kb"><div class="ti">&#x1F4DD;</div><div class="tn">笔记</div></div>
     <div class="tab" data-page="data"><div class="ti">&#x1F4CA;</div><div class="tn">数据</div></div>
     <div class="tab" data-page="me"><div class="ti">&#x1F464;</div><div class="tn">我的</div></div>
   </nav>
@@ -458,10 +460,13 @@
   function renderKPI(){
     var todo = DATA.todo||[], notes = DATA.notes||[], kb = DATA.kb||[], kbp = DATA.kbp||[];
     var todoLeft = todo.filter(function(t){return !t.done;}).length;
+    /* 2026-09-22：桌面端「灵感速记 + 个人知识库」已合并成「笔记」（统一存 notes 槽位）。
+       手机端跟着合并 —— 原来两张卡（灵感 N / 知识库 M）现在合成一张「笔记 N+M」，
+       避免同一个数据在手机端显示成两个来源。 */
+    var noteTotal = notes.length + kb.length;
     var cards = [
       {lab:'待办未完成', num:todoLeft, sub:'共 '+todo.length+' 条', ic:'📋', acc:true, go:'todo'},
-      {lab:'灵感速记', num:notes.length, sub:'沉淀创意', ic:'💡', go:'kb'},
-      {lab:'个人知识库', num:kb.length, sub:'运营经验', ic:'📚', go:'kb'},
+      {lab:'笔记', num:noteTotal, sub:'速记 ' + notes.length + ' · 结构化 ' + kb.length, ic:'📝', go:'kb'},
       {lab:'产品知识库', num:kbp.length, sub:'商品资料', ic:'🏷️', go:'kb'}
     ];
     $('#kpiGrid').innerHTML = cards.map(function(c){
@@ -515,8 +520,9 @@
     }).join('');
   }
   function renderKbGrid(){
+    /* 2026-09-22：合并后手机端只列一张「笔记」卡（原来「个人知识库」单列） */
     var items = [
-      {n:'个人知识库', ic:'📚', app:'kb', cnt:(DATA.kb||[]).length},
+      {n:'笔记（速记 + 结构化）', ic:'📝', app:'kb', cnt:((DATA.notes||[]).length+(DATA.kb||[]).length)},
       {n:'产品知识库', ic:'🏷️', app:'kbp', cnt:(DATA.kbp||[]).length}
     ];
     $('#kbGrid').innerHTML = items.map(function(k){
@@ -551,14 +557,40 @@
       b.addEventListener('click', function(e){ e.stopPropagation(); delTodo(+b.getAttribute('data-del')); });
     });
   }
+  /* 2026-09-22：合并后名字保留（调用点多），但渲染的是 **速记 + 结构化笔记** 两类。
+     ★ 判定顺序很重要：先看 `kind`，**没有 `kind` 时再看记录形状** ——
+       老 kb 槽位里的记录是**未迁移的原始形态**（只有 title/body、没有 kind、没有 text），
+       而手机端不做迁移（迁移归桌面端），所以这里必须靠形状兜底，
+       否则 kb 记录会被当成速记去读 `it.text` → 渲染出一张空白卡。
+     ⚠️ 踩过：只判 `kind` 时，kb 记录渲染成空文本 + 错误的「速记」标签。 */
+  function noteKindOf(x){
+    if(!x) return 'quick';
+    if(x.kind === 'note') return 'note';
+    if(x.kind === 'quick') return 'quick';
+    /* 无 kind → 靠形状判断：有 title/body 的当结构化笔记，有 text 的当速记 */
+    if(x.text && !x.title && !x.body) return 'quick';
+    if(x.title || x.body) return 'note';
+    return 'quick';
+  }
   function renderIdeas(){
-    var arr = (DATA.notes||[]).slice().reverse();
+    /* 存储槽统一 notes；老 kb 槽位的数据合并展示（桌面端迁完后 kb 自然为空） */
+    var q = (DATA.notes||[]).slice();
+    var k = (DATA.kb||[]).slice();
+    var arr = q.concat(k).sort(function(a,b){
+      return (Number(b.id)||0) - (Number(a.id)||0);
+    });
     $('#ideaCnt').textContent = arr.length? (arr.length+' 条') : '';
-    if(!arr.length){ $('#ideaList').innerHTML='<div class="empty">还没有灵感，记一条吧</div>'; return; }
+    if(!arr.length){
+      $('#ideaList').innerHTML='<div class="empty">还没有笔记，记一条速记吧</div>';
+      return;
+    }
     $('#ideaList').innerHTML = arr.map(function(it){
-      var chip = it.tag? '<span class="chip">'+esc(it.tag)+'</span>' : '';
+      var kind = noteKindOf(it);
+      var text = kind==='note' ? (it.title || it.body || '') : (it.text || '');
+      var chip = (it.tag || it.tags)? '<span class="chip">'+esc(it.tag||it.tags)+'</span>' : '';
+      var kc = '<span class="chip">'+(kind==='note'?'结构化':'速记')+'</span>';
       var tm = it.ts? '<span class="tm">'+esc(it.ts)+'</span>' : '';
-      return '<div class="idea-card"><div class="bd">'+esc(it.text)+'</div><div class="mt">'+chip+tm+'</div></div>';
+      return '<div class="idea-card'+(kind==='note'?' is-note':'')+'"><div class="bd">'+esc(text)+'</div><div class="mt">'+kc+chip+tm+'</div></div>';
     }).join('');
   }
 
@@ -589,7 +621,9 @@
     var a = DATA.notes||[];
     a.unshift({id:Date.now(), text:text, tag:(tag||'').trim(), ts:new Date().toLocaleString('zh-CN')});
     DATA.notes=a;
-    save('notes', a).then(function(){ renderIdeas(); renderKPI(); setSync(true); toast('已记录'); });
+    /* ★ 2026-09-22：新增后必须一起刷新知识库栅格 —— 那张「笔记（速记 + 结构化）」
+       卡的计数取自 DATA.notes + DATA.kb，不刷会显示旧数字（探针抓出来的）。 */
+    save('notes', a).then(function(){ renderIdeas(); renderKPI(); renderKbGrid(); setSync(true); toast('已记录'); });
   }
 
   // ---------- 页面切换 ----------
@@ -699,6 +733,10 @@
 
   // ---------- 加载全部 ----------
   var APPS = ['todo','notes','kb','kbp','store','item','sku','qchat'];
+  /* ★ 2026-09-22：桌面端已把「个人知识库」(kb) 合并进 notes。
+     手机端只做「读合并结果」这一步 —— **不在这里写迁移**，避免手机端和桌面端
+     同时迁移造成重复写入。桌面端负责迁移（migrateKbToNotes），手机端把 kb 当只读来源
+     一起展示，等桌面端迁完 kb 自然变空。 */
   function refresh(showToast){
     setSync(false, '同步中');
     var ps = APPS.map(function(a){ return load(a).then(function(d){ DATA[a]=d; }); });
@@ -717,7 +755,7 @@
     $('#mePath').textContent = SERVER? '电脑 <数据目录>/data/*.json.gz' : '浏览器 localStorage';
     $('#meSync').textContent = lastSync? lastSync.toLocaleTimeString('zh-CN') : '—';
     var t=DATA.todo||[], n=DATA.notes||[], k=DATA.kb||[], kp=DATA.kbp||[];
-    $('#meStat').textContent = t.length+' / '+n.length+' / '+(k.length+kp.length);
+    $('#meStat').textContent = t.length+' / '+(n.length+k.length)+' / '+kp.length;
     // 退出按钮：仅在服务端(隧道)显示有效
     $('#logoutBtn').style.display = SERVER? 'block':'none';
   }
