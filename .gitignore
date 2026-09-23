@@ -4,3 +4,17 @@ src-tauri/target/
 *.key
 *.key.pub
 .DS_Store
+
+# ---- 构建产物 ----
+dist/*.zip
+dist/*.exe
+
+# ---- app-root 里的自动留档/临时文件 ----
+# .prev 是 wb-server.js 写盘前自动留的备份，属运行产物，不入库
+app-root/.prev/
+app-root/*.bak
+app-root/*.bak-*
+# 调试截图（验证用，不入库）
+app-root/.wb-*.png
+app-root/_*.png
+app-root/shot_*.png
