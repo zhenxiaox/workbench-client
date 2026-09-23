@@ -1,6 +1,6 @@
 {
   "name": "workbench-client",
-  "version": "0.1.6",
+  "version": "0.1.18",
   "private": true,
   "scripts": {
     "tauri": "tauri"

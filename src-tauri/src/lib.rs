@@ -7,7 +7,9 @@
 //!   4. 挂一个系统托盘，主窗口关闭时只隐藏不退出，托盘/悬浮球可再唤起。
 //!   5. 客户端退出时，把 sidecar 子进程一并结束。
 //!   6. 数据目录统一落到用户 LocalAppData，卸载 / 升级不丢数据。
+//!   7. **单实例**：同一台机器只允许跑一个客户端（见 acquire/request_focus 的注释）。
 
+use std::fs::File;
 use std::net::TcpStream;
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
@@ -26,6 +28,11 @@ const FAB_AI_LABEL: &str = "fab_ai";
 const FAB_TODO_LABEL: &str = "fab_todo";
 const FAB_ACTION_EVENT: &str = "wb-fab-action";
 
+/// 悬浮球显隐存档（放在 data 目录，卸载 / 升级不丢）。
+/// 与前端 localStorage 的 `wb_ai_fab` / `wb_todo_fab` 是同一份「用户意图」，
+/// 两边每次变更都会同时写 —— 缺省=显示，与前端 `wbFabOn()` 的「缺省=开」一致。
+const VIS_FILE: &str = "fab-vis.json";
+
 /// 桌面上两个悬浮球窗口的元数据（独立拖动、独立记忆位置）。
 const FABS: &[(&str, &str, &str)] = &[
     // (label, 悬浮球.html 的 which 参数, 位置存档文件名)
@@ -36,9 +43,93 @@ const FABS: &[(&str, &str, &str)] = &[
 /// 持有 sidecar 子进程句柄，便于退出时回收。
 struct ServerProcess(Mutex<Option<Child>>);
 
+/// 单实例锁文件（放在 app_local_data_dir 根，不放 data/ 子目录 ——
+/// 免得被 `WB_CLIENT_DATA_DIR` 改道后两个实例各拿一把锁）。
+const LOCK_FILE: &str = "wb-client.lock";
+/// 「请把主窗口提到前台」的请求文件（第二个实例退出前写它）。
+const FOCUS_FILE: &str = "focus.request";
+
+/// 单实例锁的持有者：**只要这个 File 活着，排他锁就一直在**，
+/// 所以必须 manage 进 Tauri 状态里、不能让它被 drop（drop 即解锁）。
+struct SingleInstanceLock(#[allow(dead_code)] File);
+
+/// 尝试取得单实例排他锁，返回 `(能否启动, 锁句柄)`。
+///
+/// ★ 为什么必须有这个（2026-09-18 用户报「客户端可以无限打开」）：
+///   多开时**只有第一个进程的 node 抢得到 8787**，其余进程的 node 起不来，
+///   但 `wait_port()` 会因为「别人在监听」而返回 true → 窗口照常打开、看着一切正常。
+///   用户一旦关掉第一个，剩下的实例就全部失去后端：页面请求失败、手填数据存不下去。
+///   而且每个实例都会各建一套悬浮球 + 托盘图标，桌面上叠一堆球。
+///
+/// 用 std 的文件锁实现（Rust 1.89+ 的 `File::try_lock`），不引额外依赖
+/// （`tauri-plugin-single-instance` 本地缓存里没有，离线装不了）。
+/// ⚠️ 锁文件建不出来 / 打不开时**放行启动** —— 宁可多开一次，
+///    也别因为锁机制出异常让用户彻底打不开客户端（fail-open）。
+fn acquire_single_instance(dir: &Path) -> (bool, Option<File>) {
+    if std::fs::create_dir_all(dir).is_err() {
+        return (true, None);
+    }
+    let f = match std::fs::OpenOptions::new().create(true).read(true).write(true).open(dir.join(LOCK_FILE)) {
+        Ok(f) => f,
+        Err(_) => return (true, None),
+    };
+    if f.try_lock().is_ok() {
+        (true, Some(f))
+    } else {
+        (false, None)
+    }
+}
+
+/// 请已经在跑的那个实例把主窗口提到前台。
+/// 用文件轮询而不是 IPC：不引依赖，也**不弹模态对话框** ——
+/// 用户误双击时被一个「已运行」的框挡住、还要手动点确定，体验很差。
+fn request_focus(dir: &Path) {
+    let _ = std::fs::write(dir.join(FOCUS_FILE), "1");
+}
+
+/// 后台轮询「提到前台」的请求：发现就删掉并唤起主窗口。
+fn spawn_focus_watcher(app: &tauri::AppHandle, dir: PathBuf) {
+    let handle = app.clone();
+    std::thread::spawn(move || loop {
+        std::thread::sleep(Duration::from_millis(800));
+        let p = dir.join(FOCUS_FILE);
+        if p.exists() {
+            let _ = std::fs::remove_file(&p);
+            show_main(&handle);
+        }
+    });
+}
+
+/// 读 `WB_APP_ROOT` 环境变量（本地开发模式的项目根目录）。
+/// 目录下必须有 `wb-server.js` 才认，否则打印告警并忽略 —— 免得路径写错时
+/// 悄悄退回资源目录、让人以为「改了 HTML 没生效」。
+fn workbench_root_from_env() -> Option<PathBuf> {
+    let raw = std::env::var("WB_APP_ROOT").ok()?;
+    let dir = raw.trim().trim_matches('"').trim();
+    if dir.is_empty() {
+        return None;
+    }
+    let p = PathBuf::from(dir);
+    if p.join("wb-server.js").exists() {
+        Some(p)
+    } else {
+        eprintln!("WB_APP_ROOT 指向的目录下没有 wb-server.js，已忽略：{}", dir);
+        None
+    }
+}
+
 /// 定位工作台根目录（node.exe / wb-server.js / 全部 HTML 都在这里）。
-/// 优先级：打包后的资源目录 > 可执行文件同目录 > 开发者本机桌面路径（兜底）。
+/// 优先级：环境变量 WB_APP_ROOT（本地开发模式）> 打包后的资源目录 > 可执行文件同目录 > 兜底路径。
+///
+/// ★ 本地开发模式（2026-09-18）：设置 WB_APP_ROOT=<项目根绝对路径> 后，客户端直接读项目目录，
+///   改 HTML 只需刷新窗口即生效 —— 不用重新构建、不用重装。
+///   入口见项目根目录的「启动客户端-开发模式.bat」。
+///   注意：窗口加载的是 http://127.0.0.1:8787/工作台.html，由这里的 root 起 node 服务提供，
+///   所以「换 root」= 换整套页面，`dist/` 那个前端目录跟运行时无关。
 fn resolve_workbench_dir(app: &tauri::App) -> PathBuf {
+    if let Some(p) = workbench_root_from_env() {
+        return p;
+    }
     if let Ok(res) = app.path().resource_dir() {
         let candidate = res.join("app");
         if candidate.join("wb-server.js").exists() {
@@ -98,6 +189,24 @@ fn data_dir_of(app: &tauri::AppHandle) -> PathBuf {
         .unwrap_or_default()
 }
 
+/// 解析数据目录：默认跟正式版同一份（`%LOCALAPPDATA%\com.workbench.client\data`），
+/// 这样开发模式下看到的就是用户的真实数据。
+/// 想拿假数据练手时，设 `WB_CLIENT_DATA_DIR=<绝对路径>` 切到隔离目录，
+/// 免得开发期的误操作写坏生产数据（本项目真出过这种事）。
+fn resolve_data_dir(app: &tauri::App, root: &Path) -> PathBuf {
+    if let Ok(raw) = std::env::var("WB_CLIENT_DATA_DIR") {
+        let dir = raw.trim().trim_matches('"').trim();
+        if !dir.is_empty() {
+            eprintln!("WB_CLIENT_DATA_DIR 生效，数据目录切到隔离目录：{}", dir);
+            return PathBuf::from(dir);
+        }
+    }
+    app.path()
+        .app_local_data_dir()
+        .map(|d| d.join("data"))
+        .unwrap_or_else(|_| root.join("data"))
+}
+
 #[derive(serde::Serialize, serde::Deserialize)]
 struct FabPos {
     x: i32,
@@ -126,6 +235,52 @@ fn save_fab_pos(app: &tauri::AppHandle, data_dir: &Path) {
     }
 }
 
+/// 读取悬浮球显隐存档（缺省=显示）。
+fn fab_visible_saved(data_dir: &Path, which: &str) -> bool {
+    std::fs::read_to_string(data_dir.join(VIS_FILE))
+        .ok()
+        .and_then(|s| serde_json::from_str::<serde_json::Value>(&s).ok())
+        .and_then(|v| v.get(which).and_then(|x| x.as_bool()))
+        .unwrap_or(true)
+}
+
+/// 写入某个球的显隐状态（读-改-写，保留另一个球的值）。
+fn save_fab_visible(data_dir: &Path, which: &str, visible: bool) {
+    let mut v = std::fs::read_to_string(data_dir.join(VIS_FILE))
+        .ok()
+        .and_then(|s| serde_json::from_str::<serde_json::Value>(&s).ok())
+        .filter(|x| x.is_object())
+        .unwrap_or_else(|| serde_json::json!({}));
+    if let Some(obj) = v.as_object_mut() {
+        obj.insert(which.to_string(), serde_json::Value::Bool(visible));
+    }
+    if std::fs::create_dir_all(data_dir).is_err() {
+        return;
+    }
+    let _ = std::fs::write(data_dir.join(VIS_FILE), v.to_string());
+}
+
+fn fab_label_of(which: &str) -> &'static str {
+    if which == "todo" {
+        FAB_TODO_LABEL
+    } else {
+        FAB_AI_LABEL
+    }
+}
+
+/// 「显隐 + 落盘」的唯一入口：前端命令、托盘菜单、启动恢复都走这里，
+/// 避免窗口状态与存档分叉（分叉的表现就是「设置里写着已隐藏，球却还在」）。
+fn apply_fab_visible(app: &tauri::AppHandle, which: &str, visible: bool) {
+    if let Some(w) = app.get_webview_window(fab_label_of(which)) {
+        if visible {
+            let _ = w.show();
+        } else {
+            let _ = w.hide();
+        }
+    }
+    save_fab_visible(&data_dir_of(app), if which == "todo" { "todo" } else { "ai" }, visible);
+}
+
 /// 唤起主窗口（若隐藏则显示，若最小化则还原，最后聚焦）。
 fn show_main(app: &tauri::AppHandle) {
     if let Some(w) = app.get_webview_window(MAIN_LABEL) {
@@ -144,6 +299,12 @@ fn open_main_window(app: &tauri::AppHandle) {
         .inner_size(1280.0, 800.0)
         // 去掉原生标题栏：改用工作台.html 里自绘的顶部标题栏（折叠+搜索+窗口控制），与主题融合。
         .decorations(false)
+        /* ★ 必须关掉 Tauri 自带的拖放处理器（默认是开的）—— 官方注释原话：
+           "This is required to use HTML5 drag and drop APIs on the frontend on Windows."
+           开着的时候 Tauri 会把文件拖放截走：前端 dragover 还有反应（所以高亮会亮），
+           但 drop 事件里 dataTransfer.files 是**空的** → 页面表现为「拖进去没反应」。
+           2026-09-20 用户报障「店铺推广页拖 Excel 没反应」，根因就在这。 */
+        .disable_drag_drop_handler()
         .build();
 
     if let Err(e) = res {
@@ -156,6 +317,9 @@ fn open_fab_window(app: &tauri::AppHandle, data_dir: &Path, label: &str, which: 
         .expect("悬浮球 URL 解析失败");
 
     // 单个球窗口：56px 球 + 四周留 12px 边距 → 80×80。
+    // ★ 初始显隐按存档恢复：上次在设置里关掉的球，启动时不再「先冒出来」——
+    //   否则会出现「设置里写着已隐藏、球却显示」的不一致（用户报障）。
+    let visible = fab_visible_saved(data_dir, which);
     let res = WebviewWindowBuilder::new(app, label, WebviewUrl::External(target))
         .title("运营工作台悬浮球")
         .inner_size(80.0, 80.0)
@@ -166,6 +330,7 @@ fn open_fab_window(app: &tauri::AppHandle, data_dir: &Path, label: &str, which: 
         .resizable(false)
         .shadow(false)
         .focused(false)
+        .visible(visible)
         .build();
 
     if let Ok(w) = res {
@@ -189,16 +354,10 @@ fn open_fab_window(app: &tauri::AppHandle, data_dir: &Path, label: &str, which: 
 }
 
 /// 显示或隐藏某个桌面悬浮球窗口（which: "ai" / "todo"）。
+/// 同时把状态写进存档 —— 下次启动按它恢复，保证「开关状态 = 球的实际显隐」。
 #[tauri::command]
 fn fab_set_visible(app: tauri::AppHandle, which: String, visible: bool) {
-    let label = if which == "todo" { FAB_TODO_LABEL } else { FAB_AI_LABEL };
-    if let Some(w) = app.get_webview_window(label) {
-        if visible {
-            let _ = w.show();
-        } else {
-            let _ = w.hide();
-        }
-    }
+    apply_fab_visible(&app, &which, visible);
 }
 
 fn setup_tray(app: &tauri::App) -> tauri::Result<()> {
@@ -276,6 +435,10 @@ struct UpdateInfo {
 /// 检查更新：返回是否有可用版本（无更新 / 已被忽略 时 available=false）。
 #[tauri::command]
 async fn check_update(app: tauri::AppHandle) -> Result<UpdateInfo, String> {
+    // 与后台检查保持一致：开发模式下手动检查也直接说明原因，避免误装正式版覆盖开发环境。
+    if is_dev_mode() {
+        return Err("当前是本地开发模式（WB_APP_ROOT 生效），已跳过更新检查".to_string());
+    }
     let current = app.package_info().version.to_string();
     let updater = app.updater().map_err(|e| e.to_string())?;
     let ignored = read_ignored(&data_dir_of(&app));
@@ -363,8 +526,18 @@ async fn download_update(app: tauri::AppHandle) -> Result<(), String> {
     Ok(())
 }
 
+/// 是否处于本地开发模式（WB_APP_ROOT 有效即视为开发模式）。
+fn is_dev_mode() -> bool {
+    workbench_root_from_env().is_some()
+}
+
 /// 启动后后台检查一次更新，发现新版本则通知主窗口。
 fn spawn_update_check(app: &tauri::AppHandle) {
+    // 开发模式下不检查更新：否则 dev 客户端会提示「有新版本」并把正式版装进去，
+    // 把「改 HTML 立刻生效」的开发环境覆盖掉，容易让人一头雾水。
+    if is_dev_mode() {
+        return;
+    }
     let handle = app.clone();
     tauri::async_runtime::spawn(async move {
         let updater = match handle.updater() {
@@ -396,11 +569,23 @@ pub fn run() {
         .plugin(tauri_plugin_updater::Builder::new().build())
         .setup(|app| {
             let root = resolve_workbench_dir(app);
-            let data_dir = app
-                .path()
-                .app_local_data_dir()
-                .map(|d| d.join("data"))
-                .unwrap_or_else(|_| root.join("data"));
+            let data_dir = resolve_data_dir(app, &root);
+
+            /* ★ 单实例保护（2026-09-18）：必须排在 start_server / 开窗口**之前** ——
+               否则第二个实例已经起了 node、建好了球和托盘，再退出就留下残影。 */
+            let lock_dir = app.path().app_local_data_dir().unwrap_or_else(|_| root.clone());
+            let (can_start, lock) = acquire_single_instance(&lock_dir);
+            if !can_start {
+                // 已经有实例在跑：请它把主窗口提到前台，本进程立刻退出。
+                // 不用模态对话框 —— 用户误双击时不该被一个框挡住还要手动点确定。
+                request_focus(&lock_dir);
+                std::process::exit(0);
+            }
+            if let Some(f) = lock {
+                // 锁句柄必须活到进程结束（drop 即解锁），交给 Tauri 托管
+                app.manage(SingleInstanceLock(f));
+            }
+            spawn_focus_watcher(app.handle(), lock_dir);
 
             match start_server(&root, &data_dir) {
                 Ok(child) => {
@@ -440,11 +625,9 @@ pub fn run() {
                 }
             }
             "hide_fab" => {
-                for (label, _, _) in FABS {
-                    if let Some(w) = app.get_webview_window(label) {
-                        let _ = w.hide();
-                    }
-                }
+                // 走统一入口：隐藏窗口 + 落盘存档（下次启动不会又冒出来）
+                apply_fab_visible(app, "ai", false);
+                apply_fab_visible(app, "todo", false);
                 let _ = app.emit_to(
                     tauri::EventTarget::labeled(MAIN_LABEL),
                     "tray-event",
@@ -453,11 +636,8 @@ pub fn run() {
             }
             "hide_fab_ai" | "hide_fab_todo" => {
                 let is_todo = event.id().as_ref() == "hide_fab_todo";
-                let label = if is_todo { FAB_TODO_LABEL } else { FAB_AI_LABEL };
-                if let Some(w) = app.get_webview_window(label) {
-                    let _ = w.hide();
-                }
                 let which = if is_todo { "todo" } else { "ai" };
+                apply_fab_visible(app, which, false);
                 let _ = app.emit_to(
                     tauri::EventTarget::labeled(MAIN_LABEL),
                     "tray-event",
@@ -494,4 +674,74 @@ pub fn run() {
                 kill_server(app_handle);
             }
         });
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// 本地开发模式（WB_APP_ROOT）的解析规则。
+    /// 写成一个函数而不是多个 `#[test]`：这几个用例都要改**进程级**环境变量，
+    /// 拆开会被 cargo 的并行测试线程互相踩。
+    #[test]
+    fn wb_app_root_env_resolution() {
+        let tmp = std::env::temp_dir().join(format!("wb-approot-test-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&tmp);
+        std::fs::create_dir_all(&tmp).expect("建临时目录失败");
+
+        // 1) 没有这个环境变量 → 不算开发模式
+        std::env::remove_var("WB_APP_ROOT");
+        assert_eq!(workbench_root_from_env(), None, "未设变量时不应命中");
+        assert!(!is_dev_mode(), "未设变量时不应是开发模式");
+
+        // 2) 目录里没有 wb-server.js → 忽略（防路径写错时静默退回资源目录）
+        std::env::set_var("WB_APP_ROOT", &tmp);
+        assert_eq!(workbench_root_from_env(), None, "缺 wb-server.js 时应忽略");
+        assert!(!is_dev_mode(), "无效路径不应算开发模式");
+
+        // 3) 空串 / 纯空白 → 忽略
+        std::env::set_var("WB_APP_ROOT", "   ");
+        assert_eq!(workbench_root_from_env(), None, "空串时应忽略");
+
+        // 4) 正常命中
+        std::fs::write(tmp.join("wb-server.js"), "// stub").unwrap();
+        std::env::set_var("WB_APP_ROOT", &tmp);
+        assert_eq!(workbench_root_from_env(), Some(tmp.clone()), "应返回项目根");
+        assert!(is_dev_mode(), "有效路径应算开发模式");
+
+        // 5) 路径被引号 / 空格包住（.bat 里 `set "VAR=..."` 容易带出来）→ 要能剥掉
+        let quoted = format!("  \"{}\"  ", tmp.display());
+        std::env::set_var("WB_APP_ROOT", &quoted);
+        assert_eq!(
+            workbench_root_from_env(),
+            Some(tmp.clone()),
+            "应剥掉引号与首尾空白"
+        );
+
+        std::env::remove_var("WB_APP_ROOT");
+        let _ = std::fs::remove_dir_all(&tmp);
+    }
+
+    /// 单实例锁：同一个锁文件第二次取锁必须失败 —— 第二个实例就是靠这个退出的。
+    #[test]
+    fn single_instance_lock_is_exclusive() {
+        let tmp = std::env::temp_dir().join(format!("wb-lock-test-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&tmp);
+        std::fs::create_dir_all(&tmp).expect("建临时目录失败");
+
+        let (ok1, l1) = acquire_single_instance(&tmp);
+        assert!(ok1, "第一个实例应该能拿到锁");
+        let l1 = l1.expect("第一个实例应持有锁句柄");
+
+        let (ok2, l2) = acquire_single_instance(&tmp);
+        assert!(!ok2, "第二个实例不该拿到锁（否则单实例保护失效）");
+        assert!(l2.is_none());
+
+        drop(l1);
+        let (ok3, l3) = acquire_single_instance(&tmp);
+        assert!(ok3, "锁释放后应能重新拿到");
+        drop(l3);
+
+        let _ = std::fs::remove_dir_all(&tmp);
+    }
 }
